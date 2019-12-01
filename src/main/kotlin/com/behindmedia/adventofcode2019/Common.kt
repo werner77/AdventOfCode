@@ -6,10 +6,12 @@ import java.io.FileNotFoundException
 fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     val reader = readerForResource(resource)
     val ret = mutableListOf<T>()
-    reader.forEachLine {
-        ret.add(parser(it))
+    return reader.use {
+        it.forEachLine {
+            ret.add(parser(it))
+        }
+        return ret
     }
-    return ret
 }
 
 fun <T>parse(resource: String, parser: (String) -> T) : T {
@@ -17,10 +19,12 @@ fun <T>parse(resource: String, parser: (String) -> T) : T {
 }
 
 fun read(resource: String): String {
-    return readerForResource(resource).readText()
+    return readerForResource(resource).use {
+        it.readText()
+    }
 }
 
-fun readerForResource(resource: String): BufferedReader {
+private fun readerForResource(resource: String): BufferedReader {
     val url = object {}.javaClass.getResource(resource)
         ?: throw FileNotFoundException("Resource with name $resource could not be found")
 
