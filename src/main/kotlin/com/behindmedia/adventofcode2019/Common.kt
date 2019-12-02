@@ -5,12 +5,12 @@ import java.io.FileNotFoundException
 
 fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     val reader = readerForResource(resource)
-    val ret = mutableListOf<T>()
     return reader.use {
-        it.forEachLine {
-            ret.add(parser(it))
+        val ret = mutableListOf<T>()
+        it.forEachLine { line ->
+            ret.add(parser(line))
         }
-        return ret
+        ret
     }
 }
 
