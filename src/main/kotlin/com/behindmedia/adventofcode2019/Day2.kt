@@ -2,15 +2,13 @@ package com.behindmedia.adventofcode2019
 
 class Day2 {
 
-    fun processOpcodes(opcodesIn: List<Int>, noun: Int? = null, verb: Int? = null): List<Int> {
+    fun processOpcodes(opcodesIn: List<Int>, nounAndVerb: Pair<Int, Int>? = null): List<Int> {
         var position = 0
         val opcodes = opcodesIn.toMutableList()
 
-        if (noun != null) {
-            opcodes[1] = noun
-        }
-        if (verb != null) {
-            opcodes[2] = verb
+        if (nounAndVerb != null) {
+            opcodes[1] = nounAndVerb.first
+            opcodes[2] = nounAndVerb.second
         }
 
         while (true) {
@@ -37,6 +35,18 @@ class Day2 {
             position += 4
         }
         return opcodes
+    }
+
+    fun findNounAndVerb(opcodes: List<Int>, expectedResult: Int = 19690720): Int? {
+        for (noun in 0..99) {
+            for (verb in 0..99) {
+                val result = processOpcodes(opcodes, Pair(noun, verb))
+                if (result[0] == expectedResult) {
+                    return 100 * noun + verb
+                }
+            }
+        }
+        return null
     }
 
 }

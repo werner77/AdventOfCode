@@ -23,11 +23,8 @@ class Day2Test {
             it.split(",").map { value -> value.toInt() }
         }
         val day2 = Day2()
-        val result = day2.processOpcodes(opcodes, 12, 2)
-
-        // 1719512
-
-        println("Value at position 0: ${result[0]}")
+        val result = day2.processOpcodes(opcodes, Pair(12, 2))
+        println("Result: ${result[0]}")
     }
 
     @Test
@@ -36,16 +33,7 @@ class Day2Test {
             it.split(",").map { value -> value.toInt() }
         }
         val day2 = Day2()
-        var finalResult: Int? = null
-        for (noun in 0..99) {
-            for (verb in 0..99) {
-                val result = day2.processOpcodes(opcodes, noun, verb)
-                if (result[0] == 19690720) {
-                    finalResult = 100 * noun + verb
-                    break
-                }
-            }
-        }
+        val finalResult = day2.findNounAndVerb(opcodes)
         println("Final result: $finalResult")
     }
 }

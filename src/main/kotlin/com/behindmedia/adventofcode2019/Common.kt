@@ -2,6 +2,8 @@ package com.behindmedia.adventofcode2019
 
 import java.io.BufferedReader
 import java.io.FileNotFoundException
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     val reader = readerForResource(resource)
@@ -59,6 +61,7 @@ fun Array<IntArray>.printMatrix() {
 }
 
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
+
     override fun compareTo(other: Coordinate): Int {
         var result = this.y.compareTo(other.y)
         if (result == 0) {
@@ -71,4 +74,21 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return Coordinate(x + xOffset, y + yOffset)
     }
 
+    fun offset(vector: Coordinate): Coordinate {
+        return offset(vector.x, vector.y)
+    }
+
+    fun manhattenDistance(to: Coordinate): Int {
+        return abs(x - to.x) + abs(y - to.y)
+    }
+
+    fun distance(to: Coordinate): Double {
+        val deltaX = (x - to.x).toDouble()
+        val deltaY = (y - to.y).toDouble()
+        return sqrt( deltaX * deltaX + deltaY * deltaY)
+    }
+
+    companion object {
+        val origin = Coordinate(0, 0)
+    }
 }
