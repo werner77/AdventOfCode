@@ -13,6 +13,11 @@ class Day4 {
     }
 
     fun isValidPassword(password: Int, strict: Boolean): Boolean {
+
+        if (password < 100_000 || password >= 1_000_000) {
+            return false
+        }
+
         var lastDigit: Int? = null
         var number = password
         var sameCount = 0
