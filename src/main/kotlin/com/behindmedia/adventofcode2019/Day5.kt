@@ -2,119 +2,127 @@ package com.behindmedia.adventofcode2019
 
 class Day5 {
 
+    data class Opcode(val code: Int, val operandModes: IntArray)
+
+    private fun getValue(index: Int, position: Int, operandModes: IntArray, state: List<Int>): Int {
+        val value = getValue(index, position, state)
+        return if (operandModes[index] == 0) state[value] else value
+    }
+
+    private fun getValue(index: Int, position: Int, state: List<Int>): Int {
+        return state[position + index]
+    }
+
+    private fun getOpcode(position: Int, state: List<Int>): Opcode {
+        var encodedOpcode = state[position]
+
+        val code = encodedOpcode % 100
+        val operandModes = IntArray(3)
+
+        encodedOpcode /= 100
+        for (i in 0 until 3) {
+            operandModes[i] = encodedOpcode % 10
+            encodedOpcode /= 10
+            assert(operandModes[i] < 2)
+        }
+
+        return Opcode(code, operandModes)
+    }
+
     fun processOpcodes(opcodesIn: List<Int>, input: Int = 1): Int {
         var position = 0
-        val opcodes = opcodesIn.toMutableList()
+        val state = opcodesIn.toMutableList()
 
         var encounteredInput = false
-        var encounteredOutput = false
         var lastOutput = 0
 
-        while (true) {
-            var encodedOpcode = opcodes[position]
-
-            val opcode = encodedOpcode % 100
-            val operandModes = IntArray(3)
-
-            encodedOpcode /= 100
-            for (i in 0 until 3) {
-                operandModes[i] = encodedOpcode % 10
-                encodedOpcode /= 10
-                assert(operandModes[i] < 2)
-            }
-
-            if (opcode == 1) {
-                // Add
-                val pos1 = opcodes[position + 1]
-                val pos2 = opcodes[position + 2]
-                val pos3 = opcodes[position + 3]
-                val first = if (operandModes[0] == 0) opcodes[pos1] else pos1
-                val second = if (operandModes[1] == 0) opcodes[pos2] else pos2
-                assert(operandModes[2] == 0)
-                opcodes[pos3] = first + second
-                position += 4
-            } else if (opcode == 2) {
-                // Multiply
-                val pos1 = opcodes[position + 1]
-                val pos2 = opcodes[position + 2]
-                val pos3 = opcodes[position + 3]
-
-                val first = if (operandModes[0] == 0) opcodes[pos1] else pos1
-                val second = if (operandModes[1] == 0) opcodes[pos2] else pos2
-
-                opcodes[pos3] = first * second
-                position += 4
-            } else if (opcode == 3) {
-                // Input
-                assert(!encounteredInput)
-                val address = opcodes[position + 1]
-                opcodes[address] = input
-                position += 2
-                encounteredInput = true
-            } else if (opcode == 4) {
-                // Output
-                assert(!encounteredOutput)
-                val outputAddress = opcodes[position + 1]
-                val output = opcodes[outputAddress]
-                lastOutput = output
-
-                position += 2
-                encounteredOutput = true
-            } else if (opcode == 5) {
-                val pos1 = opcodes[position + 1]
-                val pos2 = opcodes[position + 2]
-                val first = if (operandModes[0] == 0) opcodes[pos1] else pos1
-                val second = if (operandModes[1] == 0) opcodes[pos2] else pos2
-
-                if (first != 0) {
-                    position = second
-                } else {
+        loop@ while (true) {
+            val opcode = getOpcode(position++, state)
+            when (opcode.code) {
+                1 -> {
+                    // Add
+                    val first = getValue(0, position, opcode.operandModes, state)
+                    val second = getValue(1, position, opcode.operandModes, state)
+                    assert(opcode.operandModes[2] == 0)
+                    val address = getValue(2, position, state)
+                    state[address] = first + second
                     position += 3
                 }
-            } else if (opcode == 6) {
-                val pos1 = opcodes[position + 1]
-                val pos2 = opcodes[position + 2]
-                val first = if (operandModes[0] == 0) opcodes[pos1] else pos1
-                val second = if (operandModes[1] == 0) opcodes[pos2] else pos2
-                if (first == 0) {
-                    position = second
-                } else {
+                2 -> {
+                    // Multiply
+                    // Add
+                    val first = getValue(0, position, opcode.operandModes, state)
+                    val second = getValue(1, position, opcode.operandModes, state)
+                    assert(opcode.operandModes[2] == 0)
+                    val address = getValue(2, position, state)
+                    state[address] = first * second
                     position += 3
                 }
-            } else if (opcode == 7) {
-                val pos1 = opcodes[position + 1]
-                val pos2 = opcodes[position + 2]
-                val address = opcodes[position + 3]
-                val first = if (operandModes[0] == 0) opcodes[pos1] else pos1
-                val second = if (operandModes[1] == 0) opcodes[pos2] else pos2
-                assert(operandModes[2] == 0)
-
-                if (first < second) {
-                    opcodes[address] = 1
-                } else {
-                    opcodes[address] = 0
+                3 -> {
+                    // Input
+                    assert(!encounteredInput)
+                    val address = getValue(0, position, state)
+                    state[address] = input
+                    position += 1
+                    encounteredInput = true
                 }
-                position += 4
-            } else if (opcode == 8) {
-                val pos1 = opcodes[position + 1]
-                val pos2 = opcodes[position + 2]
-                val address = opcodes[position + 3]
-                val first = if (operandModes[0] == 0) opcodes[pos1] else pos1
-                val second = if (operandModes[1] == 0) opcodes[pos2] else pos2
-                assert(operandModes[2] == 0)
-                if (first == second) {
-                    opcodes[address] = 1
-                } else {
-                    opcodes[address] = 0
+                4 -> {
+                    // Output
+                    val address = getValue(0, position, state)
+                    val output = state[address]
+                    lastOutput = output
+                    position += 1
                 }
-                position += 4
-            } else if (opcode == 99) {
-                // Done
-                break
-            } else {
-                throw IllegalStateException("Found unknown opcode $opcode at position $position")
+                5 -> {
+                    val first = getValue(0, position, opcode.operandModes, state)
+                    val second = getValue(1, position, opcode.operandModes, state)
+                    if (first != 0) {
+                        position = second
+                    } else {
+                        position += 2
+                    }
+                }
+                6 -> {
+                    val first = getValue(0, position, opcode.operandModes, state)
+                    val second = getValue(1, position, opcode.operandModes, state)
+                    if (first == 0) {
+                        position = second
+                    } else {
+                        position += 2
+                    }
+                }
+                7 -> {
+                    val first = getValue(0, position, opcode.operandModes, state)
+                    val second = getValue(1, position, opcode.operandModes, state)
+                    assert(opcode.operandModes[2] == 0)
+                    val address = getValue(2, position, state)
+                    if (first < second) {
+                        state[address] = 1
+                    } else {
+                        state[address] = 0
+                    }
+                    position += 3
+                }
+                8 -> {
+                    val first = getValue(0, position, opcode.operandModes, state)
+                    val second = getValue(1, position, opcode.operandModes, state)
+                    assert(opcode.operandModes[2] == 0)
+                    val address = getValue(2, position, state)
+                    if (first == second) {
+                        state[address] = 1
+                    } else {
+                        state[address] = 0
+                    }
+                    position += 3
+                }
+                99 -> {
+                    // Done
+                    break@loop
+                }
+                else -> {
+                    throw IllegalStateException("Found unknown opcode $opcode at position $position")
+                }
             }
-
         }
         return lastOutput
     }
