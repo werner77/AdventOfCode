@@ -1,6 +1,5 @@
 package com.behindmedia.adventofcode2019
 
-import java.lang.Math.abs
 import kotlin.math.min
 
 class Day3 {
