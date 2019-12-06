@@ -60,6 +60,8 @@ fun Array<IntArray>.printMatrix() {
     }
 }
 
+class Reference<T>(var value: T)
+
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
     override fun compareTo(other: Coordinate): Int {

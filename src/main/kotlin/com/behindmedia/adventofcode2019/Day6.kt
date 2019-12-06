@@ -1,14 +1,10 @@
 package com.behindmedia.adventofcode2019
 
-import java.lang.IllegalArgumentException
-import java.lang.Integer.min
-import java.util.*
+import kotlin.math.min
 
 class Day6 {
 
-    data class Counter(var count: Int)
-
-    data class Star(val name: String, val orbitedBy: MutableSet<Star>, val orbiting: MutableSet<Star>) {
+    data class Star(val name: String, val orbitedBy: MutableSet<Star> = mutableSetOf(), val orbiting: MutableSet<Star> = mutableSetOf()) {
         override fun hashCode(): Int {
             return name.hashCode()
         }
@@ -31,9 +27,9 @@ class Day6 {
         val centerOfMass = allStars["COM"]
 
         if (centerOfMass != null) {
-            val counter = Counter(0)
+            val counter = Reference(0)
             traverse(centerOfMass, 0, counter)
-            return counter.count
+            return counter.value
         } else {
             throw IllegalStateException("No centerOfMassFound")
         }
@@ -58,7 +54,7 @@ class Day6 {
         for(i in 0 until min(sourcePath.size, targetPath.size)) {
             val star1 = sourcePath[sourcePath.size - 1 - i]
             val star2 = targetPath[targetPath.size - 1 - i]
-            if(star1.name == star2.name) {
+            if(star1 == star2) {
                 commonAncestorCount++
             } else {
                 break
@@ -78,8 +74,8 @@ class Day6 {
         return path
     }
 
-    private fun traverse(star: Star, depth: Int, counter: Counter) {
-        counter.count += depth
+    private fun traverse(star: Star, depth: Int, counter: Reference<Int>) {
+        counter.value += depth
         for (child in star.orbitedBy) {
             traverse(child, depth + 1, counter)
         }
@@ -93,11 +89,11 @@ class Day6 {
             assert(components.size == 2)
 
             val star1 = allStars.getOrPut(components[0]) {
-                Star(components[0], mutableSetOf(), mutableSetOf())
+                Star(components[0])
             }
 
             val star2 = allStars.getOrPut(components[1]) {
-                Star(components[1], mutableSetOf(), mutableSetOf())
+                Star(components[1])
             }
 
             star1.orbitedBy.update(star2)
