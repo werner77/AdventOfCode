@@ -1,0 +1,116 @@
+package com.behindmedia.adventofcode2019
+
+import java.lang.IllegalArgumentException
+import java.lang.Integer.min
+import java.util.*
+
+class Day6 {
+
+    data class Counter(var count: Int)
+
+    data class Star(val name: String, val orbitedBy: MutableSet<Star>, val orbiting: MutableSet<Star>) {
+        override fun hashCode(): Int {
+            return name.hashCode()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (other is Star) {
+                return name == other.name
+            }
+            return false
+        }
+
+        override fun toString(): String {
+            return name
+        }
+    }
+
+    fun numberOfTotalOrbits(encoded: List<String>): Int {
+
+        val allStars = mapFromEncodedInput(encoded)
+        val centerOfMass = allStars["COM"]
+
+        if (centerOfMass != null) {
+            val counter = Counter(0)
+            traverse(centerOfMass, 0, counter)
+            return counter.count
+        } else {
+            throw IllegalStateException("No centerOfMassFound")
+        }
+    }
+
+    fun numberOfTransfers(encoded: List<String>, source: String, target: String): Int {
+        val allStars = mapFromEncodedInput(encoded)
+
+        val sourceStar = allStars[source]
+        val targetStar = allStars[target]
+
+        if (sourceStar == null || targetStar == null) {
+            throw IllegalArgumentException("Invalid argument supplied")
+        }
+
+        //Find the nearest common ancestor
+        val sourcePath = completePath(sourceStar)
+        val targetPath = completePath(targetStar)
+
+        var commonAncestorCount = 0
+
+        for(i in 0 until min(sourcePath.size, targetPath.size)) {
+            val star1 = sourcePath[sourcePath.size - 1 - i]
+            val star2 = targetPath[targetPath.size - 1 - i]
+            if(star1.name == star2.name) {
+                commonAncestorCount++
+            } else {
+                break
+            }
+        }
+        return sourcePath.size + targetPath.size - 2 * commonAncestorCount
+    }
+
+    private fun completePath(star: Star): List<Star> {
+        val path = mutableListOf<Star>()
+        var parent: Star? = star.orbiting.onlyOrNull()
+
+        while(parent != null) {
+            path.add(parent)
+            parent = parent.orbiting.onlyOrNull()
+        }
+        return path
+    }
+
+    private fun traverse(star: Star, depth: Int, counter: Counter) {
+        counter.count += depth
+        for (child in star.orbitedBy) {
+            traverse(child, depth + 1, counter)
+        }
+    }
+
+    private fun mapFromEncodedInput(encoded: List<String>): Map<String, Star> {
+        val allStars = mutableMapOf<String, Star>()
+
+        for (line in encoded) {
+            val components = line.split(")")
+            assert(components.size == 2)
+
+            val star1 = allStars.getOrPut(components[0]) {
+                Star(components[0], mutableSetOf(), mutableSetOf())
+            }
+
+            val star2 = allStars.getOrPut(components[1]) {
+                Star(components[1], mutableSetOf(), mutableSetOf())
+            }
+
+            star1.orbitedBy.update(star2)
+            star2.orbiting.update(star1)
+        }
+        return allStars
+    }
+
+    private fun Set<Star>.onlyOrNull(): Star? {
+        if (this.size > 1) {
+            throw IllegalStateException("More than one element found")
+        } else {
+            return this.firstOrNull()
+        }
+    }
+}
