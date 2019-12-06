@@ -101,12 +101,4 @@ class Day6 {
         }
         return allStars
     }
-
-    private fun Set<Star>.onlyOrNull(): Star? {
-        if (this.size > 1) {
-            throw IllegalStateException("More than one element found")
-        } else {
-            return this.firstOrNull()
-        }
-    }
 }

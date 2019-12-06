@@ -47,6 +47,14 @@ fun <T>MutableSet<T>.update(value: T) {
     this.add(value)
 }
 
+fun <T>Collection<T>.onlyOrNull(): T? {
+    if (this.size > 1) {
+        throw IllegalStateException("More than one element found")
+    } else {
+        return this.firstOrNull()
+    }
+}
+
 fun Array<IntArray>.printMatrix() {
     val size = this.size
     for (i in 0 until size) {
