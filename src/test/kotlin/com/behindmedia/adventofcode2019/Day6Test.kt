@@ -24,13 +24,17 @@ class Day6Test {
     fun puzzle1() {
         val input = parseLines("/day6.txt") { it }
         val day6 = Day6()
-        println(day6.numberOfTotalOrbits(input))
+        val result = day6.numberOfTotalOrbits(input)
+        println(result)
+        assertEquals(312697, result)
     }
 
     @Test
     fun puzzle2() {
         val input = parseLines("/day6.txt") { it }
         val day6 = Day6()
-        println(day6.numberOfTransfers(input, "YOU", "SAN"))
+        val result = day6.numberOfTransfers(input, "YOU", "SAN")
+        println(result)
+        assertEquals(466, result)
     }
 }

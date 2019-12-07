@@ -19,6 +19,7 @@ class Day4Test {
         val day4 = Day4()
         val result = day4.numberOfValidPasswords(168630, 718098, false)
         println(result)
+        assertEquals(1686, result)
     }
 
     @Test
@@ -34,5 +35,6 @@ class Day4Test {
         val day4 = Day4()
         val result = day4.numberOfValidPasswords(168630, 718098, true)
         println(result)
+        assertEquals(1145, result)
     }
 }

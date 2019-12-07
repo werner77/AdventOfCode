@@ -51,7 +51,7 @@ class Day7 {
 
     fun optimizeWithFeedback(state: List<Int>): Int {
         var maxOutput = Integer.MIN_VALUE
-        permutate<Int>(5, 5..9) {
+        permutate(5, 5..9) {
             if (it.toSet().size == 5) {
                 val output = executeWithFeedback(state, it)
                 maxOutput = max(output, maxOutput)

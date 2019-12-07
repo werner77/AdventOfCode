@@ -9,23 +9,25 @@ class Day5Test {
     @Test
     fun puzzle1() {
 
-        val opcodes = parse("/day5.txt") {
+        val initialState = parse("/day5.txt") {
             it.split(",").map { value -> value.toInt() }
         }
         val day5 = Day5()
-        val result = day5.execute(opcodes)
+        val result = day5.execute(initialState)
         println("Result: $result")
+        assertEquals(7157989, result)
     }
 
     @Test
     fun puzzle2() {
 
-        val opcodes = parse("/day5.txt") {
+        val initialState = parse("/day5.txt") {
             it.split(",").map { value -> value.toInt() }
         }
         val day5 = Day5()
-        val result = day5.execute(opcodes, 5)
+        val result = day5.execute(initialState, 5)
         println("Result: $result")
+        assertEquals(7873292, result)
     }
 
     @Test

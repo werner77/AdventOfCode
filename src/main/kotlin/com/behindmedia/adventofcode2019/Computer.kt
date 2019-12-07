@@ -23,9 +23,8 @@ class Computer(initialState: List<Int>) {
         status = Status.Processing
         inputStack.addAll(inputs)
         while (true) {
-            val opcode = Opcode.at(position++, state)
-            val operation = Operation.forCode(opcode.code) ?:
-            throw IllegalStateException("Unknown opcode encountered: $opcode.code")
+            val opcode = Opcode.at(position, state)
+            val operation = Operation.forCode(opcode.code)
             position = operation.perform(this, opcode.operandModes) ?: break
         }
         return lastOutput
@@ -35,7 +34,6 @@ class Computer(initialState: List<Int>) {
         companion object {
             fun at(position: Int, state: List<Int>): Opcode {
                 var encodedOpcode = state[position]
-
                 val code = encodedOpcode % 100
                 val operandModes = IntArray(3)
 
@@ -43,9 +41,8 @@ class Computer(initialState: List<Int>) {
                 for (i in 0 until 3) {
                     operandModes[i] = encodedOpcode % 10
                     encodedOpcode /= 10
-                    assert(operandModes[i] < 2)
+                    assert(operandModes[i] == 0 || operandModes[i] == 1)
                 }
-
                 return Opcode(code, operandModes)
             }
         }
@@ -53,7 +50,7 @@ class Computer(initialState: List<Int>) {
 
     private sealed class Operation {
         companion object {
-            fun forCode(code: Int): Operation? {
+            fun forCode(code: Int): Operation {
                 return when(code) {
                     1 -> Add
                     2 -> Multiply
@@ -64,7 +61,7 @@ class Computer(initialState: List<Int>) {
                     7 -> LessThan
                     8 -> Equals
                     99 -> Exit
-                    else -> null
+                    else -> throw IllegalStateException("Unknown opcode encountered: $code")
                 }
             }
         }
@@ -79,7 +76,9 @@ class Computer(initialState: List<Int>) {
         }
 
         protected fun getValue(index: Int, computer: Computer): Int {
-            return computer.state[computer.position + index]
+            val effectivePosition = computer.position + 1 + index
+            assert(effectivePosition < computer.state.size)
+            return computer.state[effectivePosition]
         }
 
         object Add: Operation() {
@@ -89,7 +88,7 @@ class Computer(initialState: List<Int>) {
                 assert(operandModes[2] == 0)
                 val address = getValue(2, computer)
                 computer.state[address] = first + second
-                return computer.position + 3
+                return computer.position + 4
             }
         }
 
@@ -100,7 +99,7 @@ class Computer(initialState: List<Int>) {
                 assert(operandModes[2] == 0)
                 val address = getValue(2, computer)
                 computer.state[address] = first * second
-                return computer.position + 3
+                return computer.position + 4
             }
         }
 
@@ -112,11 +111,10 @@ class Computer(initialState: List<Int>) {
                 if (input == null) {
                     // reset position and return status
                     computer.status = Status.WaitingForInput
-                    computer.position--
                     return null
                 }
                 computer.state[address] = input
-                return computer.position + 1
+                return computer.position + 2
             }
         }
 
@@ -126,7 +124,7 @@ class Computer(initialState: List<Int>) {
                 val address = getValue(0, computer)
                 val output = computer.state[address]
                 computer.lastOutput = output
-                return computer.position + 1
+                return computer.position + 2
             }
         }
 
@@ -134,7 +132,7 @@ class Computer(initialState: List<Int>) {
             override fun perform(computer: Computer, operandModes: IntArray): Int? {
                 val first = getValue(0, operandModes, computer)
                 val second = getValue(1, operandModes, computer)
-                return if (first != 0) second else computer.position + 2
+                return if (first != 0) second else computer.position + 3
             }
         }
 
@@ -142,7 +140,7 @@ class Computer(initialState: List<Int>) {
             override fun perform(computer: Computer, operandModes: IntArray): Int? {
                 val first = getValue(0, operandModes, computer)
                 val second = getValue(1, operandModes, computer)
-                return if (first == 0) second else computer.position + 2
+                return if (first == 0) second else computer.position + 3
             }
         }
 
@@ -157,7 +155,7 @@ class Computer(initialState: List<Int>) {
                 } else {
                     computer.state[address] = 0
                 }
-                return computer.position + 3
+                return computer.position + 4
             }
         }
 
@@ -172,7 +170,7 @@ class Computer(initialState: List<Int>) {
                 } else {
                     computer.state[address] = 0
                 }
-                return computer.position + 3
+                return computer.position + 4
             }
         }
 

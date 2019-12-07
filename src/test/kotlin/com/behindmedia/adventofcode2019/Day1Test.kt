@@ -32,7 +32,9 @@ class Day1Test {
         val masses = parseLines("/day1.txt") {
             it.toInt()
         }
-        println(day1.getTotalFuel(masses))
+        val result = day1.getTotalFuel(masses)
+        println(result)
+        assertEquals(3367126, result)
     }
 
     @Test
@@ -51,6 +53,8 @@ class Day1Test {
         val masses = parseLines("/day1.txt") {
             it.toInt()
         }
-        println(day1.cumulativeTotalFuel(masses))
+        val result = day1.cumulativeTotalFuel(masses)
+        println(result)
+        assertEquals(5047796, result)
     }
 }

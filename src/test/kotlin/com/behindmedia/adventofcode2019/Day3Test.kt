@@ -32,6 +32,7 @@ class Day3Test {
         val result = day3.smallestDistance(lines[0], lines[1])
 
         println(result)
+        assertEquals(806, result)
     }
 
     @Test
@@ -61,5 +62,6 @@ class Day3Test {
         val result = day3.smallestSteps(lines[0], lines[1])
 
         println(result)
+        assertEquals(66076, result)
     }
 }
