@@ -12,7 +12,7 @@ class Day2 {
 
         val computer = Computer(modifiedState)
         computer.process(listOf())
-        assert(computer.status == Computer.Status.Exit)
+        assert(computer.status == Computer.Status.Done)
         return computer.currentState
     }
 
