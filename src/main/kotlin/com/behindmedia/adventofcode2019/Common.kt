@@ -68,6 +68,28 @@ fun Array<IntArray>.printMatrix() {
     }
 }
 
+fun <T>permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
+    val list = MutableList(count) {
+        range.first
+    }
+    return permutate(list, 0, range, perform)
+}
+
+private fun <T>permutate(list: MutableList<Int>, index: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
+    if (index >= list.size) {
+        return perform(list)
+    }
+
+    for (value in range.start..range.endInclusive) {
+        list[index] = value
+        val ret = permutate(list, index + 1, range, perform)
+        if (ret != null) {
+            return ret
+        }
+    }
+    return null
+}
+
 class Reference<T>(var value: T)
 
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
