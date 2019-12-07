@@ -14,7 +14,7 @@ class Day5Test {
         }
         val day5 = Day5()
         val result = day5.execute(initialState)
-        println("Result: $result")
+        println(result)
         assertEquals(7157989, result)
     }
 
@@ -26,7 +26,7 @@ class Day5Test {
         }
         val day5 = Day5()
         val result = day5.execute(initialState, 5)
-        println("Result: $result")
+        println(result)
         assertEquals(7873292, result)
     }
 

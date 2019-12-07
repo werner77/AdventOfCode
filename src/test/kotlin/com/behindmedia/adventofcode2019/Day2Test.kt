@@ -24,7 +24,7 @@ class Day2Test {
         }
         val day2 = Day2()
         val result = day2.execute(opcodes, Pair(12, 2)).first()
-        println("Result: $result")
+        println(result)
         assertEquals(5866714, result)
     }
 
@@ -34,8 +34,8 @@ class Day2Test {
             it.split(",").map { value -> value.toInt() }
         }
         val day2 = Day2()
-        val finalResult = day2.findNounAndVerb(opcodes)
-        println("Final result: $finalResult")
-        assertEquals(5208, finalResult)
+        val result = day2.findNounAndVerb(opcodes)
+        println(result)
+        assertEquals(5208, result)
     }
 }

@@ -13,7 +13,7 @@ class Day7Test {
         }
         val day7 = Day7()
         val result = day7.optimize(opcodes)
-        println("Result: $result")
+        println(result)
         assertEquals(30940, result)
     }
 
@@ -24,7 +24,7 @@ class Day7Test {
         }
         val day7 = Day7()
         val result = day7.optimizeWithFeedback(opcodes)
-        println("Result: $result")
+        println(result)
         assertEquals(76211147, result)
     }
 
