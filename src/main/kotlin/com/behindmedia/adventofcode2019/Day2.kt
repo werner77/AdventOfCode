@@ -21,10 +21,7 @@ class Day2 {
             val noun = it[0]
             val verb = it[1]
             val result = execute(opcodes, Pair(noun, verb))
-            if (result[0] == expectedResult) {
-                return@permutate 100 * noun + verb
-            }
-            return@permutate null
+            if (result[0] == expectedResult) 100 * noun + verb else null
         }
     }
 
