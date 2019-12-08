@@ -40,7 +40,7 @@ class Day8 {
             if (index > 0 && index % width == 0) {
                 buffer.append("\n")
             }
-            buffer.append(value)
+            buffer.append(if (value == 1) "*" else " ")
             buffer
         }.toString()
     }
