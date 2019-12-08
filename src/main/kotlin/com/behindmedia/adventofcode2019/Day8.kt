@@ -36,16 +36,12 @@ class Day8 {
             }
         }
 
-        val result = StringBuilder()
-        var index = 0
-        for(j in 0 until height) {
-            var line = ""
-            for (i in 0 until width) {
-                line += visibleLayer[index]
-                index++
+        return visibleLayer.foldIndexed(StringBuilder()) { index, buffer, value ->
+            if (index > 0 && index % width == 0) {
+                buffer.append("\n")
             }
-            result.append(line).append("\n")
-        }
-        return result.toString()
+            buffer.append(value)
+            buffer
+        }.toString()
     }
 }
