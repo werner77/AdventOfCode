@@ -68,6 +68,17 @@ fun Array<IntArray>.printMatrix() {
     }
 }
 
+fun <E>List<E>.slice(count: Int): List<List<E>> {
+    val sliceCount = this.size / count + (if (this.size % count == 0) 0 else 1)
+    val result = List(sliceCount) {
+        mutableListOf<E>()
+    }
+    for (i in this.indices) {
+        result[i / count].add(this[i])
+    }
+    return result
+}
+
 fun <T>permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
     fun <T>permutate(list: MutableList<Int>, index: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
         if (index >= list.size) {
