@@ -63,7 +63,7 @@ class Computer(initialState: List<Long>) {
                 for (i in 0 until 3) {
                     operandModes[i] = encodedOpcode % 10
                     encodedOpcode /= 10
-                    assert(operandModes[i] == 0 || operandModes[i] == 1 || operandModes[i] == 2)
+                    assert(operandModes[i] in 0..2)
                 }
                 return Opcode(code, operandModes)
             }
@@ -181,11 +181,7 @@ class Computer(initialState: List<Long>) {
                 val first = getValue(0, operandModes, computer)
                 val second = getValue(1, operandModes, computer)
                 val address = getAddress(2, operandModes, computer)
-                if (first < second) {
-                    computer._state[address] = 1
-                } else {
-                    computer._state[address] = 0
-                }
+                computer._state[address] = if (first < second) 1L else 0L
                 return computer.position + 4
             }
         }
@@ -195,11 +191,7 @@ class Computer(initialState: List<Long>) {
                 val first = getValue(0, operandModes, computer)
                 val second = getValue(1, operandModes, computer)
                 val address = getAddress(2, operandModes, computer)
-                if (first == second) {
-                    computer._state[address] = 1
-                } else {
-                    computer._state[address] = 0
-                }
+                computer._state[address] = if (first == second) 1L else 0L
                 return computer.position + 4
             }
         }
