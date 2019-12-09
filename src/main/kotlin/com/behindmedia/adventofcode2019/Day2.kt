@@ -21,7 +21,7 @@ class Day2 {
 
         val computer = Computer(modifiedState.toLongList())
         computer.process(listOf())
-        assert(computer.status == Computer.Status.Done)
+        assert(computer.status == Computer.Status.Finished)
 
         return stateToList(computer.currentState)
     }

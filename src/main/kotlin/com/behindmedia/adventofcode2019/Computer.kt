@@ -3,22 +3,22 @@ package com.behindmedia.adventofcode2019
 class Computer(initialState: List<Long>) {
 
     companion object {
-        fun parseEncodedState(encodedState: String): List<Long> {
+        private fun parseEncodedState(encodedState: String): List<Long> {
             return encodedState.split(",").map { value -> value.toLong() }
         }
     }
 
-    constructor(encodedInitialState: String): this(Computer.parseEncodedState(encodedInitialState))
+    constructor(encodedInitialState: String): this(parseEncodedState(encodedInitialState))
 
     enum class Status {
-        Initial, Processing, WaitingForInput, Done
+        Initial, Processing, WaitingForInput, Finished
     }
 
     private val _state: MutableMap<Long, Long> = initialState.toMutableMap()
     private val _inputs = mutableListOf<Long>()
     private val _outputs = mutableListOf<Long>()
 
-    val lastOutput: Long
+    private val lastOutput: Long
         get() = _outputs.lastOrNull() ?: 0L
 
     val outputs: List<Long>
@@ -207,7 +207,7 @@ class Computer(initialState: List<Long>) {
         object Exit: Operation() {
             override fun perform(computer: Computer, operandModes: IntArray): Long? {
                 // Done
-                computer.status = Status.Done
+                computer.status = Status.Finished
                 return null
             }
         }

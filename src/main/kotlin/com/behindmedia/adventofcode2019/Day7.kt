@@ -11,7 +11,7 @@ class Day7 {
             val inputs = listOf(phase, lastOutput)
             val amplifier = amplifiers[i]
             val output = amplifier.process(inputs.toLongList())
-            assert(amplifier.status == Computer.Status.Done)
+            assert(amplifier.status == Computer.Status.Finished)
             lastOutput = output.toInt()
         }
         return lastOutput
@@ -30,7 +30,7 @@ class Day7 {
             val output = amplifier.process(inputs.toLongList())
             lastOutput = output.toInt()
 
-            if (i == amplifiers.size - 1 && amplifier.status == Computer.Status.Done) {
+            if (i == amplifiers.size - 1 && amplifier.status == Computer.Status.Finished) {
                 return lastOutput
             }
             i = if (i < amplifiers.size - 1) i + 1 else 0
