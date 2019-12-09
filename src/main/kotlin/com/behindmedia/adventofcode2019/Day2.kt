@@ -2,6 +2,15 @@ package com.behindmedia.adventofcode2019
 
 class Day2 {
 
+    private fun stateToList(state: Map<Long, Long>): List<Int> {
+        val result = mutableListOf<Int>()
+        for(i in 0L until state.size) {
+            val value = state[i] ?: throw IllegalStateException("No value found for index $i")
+            result.add(value.toInt())
+        }
+        return result
+    }
+
     fun execute(initialState: List<Int>, nounAndVerb: Pair<Int, Int>? = null): List<Int> {
         val modifiedState = initialState.toMutableList()
 
@@ -14,8 +23,7 @@ class Day2 {
         computer.process(listOf())
         assert(computer.status == Computer.Status.Done)
 
-        //return computer.currentState
-        return listOf()
+        return stateToList(computer.currentState)
     }
 
     fun findNounAndVerb(opcodes: List<Int>, expectedResult: Int = 19690720): Int? {

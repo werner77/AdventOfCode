@@ -102,6 +102,53 @@ fun List<Int>.toLongList(): List<Long> {
     return this.map { it.toLong() }
 }
 
+fun <K, V>MutableMap<K, V>.retainAll(where: (Map.Entry<K, V>) -> Boolean) {
+    val iterator = this.iterator()
+    while(iterator.hasNext()) {
+        val entry = iterator.next()
+        if (!where(entry)) {
+            iterator.remove()
+        }
+    }
+}
+
+fun <K, V>Map<K, V>.retainingAll(where: (Map.Entry<K, V>) -> Boolean): Map<K, V> {
+    var result = this.toMutableMap()
+    for (entry in this) {
+        if (!where(entry)) {
+            result.remove(entry.key)
+        }
+    }
+    return result
+}
+
+fun List<Long>.toMap(): Map<Long, Long> {
+    return this.foldIndexed(mutableMapOf()) { address, map, value ->
+        map[address.toLong()] = value
+        map
+    }
+}
+
+fun List<Long>.toMutableMap(): MutableMap<Long, Long> {
+    return this.foldIndexed(mutableMapOf()) { address, map, value ->
+        map[address.toLong()] = value
+        map
+    }
+}
+
+val Long.numberOfDigits: Int
+    get() = numberOfDigits(this)
+
+private fun numberOfDigits(number: Long): Int {
+    var value = number
+    var digitCount = 0
+    while (value != 0L) {
+        value /= 10
+        digitCount++
+    }
+    return digitCount
+}
+
 class Reference<T>(var value: T)
 
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {

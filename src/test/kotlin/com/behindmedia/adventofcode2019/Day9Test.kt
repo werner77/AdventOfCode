@@ -5,60 +5,53 @@ import org.junit.Test
 
 class Day9Test {
 
-    fun mapOfState(state: List<Long>): Map<Long, Long> {
-        return state.foldIndexed(mutableMapOf()) { address, map, value ->
-            map[address.toLong()] = value
-            map
-        }
-    }
-
     @Test
     fun selfTest1() {
 
-        val input = listOf(109L,1L,204L,-1L,1001L,100L,1L,100L,1008L,100L,16L,101L,1006L,101L,0L,99L)
-        val day9 = Day9()
-        val computer = day9.selfTest(input)
+        val initialState = listOf<Long>(109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99)
+        val computer = Computer(initialState)
+        val expectedState = initialState.toMap()
 
-        val expectedState = mapOfState(input)
-        val state = computer.currentState
+        computer.process()
 
+        val state = computer.currentState.toMutableMap().retainingAll { entry ->
+            entry.key in initialState.indices
+        }
         assertEquals(expectedState, state)
     }
 
     @Test
     fun selfTest2() {
-        val day9 = Day9()
-        val input = listOf(1102L,34915192L,34915192L,7L,4L,7L,99L,0L)
-        val computer = day9.selfTest(input)
-        val output = computer.lastOutput
+        val initialState = listOf<Long>(1102,34915192,34915192,7,4,7,99,0)
+        val computer = Computer(initialState)
+        val output = computer.process()
+        assertEquals(16, output.numberOfDigits)
+    }
 
-        println(output)
-        println(computer.currentState)
-
+    @Test
+    fun selfTest3() {
+        val initialState = listOf<Long>(104,1125899906842624,99)
+        val computer = Computer(initialState)
+        val output = computer.process()
+        assertEquals(initialState[1], output)
     }
 
     @Test
     fun puzzle1() {
-        val input = parse("/day9.txt") {
-            it.split(",").map { value -> value.toLong() }
-        }
-
-        val computer = Computer(input)
+        val encodedState = read("/day9.txt")
+        val computer = Computer(encodedState)
         val output = computer.process(listOf(1L))
-
         println(output)
+        assertEquals(3598076521, output)
     }
 
     @Test
     fun puzzle2() {
-        val input = parse("/day9.txt") {
-            it.split(",").map { value -> value.toLong() }
-        }
-
-        val computer = Computer(input)
+        val encodedState = read("/day9.txt")
+        val computer = Computer(encodedState)
         val output = computer.process(listOf(2L))
-
         println(output)
+        assertEquals(90722, output)
     }
 
 }

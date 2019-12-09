@@ -2,34 +2,43 @@ package com.behindmedia.adventofcode2019
 
 class Computer(initialState: List<Long>) {
 
+    companion object {
+        fun parseEncodedState(encodedState: String): List<Long> {
+            return encodedState.split(",").map { value -> value.toLong() }
+        }
+    }
+
+    constructor(encodedInitialState: String): this(Computer.parseEncodedState(encodedInitialState))
+
     enum class Status {
         Initial, Processing, WaitingForInput, Done
     }
 
-    private var position: Long = 0L
-    private val state: MutableMap<Long, Long> = initialState.foldIndexed(mutableMapOf<Long, Long>()) { address, map, value ->
-        map[address.toLong()] = value
-        map
-    }
-    private val inputStack = mutableListOf<Long>()
-    private var baseAddress: Long = 0L
-    private val outputs = mutableListOf<Long>()
+    private val _state: MutableMap<Long, Long> = initialState.toMutableMap()
+    private val _inputs = mutableListOf<Long>()
+    private val _outputs = mutableListOf<Long>()
 
     val lastOutput: Long
-        get() = outputs.lastOrNull() ?: 0L
+        get() = _outputs.lastOrNull() ?: 0L
 
-    val allOutputs: List<Long>
-        get() = outputs.toList()
+    val outputs: List<Long>
+        get() = _outputs.toList()
 
     var status = Status.Initial
         private set
 
-    val currentState: Map<Long, Long>
-        get() = state.toMap()
+    var baseAddress = 0L
+        private set
 
-    fun process(inputs: List<Long>): Long {
+    var position = 0L
+        private set
+
+    val currentState: Map<Long, Long>
+        get() = _state.toMap()
+
+    fun process(inputs: List<Long> = listOf()): Long {
         status = Status.Processing
-        inputStack.addAll(inputs)
+        _inputs.addAll(inputs)
         while (true) {
             val opcode = Opcode.at(position, this)
             val operation = Operation.forCode(opcode.code)
@@ -39,15 +48,13 @@ class Computer(initialState: List<Long>) {
     }
 
     private fun getValue(address: Long): Long {
-        return state[address] ?: 0
+        return _state[address] ?: 0
     }
 
     private class Opcode(val code: Int, val operandModes: IntArray) {
         companion object {
             fun at(position: Long, computer: Computer): Opcode {
                 var encodedOpcode = computer.getValue(position).toInt()
-
-                println("Opcode: $encodedOpcode")
 
                 val code = encodedOpcode % 100
                 val operandModes = IntArray(3)
@@ -90,13 +97,13 @@ class Computer(initialState: List<Long>) {
                 0 -> computer.getValue(value)
                 1 -> value
                 2 -> computer.getValue(computer.baseAddress + value)
-                else -> throw IllegalStateException("Unknown operand mode: $operandMode")
+                else -> throw IllegalStateException("Invalid operand mode for getValue(): $operandMode")
             }
         }
 
-        protected fun getValue(index: Int, computer: Computer): Long {
+        private fun getValue(index: Int, computer: Computer): Long {
             val effectivePosition = computer.position + 1 + index
-            assert(effectivePosition < computer.state.size)
+            assert(effectivePosition < computer._state.size)
             return computer.getValue(effectivePosition)
         }
 
@@ -104,11 +111,8 @@ class Computer(initialState: List<Long>) {
             val value = getValue(index, computer)
             return when(val operandMode = operandModes[index]) {
                 0 -> value
-                2 -> {
-                    println("Encountered relative address")
-                    computer.baseAddress + value
-                }
-                else -> throw IllegalStateException("Unknown operand mode: $operandMode")
+                2 -> computer.baseAddress + value
+                else -> throw IllegalStateException("Invalid operand mode for getAddress(): $operandMode")
             }
         }
 
@@ -117,7 +121,7 @@ class Computer(initialState: List<Long>) {
                 val first = getValue(0, operandModes, computer)
                 val second = getValue(1, operandModes, computer)
                 val address = getAddress(2, operandModes, computer)
-                computer.state[address] = first + second
+                computer._state[address] = first + second
                 return computer.position + 4
             }
         }
@@ -127,7 +131,7 @@ class Computer(initialState: List<Long>) {
                 val first = getValue(0, operandModes, computer)
                 val second = getValue(1, operandModes, computer)
                 val address = getAddress(2, operandModes, computer)
-                computer.state[address] = first * second
+                computer._state[address] = first * second
                 return computer.position + 4
             }
         }
@@ -136,13 +140,13 @@ class Computer(initialState: List<Long>) {
             override fun perform(computer: Computer, operandModes: IntArray): Long? {
                 // Input
                 val address = getAddress(0, operandModes, computer)
-                val input = computer.inputStack.popFirst()
+                val input = computer._inputs.popFirst()
                 if (input == null) {
                     // reset position and return status
                     computer.status = Status.WaitingForInput
                     return null
                 }
-                computer.state[address] = input
+                computer._state[address] = input
                 return computer.position + 2
             }
         }
@@ -151,7 +155,7 @@ class Computer(initialState: List<Long>) {
             override fun perform(computer: Computer, operandModes: IntArray): Long? {
                 // Output
                 val output = getValue(0, operandModes, computer)
-                computer.outputs.add(output)
+                computer._outputs.add(output)
                 return computer.position + 2
             }
         }
@@ -178,9 +182,9 @@ class Computer(initialState: List<Long>) {
                 val second = getValue(1, operandModes, computer)
                 val address = getAddress(2, operandModes, computer)
                 if (first < second) {
-                    computer.state[address] = 1
+                    computer._state[address] = 1
                 } else {
-                    computer.state[address] = 0
+                    computer._state[address] = 0
                 }
                 return computer.position + 4
             }
@@ -192,9 +196,9 @@ class Computer(initialState: List<Long>) {
                 val second = getValue(1, operandModes, computer)
                 val address = getAddress(2, operandModes, computer)
                 if (first == second) {
-                    computer.state[address] = 1
+                    computer._state[address] = 1
                 } else {
-                    computer.state[address] = 0
+                    computer._state[address] = 0
                 }
                 return computer.position + 4
             }

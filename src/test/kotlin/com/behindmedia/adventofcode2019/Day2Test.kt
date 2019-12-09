@@ -23,9 +23,9 @@ class Day2Test {
             it.split(",").map { value -> value.toInt() }
         }
         val day2 = Day2()
-        val result = day2.execute(opcodes, Pair(12, 2))
+        val result = day2.execute(opcodes, Pair(12, 2))[0]
         println(result)
-        assertEquals(5866714L, result)
+        assertEquals(5866714, result)
     }
 
     @Test
