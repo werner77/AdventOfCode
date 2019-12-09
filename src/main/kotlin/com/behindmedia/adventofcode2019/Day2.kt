@@ -10,10 +10,12 @@ class Day2 {
             modifiedState[2] = nounAndVerb.second
         }
 
-        val computer = Computer(modifiedState)
+        val computer = Computer(modifiedState.toLongList())
         computer.process(listOf())
         assert(computer.status == Computer.Status.Done)
-        return computer.currentState
+
+        //return computer.currentState
+        return listOf()
     }
 
     fun findNounAndVerb(opcodes: List<Int>, expectedResult: Int = 19690720): Int? {

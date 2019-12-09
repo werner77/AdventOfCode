@@ -98,6 +98,10 @@ fun <T>permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
     return permutate(list, 0, range, perform)
 }
 
+fun List<Int>.toLongList(): List<Long> {
+    return this.map { it.toLong() }
+}
+
 class Reference<T>(var value: T)
 
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {

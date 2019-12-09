@@ -4,21 +4,21 @@ import kotlin.math.max
 class Day7 {
 
     fun execute(state: List<Int>, phases: List<Int>): Int {
-        val amplifiers = Array(phases.size) { Computer(state) }
+        val amplifiers = Array(phases.size) { Computer(state.toLongList()) }
         var lastOutput = 0
 
         for ((i, phase) in phases.withIndex()) {
             val inputs = listOf(phase, lastOutput)
             val amplifier = amplifiers[i]
-            val output = amplifier.process(inputs)
+            val output = amplifier.process(inputs.toLongList())
             assert(amplifier.status == Computer.Status.Done)
-            lastOutput = output
+            lastOutput = output.toInt()
         }
         return lastOutput
     }
 
     fun executeWithFeedback(state: List<Int>, phases: List<Int>): Int {
-        val amplifiers = Array(phases.size) { Computer(state) }
+        val amplifiers = Array(phases.size) { Computer(state.toLongList()) }
         var lastOutput = 0
         var i = 0
 
@@ -27,8 +27,8 @@ class Day7 {
             val amplifier = amplifiers[i]
 
             val inputs = if (amplifier.status == Computer.Status.Initial) listOf(phase, lastOutput) else listOf(lastOutput)
-            val output = amplifier.process(inputs)
-            lastOutput = output
+            val output = amplifier.process(inputs.toLongList())
+            lastOutput = output.toInt()
 
             if (i == amplifiers.size - 1 && amplifier.status == Computer.Status.Done) {
                 return lastOutput
