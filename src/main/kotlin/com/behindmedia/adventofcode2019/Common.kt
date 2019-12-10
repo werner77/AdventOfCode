@@ -164,10 +164,9 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
         var angle = acos((a1 * a2 + b1 * b2) / (c1 * c2))
 
-        if (a1 < 0) {
+        if (a1 < 0 && a2 >= 0) {
             angle = -angle
         }
-
         if (angle < 0) {
             angle += 2 * PI
         }
@@ -190,8 +189,8 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return offset(vector.x, vector.y)
     }
 
-    fun vectorTo(coordinate: Coordinate): Coordinate {
-        return Coordinate(coordinate.x - this.x, coordinate.y - this.y)
+    fun vector(to: Coordinate): Coordinate {
+        return Coordinate(to.x - this.x, to.y - this.y)
     }
 
     fun manhattenDistance(to: Coordinate): Int {
@@ -205,13 +204,8 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     }
 
     fun normalized(): Coordinate {
-        val factor = gcdBySteinsAlgorithm(abs(this.x), abs(this.y))
+        val factor = greatestCommonDivisor(abs(this.x), abs(this.y))
         return Coordinate(this.x / factor, this.y / factor)
-    }
-
-    fun normalized1(): Pair<Coordinate, Int> {
-        val factor = gcdBySteinsAlgorithm(abs(this.x), abs(this.y))
-        return Pair(Coordinate(this.x / factor, this.y / factor), factor)
     }
 
     companion object {
@@ -219,7 +213,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     }
 }
 
-fun gcdBySteinsAlgorithm(n1: Int, n2: Int): Int {
+fun greatestCommonDivisor(n1: Int, n2: Int): Int {
     var n1 = n1
     var n2 = n2
     if (n1 == 0) {
@@ -228,8 +222,7 @@ fun gcdBySteinsAlgorithm(n1: Int, n2: Int): Int {
     if (n2 == 0) {
         return n1
     }
-    var n: Int
-    n = 0
+    var n: Int = 0
     while (n1 or n2 and 1 == 0) {
         n1 = n1 shr 1
         n2 = n2 shr 1
@@ -247,7 +240,7 @@ fun gcdBySteinsAlgorithm(n1: Int, n2: Int): Int {
             n1 = n2
             n2 = temp
         }
-        n2 = n2 - n1
+        n2 -= n1
     } while (n2 != 0)
     return n1 shl n
 }

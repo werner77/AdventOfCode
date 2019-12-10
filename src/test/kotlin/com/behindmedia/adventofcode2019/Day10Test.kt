@@ -11,153 +11,32 @@ import kotlin.test.assertEquals
 class Day10Test {
 
     @Test
-    fun test() {
-
-        // .#....#.###.........#..##.###.#.....##...
-
-        val asteroids = parseAsteroids()
-
-        //val vectorCount = mutableMapOf<Coordinate, Int>()
-
-        var bestCount = 0
-        var bestCoordinate = Coordinate.origin
-
-        for (i in 0 until asteroids.size) {
-            val asteroid1 = asteroids[i]
-            val uniqueVectors = mutableSetOf<Coordinate>()
-
-            for (j in 0 until asteroids.size) {
-                if (i != j) {
-                    val asteroid2 = asteroids[j]
-                    val vector = asteroid1.vectorTo(asteroid2).normalized()
-                    if (!uniqueVectors.contains(vector)) {
-                        uniqueVectors.add(vector)
-                    }
-                }
-            }
-            if (uniqueVectors.size > bestCount) {
-                bestCoordinate = asteroid1
-                bestCount = max(bestCount, uniqueVectors.size)
-            }
-        }
-
-        println(bestCount)
-        println("Best coordinate: (${bestCoordinate.x},${bestCoordinate.y})")
-    }
-
-    private fun parseAsteroids(): List<Coordinate> {
-        val characters = read("/day10.txt").toCharArray()
-
-        val asteroids = mutableListOf<Coordinate>()
-        var x = 0
-        var y = 0
-
-        for (c in characters) {
-
-            when (c) {
-                '.' -> x++
-                '#' -> {
-                    asteroids.add(Coordinate(x, y))
-                    x++
-                }
-                '\n' -> {
-                    x = 0
-                    y++
-                }
-                else -> throw IllegalStateException("Unknown character")
-            }
-        }
-        return asteroids
-    }
-
-    class CoordinateVector(val coordinate: Coordinate, val distance: Double): Comparable<CoordinateVector> {
-        override fun compareTo(other: CoordinateVector): Int {
-            return this.distance.compareTo(other.distance)
-        }
+    fun puzzle1() {
+        val day10 = Day10()
+        val asteroids = day10.decodeInput(read("/day10.txt"))
+        val result = day10.findBestLocation(asteroids)
+        println(result)
+        assertEquals(Pair(Coordinate(28,29), 340), result)
     }
 
     @Test
     fun puzzle2() {
-        val coordinate = findAsteroid()
-        println(coordinate)
+        val day10 = Day10()
+        val asteroids = day10.decodeInput(read("/day10.txt"))
+        val bestLocation = day10.findBestLocation(asteroids)
+        val result = day10.destroyAsteroids(asteroids, bestLocation.first)!!
+        println(result.x * 100 + result.y)
+        assertEquals(Coordinate(26, 28), result)
     }
 
     @Test
     fun angle() {
-
         val zero = Coordinate(0, -1)
-        println(Coordinate(1, -1).angle(zero))
-        println(Coordinate(1, 1).angle(zero))
-        println(Coordinate(0, 1).angle(zero))
-        println(Coordinate(-1, 1).angle(zero))
-        println(Coordinate(-1, -1).angle(zero))
-//
-//        assertEquals(PI/4.0, Coordinate(1, -1).angle(zero))
-//        assertEquals(PI * 3.0/4.0, Coordinate(1, 1).angle(zero))
-//        assertEquals(PI * 5.0/4.0, Coordinate(-1, 1).angle(zero))
-//        assertEquals(PI * 7.0/4.0, Coordinate(-1, -1).angle(zero))
-
-//        println(Coordinate(1, 0).angle())
-//        println(Coordinate(-1, 0).angle())
-//        println(Coordinate(0, 1).angle())
-//        println(Coordinate(0, -1).angle())
-    }
-
-    class AngleComparator: Comparator<Coordinate> {
-        override fun compare(o1: Coordinate?, o2: Coordinate?): Int {
-            if (o1 == null || o2 == null) {
-                throw IllegalStateException("Unexpected")
-            }
-            val zero = Coordinate(0, -1)
-            val angle1: Double = o1.angle(zero)
-            val angle2: Double = o2.angle(zero)
-
-            return angle1.compareTo(angle2)
-        }
-    }
-
-    fun findAsteroid(): Coordinate? {
-        val asteroids = parseAsteroids()
-        val laserCoordinate = Coordinate(28,29)
-
-        val vectors = mutableMapOf<Coordinate, TreeSet<CoordinateVector>>()
-        var asteroidCount = 0
-
-        val possibleVectors = mutableListOf<Coordinate>()
-
-        for (asteroid in asteroids) {
-            if (laserCoordinate != asteroid) {
-                val vector = laserCoordinate.vectorTo(asteroid).normalized()
-                val distance = laserCoordinate.distance(asteroid)
-
-                var vectorSet = vectors[vector]
-                if (vectorSet == null) {
-                    vectorSet = TreeSet<CoordinateVector>()
-                    vectors[vector] = vectorSet
-                    possibleVectors.add(vector)
-                }
-                vectorSet.add(CoordinateVector(asteroid, distance))
-                asteroidCount++
-            }
-        }
-
-        val sortedPossibleVectors = possibleVectors.sortedWith(AngleComparator())
-
-        var eliminatedCount = 0
-        while (asteroidCount > 0) {
-            for (vector in sortedPossibleVectors) {
-                // Eliminate first
-                val vectorSet = vectors[vector]
-                val eliminatedAsteroid = vectorSet?.popFirst()
-                if (eliminatedAsteroid != null) {
-                    eliminatedCount++
-                    asteroidCount--
-                    if (eliminatedCount == 200) {
-                        return eliminatedAsteroid.coordinate
-                    }
-                }
-            }
-        }
-        return null
+        assertEquals(Coordinate(0, -1).angle(zero) == 0.0)
+        assertEquals(Coordinate(1, -1).angle(zero) == PI / 4.0)
+        assertEquals(Coordinate(1, 1).angle(zero) == PI * 3.0 / 4.0)
+        assertEquals(Coordinate(0, 1).angle(zero) == PI)
+        assertEquals(Coordinate(-1, 1).angle(zero) == PI * 5.0 / 4.0)
+        assertEquals(Coordinate(-1, -1).angle(zero) == PI * 7.0 / 4.0)
     }
 }
