@@ -96,8 +96,8 @@ class Day6 {
                 Star(components[1])
             }
 
-            star1.orbitedBy.update(star2)
-            star2.orbiting.update(star1)
+            star1.orbitedBy.add(star2)
+            star2.orbiting.add(star1)
         }
         return allStars
     }
