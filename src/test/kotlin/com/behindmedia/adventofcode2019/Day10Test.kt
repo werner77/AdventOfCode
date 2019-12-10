@@ -85,10 +85,17 @@ class Day10Test {
     @Test
     fun angle() {
 
-        assertEquals(PI/4.0, Coordinate(1, -1).angle())
-        assertEquals(PI * 3.0/4.0, Coordinate(1, 1).angle())
-        assertEquals(PI * 5.0/4.0, Coordinate(-1, 1).angle())
-        assertEquals(PI * 7.0/4.0, Coordinate(-1, -1).angle())
+        val zero = Coordinate(0, -1)
+        println(Coordinate(1, -1).angle(zero))
+        println(Coordinate(1, 1).angle(zero))
+        println(Coordinate(0, 1).angle(zero))
+        println(Coordinate(-1, 1).angle(zero))
+        println(Coordinate(-1, -1).angle(zero))
+//
+//        assertEquals(PI/4.0, Coordinate(1, -1).angle(zero))
+//        assertEquals(PI * 3.0/4.0, Coordinate(1, 1).angle(zero))
+//        assertEquals(PI * 5.0/4.0, Coordinate(-1, 1).angle(zero))
+//        assertEquals(PI * 7.0/4.0, Coordinate(-1, -1).angle(zero))
 
 //        println(Coordinate(1, 0).angle())
 //        println(Coordinate(-1, 0).angle())
@@ -101,8 +108,9 @@ class Day10Test {
             if (o1 == null || o2 == null) {
                 throw IllegalStateException("Unexpected")
             }
-            val angle1: Double = o1.angle()
-            val angle2: Double = o2.angle()
+            val zero = Coordinate(0, -1)
+            val angle1: Double = o1.angle(zero)
+            val angle2: Double = o2.angle(zero)
 
             return angle1.compareTo(angle2)
         }
@@ -115,29 +123,29 @@ class Day10Test {
         val vectors = mutableMapOf<Coordinate, TreeSet<CoordinateVector>>()
         var asteroidCount = 0
 
-        var maxX = 0
-        var maxY = 0
-
-        val possibleVectors = TreeSet<Coordinate>(AngleComparator())
+        val possibleVectors = mutableListOf<Coordinate>()
 
         for (asteroid in asteroids) {
             if (laserCoordinate != asteroid) {
                 val vector = laserCoordinate.vectorTo(asteroid).normalized()
                 val distance = laserCoordinate.distance(asteroid)
-                val vectorSet = vectors.getOrPut(vector) {
-                    TreeSet<CoordinateVector>()
+
+                var vectorSet = vectors[vector]
+                if (vectorSet == null) {
+                    vectorSet = TreeSet<CoordinateVector>()
+                    vectors[vector] = vectorSet
+                    possibleVectors.add(vector)
                 }
                 vectorSet.add(CoordinateVector(asteroid, distance))
                 asteroidCount++
-
-                maxX = max(maxX, asteroid.x)
-                maxY = max(maxY, asteroid.y)
             }
         }
 
+        val sortedPossibleVectors = possibleVectors.sortedWith(AngleComparator())
+
         var eliminatedCount = 0
         while (asteroidCount > 0) {
-            for (vector in possibleVectors) {
+            for (vector in sortedPossibleVectors) {
                 // Eliminate first
                 val vectorSet = vectors[vector]
                 val eliminatedAsteroid = vectorSet?.popFirst()

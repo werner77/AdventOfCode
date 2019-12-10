@@ -2,10 +2,7 @@ package com.behindmedia.adventofcode2019
 
 import java.io.BufferedReader
 import java.io.FileNotFoundException
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.atan
-import kotlin.math.sqrt
+import kotlin.math.*
 
 
 fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
@@ -156,28 +153,24 @@ class Reference<T>(var value: T)
 
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
-    fun angle(): Double {
-        if (y == 0) {
-            return if (x > 0) PI/2.0 else 3.0 * PI/2.0
+    fun angle(to: Coordinate): Double {
+        val a1 = this.x.toDouble()
+        val b1 = this.y.toDouble()
+        val c1 = this.distance(origin)
+
+        val a2 = to.x.toDouble()
+        val b2 = to.y.toDouble()
+        val c2 = to.distance(origin)
+
+        var angle = acos((a1 * a2 + b1 * b2) / (c1 * c2))
+
+        if (a1 < 0) {
+            angle = -angle
         }
 
-        val ratio = x.toDouble() / -y.toDouble()
-        var angle = -atan(ratio)
-
-        if (x < 0) {
-            if (y < 0) {
-
-            } else {
-
-            }
-        } else {
-            if (y < 0) {
-
-            } else {
-
-            }
+        if (angle < 0) {
+            angle += 2 * PI
         }
-
         return angle
     }
 
