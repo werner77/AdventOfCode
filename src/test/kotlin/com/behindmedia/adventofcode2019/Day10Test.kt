@@ -7,6 +7,7 @@ import kotlin.IllegalStateException
 import kotlin.math.PI
 import kotlin.math.max
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class Day10Test {
 
@@ -32,11 +33,11 @@ class Day10Test {
     @Test
     fun angle() {
         val zero = Coordinate(0, -1)
-        assertEquals(Coordinate(0, -1).angle(zero) == 0.0)
-        assertEquals(Coordinate(1, -1).angle(zero) == PI / 4.0)
-        assertEquals(Coordinate(1, 1).angle(zero) == PI * 3.0 / 4.0)
-        assertEquals(Coordinate(0, 1).angle(zero) == PI)
-        assertEquals(Coordinate(-1, 1).angle(zero) == PI * 5.0 / 4.0)
-        assertEquals(Coordinate(-1, -1).angle(zero) == PI * 7.0 / 4.0)
+        assertTrue(Coordinate(0, -1).angle(zero).isAlmostEqual(0.0))
+        assertTrue(Coordinate(1, -1).angle(zero).isAlmostEqual(PI / 4.0))
+        assertTrue(Coordinate(1, 1).angle(zero).isAlmostEqual(PI * 3.0 / 4.0))
+        assertTrue(Coordinate(0, 1).angle(zero).isAlmostEqual(PI))
+        assertTrue(Coordinate(-1, 1).angle(zero).isAlmostEqual(PI * 5.0 / 4.0))
+        assertTrue(Coordinate(-1, -1).angle(zero).isAlmostEqual(PI * 7.0 / 4.0))
     }
 }

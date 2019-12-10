@@ -136,6 +136,10 @@ fun List<Long>.toMutableMap(): MutableMap<Long, Long> {
     }
 }
 
+fun Double.isAlmostEqual(other: Double, allowedDifference: Double = 0.000001): Boolean {
+    return abs(this - other) < allowedDifference
+}
+
 val Long.numberOfDigits: Int
     get() = numberOfDigits(this)
 
@@ -213,9 +217,9 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     }
 }
 
-fun greatestCommonDivisor(n1: Int, n2: Int): Int {
-    var n1 = n1
-    var n2 = n2
+fun greatestCommonDivisor(i1: Int, i2: Int): Int {
+    var n1 = i1
+    var n2 = i2
     if (n1 == 0) {
         return n2
     }
