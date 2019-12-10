@@ -2,8 +2,11 @@ package com.behindmedia.adventofcode2019
 
 import java.io.BufferedReader
 import java.io.FileNotFoundException
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan
 import kotlin.math.sqrt
+
 
 fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     val reader = readerForResource(resource)
@@ -153,6 +156,31 @@ class Reference<T>(var value: T)
 
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
+    fun angle(): Double {
+        if (y == 0) {
+            return if (x > 0) PI/2.0 else 3.0 * PI/2.0
+        }
+
+        val ratio = x.toDouble() / -y.toDouble()
+        var angle = -atan(ratio)
+
+        if (x < 0) {
+            if (y < 0) {
+
+            } else {
+
+            }
+        } else {
+            if (y < 0) {
+
+            } else {
+
+            }
+        }
+
+        return angle
+    }
+
     override fun compareTo(other: Coordinate): Int {
         var result = this.y.compareTo(other.y)
         if (result == 0) {
@@ -169,6 +197,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return offset(vector.x, vector.y)
     }
 
+    fun vectorTo(coordinate: Coordinate): Coordinate {
+        return Coordinate(coordinate.x - this.x, coordinate.y - this.y)
+    }
+
     fun manhattenDistance(to: Coordinate): Int {
         return abs(x - to.x) + abs(y - to.y)
     }
@@ -179,7 +211,50 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return sqrt( deltaX * deltaX + deltaY * deltaY)
     }
 
+    fun normalized(): Coordinate {
+        val factor = gcdBySteinsAlgorithm(abs(this.x), abs(this.y))
+        return Coordinate(this.x / factor, this.y / factor)
+    }
+
+    fun normalized1(): Pair<Coordinate, Int> {
+        val factor = gcdBySteinsAlgorithm(abs(this.x), abs(this.y))
+        return Pair(Coordinate(this.x / factor, this.y / factor), factor)
+    }
+
     companion object {
         val origin = Coordinate(0, 0)
     }
+}
+
+fun gcdBySteinsAlgorithm(n1: Int, n2: Int): Int {
+    var n1 = n1
+    var n2 = n2
+    if (n1 == 0) {
+        return n2
+    }
+    if (n2 == 0) {
+        return n1
+    }
+    var n: Int
+    n = 0
+    while (n1 or n2 and 1 == 0) {
+        n1 = n1 shr 1
+        n2 = n2 shr 1
+        n++
+    }
+    while (n1 and 1 == 0) {
+        n1 = n1 shr 1
+    }
+    do {
+        while (n2 and 1 == 0) {
+            n2 = n2 shr 1
+        }
+        if (n1 > n2) {
+            val temp = n1
+            n1 = n2
+            n2 = temp
+        }
+        n2 = n2 - n1
+    } while (n2 != 0)
+    return n1 shl n
 }
