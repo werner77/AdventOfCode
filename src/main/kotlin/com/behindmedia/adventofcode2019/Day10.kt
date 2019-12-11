@@ -1,22 +1,12 @@
 package com.behindmedia.adventofcode2019
 
 import java.util.*
-import kotlin.Comparator
 
 class Day10 {
 
     private class CoordinateDistance(val coordinate: Coordinate, val distance: Double): Comparable<CoordinateDistance> {
         override fun compareTo(other: CoordinateDistance): Int {
             return this.distance.compareTo(other.distance)
-        }
-    }
-
-    private class AngleComparator(private val zeroVector: Coordinate): Comparator<Coordinate> {
-        override fun compare(o1: Coordinate?, o2: Coordinate?): Int {
-            if (o1 == null || o2 == null) {
-                throw IllegalStateException("Unexpected")
-            }
-            return o1.angle(zeroVector).compareTo(o2.angle(zeroVector))
         }
     }
 
@@ -58,7 +48,7 @@ class Day10 {
     }
 
     fun destroyAsteroids(asteroids: List<Coordinate>, laser: Coordinate, eliminationCount: Int = 200): Coordinate? {
-        val vectors = mutableMapOf<Coordinate, TreeSet<CoordinateDistance>>()
+        val vectors = mutableMapOf<Coordinate, SortedSet<CoordinateDistance>>()
         var asteroidCount = 0
 
         for (asteroid in asteroids) {
@@ -69,7 +59,7 @@ class Day10 {
                 //Distance
                 val distance = laser.distance(asteroid)
 
-                val vectorSet = vectors.getOrPut(vector) { TreeSet() }
+                val vectorSet = vectors.getOrPut(vector) { sortedSetOf() }
 
                 // Add the coordinate to the vectorSet, sorted by distance ascending
                 vectorSet.add(CoordinateDistance(asteroid, distance))
