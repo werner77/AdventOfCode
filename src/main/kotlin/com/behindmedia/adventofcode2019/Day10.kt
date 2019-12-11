@@ -4,12 +4,19 @@ import java.util.*
 
 class Day10 {
 
+    /**
+     * This class describes a tuple of coordinate and its distance to another coordinate,
+     * sorted by the distance ascending
+     */
     private class CoordinateDistance(val coordinate: Coordinate, val distance: Double): Comparable<CoordinateDistance> {
         override fun compareTo(other: CoordinateDistance): Int {
             return this.distance.compareTo(other.distance)
         }
     }
 
+    /**
+     * Function to decode the string input of the puzzle to a list of coordinates (describing all the asteroids)
+     */
     fun decodeInput(string: String): List<Coordinate> {
         var x = 0
         var y = 0
@@ -29,17 +36,33 @@ class Day10 {
         }
     }
 
+    /**
+     * Finds the best location (puzzle1) for positioning the laser.
+     * Returns the coordinate and the number of asteroids it can directly shoot from that location.
+     */
     fun findBestLocation(asteroids: List<Coordinate>): Pair<Coordinate, Int> {
         var result: Pair<Coordinate, Int>? = null
         for (i in asteroids.indices) {
             val asteroid1 = asteroids[i]
+
+            // Unique normalized vectors to other asteroid using asteroid1 as base
             val uniqueVectors = mutableSetOf<Coordinate>()
             for (j in asteroids.indices) {
+                // Skip if its the same asteroid
                 if (i == j) continue
+
                 val asteroid2 = asteroids[j]
+
+                // Determine the vector and normalize its distance using the greatest common denominator for x and y
+                // This will ensure that two vectors of different magnitude, but with the same direction will result
+                // in the same vector
                 val vector = asteroid1.vector(asteroid2).normalized()
+
+                // Add the vector to the set
                 uniqueVectors.add(vector)
             }
+
+            // Take this asteroid if the number of uniqueVectors is greater than the current result
             if (uniqueVectors.size > (result?.second ?: 0)) {
                 result = Pair(asteroid1, uniqueVectors.size)
             }

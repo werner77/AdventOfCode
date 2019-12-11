@@ -2,18 +2,27 @@ package com.behindmedia.adventofcode2019
 
 import kotlin.math.*
 
+/**
+ * Describes the rotation direction (left or right)
+ */
 enum class RotationDirection {
     Left, Right;
 
     companion object { }
 }
 
+/**
+ * Describes a two-dimensional coordinate or vector.
+ */
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
     companion object {
         val origin = Coordinate(0, 0)
     }
 
+    /**
+     * Comparison, ordering from top-left to bottom-right
+     */
     override fun compareTo(other: Coordinate): Int {
         var result = this.y.compareTo(other.y)
         if (result == 0) {
@@ -30,25 +39,40 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return offset(vector.x, vector.y)
     }
 
+    /**
+     * Returns the diff with the supplied coordinate as a new coordinate (representing the vector)
+     */
     fun vector(to: Coordinate): Coordinate {
         return Coordinate(to.x - this.x, to.y - this.y)
     }
 
+    /**
+     * Returns the Manhatten distance to the specified coordinate
+     */
     fun manhattenDistance(to: Coordinate): Int {
         return abs(x - to.x) + abs(y - to.y)
     }
 
+    /**
+     * Returns the shortest Euclidean distance to the specified coordinate
+     */
     fun distance(to: Coordinate): Double {
         val deltaX = (x - to.x).toDouble()
         val deltaY = (y - to.y).toDouble()
         return sqrt( deltaX * deltaX + deltaY * deltaY)
     }
 
+    /**
+     * Normalizes the coordinate by dividing both x and y by their greatest common divisor
+     */
     fun normalized(): Coordinate {
         val factor = greatestCommonDivisor(abs(this.x), abs(this.y))
         return Coordinate(this.x / factor, this.y / factor)
     }
 
+    /**
+     * Rotates this coordinate (representing a vector) using the specified rotation direction
+     */
     fun rotate(direction: RotationDirection): Coordinate {
         return when(direction) {
             RotationDirection.Left -> Coordinate(this.y, -this.x)
@@ -74,10 +98,16 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     }
 }
 
+/**
+ * Function to compare doubles with an allowed fractional difference
+ */
 fun Double.isAlmostEqual(other: Double, allowedDifference: Double = 0.000001): Boolean {
     return abs(this - other) < allowedDifference
 }
 
+/**
+ * Returns the number of 10-based digits (excluding leading 0-s) of this Long
+ */
 val Long.numberOfDigits: Int
     get() {
         var value = this
@@ -89,6 +119,9 @@ val Long.numberOfDigits: Int
         return digitCount
     }
 
+/**
+ * Computes the greatest common divisor of two integers.
+ */
 tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
     if (b == 0) {
         return a
@@ -96,6 +129,9 @@ tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
     return greatestCommonDivisor(b, a % b)
 }
 
+/**
+ * Range to enumerate coordinates between the (minx, miny) and (maxx, maxy) found in a list of coordinates.
+ */
 class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>, ClosedRange<Coordinate> {
     private val minCoordinate: Coordinate
     private val maxCoordinate: Coordinate

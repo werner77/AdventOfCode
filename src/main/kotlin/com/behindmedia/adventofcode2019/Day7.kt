@@ -17,6 +17,10 @@ class Day7 {
         return lastOutput
     }
 
+    /**
+     * Method to execute the program on all amplifiers with feedback from last to first. Uses conversion from int to long
+     * since the computer was refactored at a later point to work with 64 bit values and addresses.
+     */
     fun executeWithFeedback(state: List<Int>, phases: List<Int>): Int {
         val amplifiers = Array(phases.size) { Computer(state.toLongList()) }
         var lastOutput = 0
@@ -26,13 +30,17 @@ class Day7 {
             val phase = phases[i]
             val amplifier = amplifiers[i]
 
+            // Initially feed the amplifier two inputs (including the phase), otherwise just feed it the last output
             val inputs = if (amplifier.status == Computer.Status.Initial) listOf(phase, lastOutput) else listOf(lastOutput)
             val result = amplifier.process(inputs.toLongList())
             lastOutput = result.lastOutput.toInt()
 
+            // When the last amplifier is finished, return the output
             if (i == amplifiers.size - 1 && amplifier.status == Computer.Status.Finished) {
                 return lastOutput
             }
+
+            // Feed back to the first amplifier if we're at the last one
             i = if (i < amplifiers.size - 1) i + 1 else 0
         }
     }

@@ -1,5 +1,11 @@
 package com.behindmedia.adventofcode2019
 
+/**
+ * Class with the IntCode Computer functionality.
+ *
+ * This class is used by all puzzles that require the IntCode Computer,
+ * it has been refactored to be fully backwards compatible.
+ */
 class Computer(initialState: List<Long>) {
 
     companion object {
@@ -10,10 +16,16 @@ class Computer(initialState: List<Long>) {
 
     constructor(encodedInitialState: String): this(parseEncodedState(encodedInitialState))
 
+    /**
+     * The status of the computer
+     */
     enum class Status {
         Initial, Processing, WaitingForInput, Finished
     }
 
+    /**
+     * The processing result of the computer. Returns the status and the list of encountered outputs.
+     */
     class Result(val status: Status, val outputs: List<Long>) {
         val lastOutput: Long
             get() = outputs.lastOrNull() ?: 0L
@@ -23,24 +35,33 @@ class Computer(initialState: List<Long>) {
     private val _inputs = mutableListOf<Long>()
     private val _outputs = mutableListOf<Long>()
 
-    private val lastOutput: Long
-        get() = _outputs.lastOrNull() ?: 0L
-
-    val outputs: List<Long>
-        get() = _outputs.toList()
-
+    /**
+     * The status of the computer
+     */
     var status = Status.Initial
         private set
 
+    /**
+     * Base address for relative address operations
+     */
     var baseAddress = 0L
         private set
 
+    /**
+     * Position of the instruction pointer
+     */
     var position = 0L
         private set
 
+    /**
+     * Returns the current state of the computer as read-only map: <address, value>
+     */
     val currentState: Map<Long, Long>
         get() = _state.toMap()
 
+    /**
+     * Processes with the specified list of inputs
+     */
     fun process(inputs: List<Long> = listOf()): Result {
         status = Status.Processing
         _outputs.clear()
@@ -50,9 +71,12 @@ class Computer(initialState: List<Long>) {
             val operation = Operation.forCode(opcode.code)
             position = operation.perform(this, opcode.operandModes) ?: break
         }
-        return Result(this.status, this.outputs)
+        return Result(status, _outputs.toList())
     }
 
+    /**
+     * Processes with a single input
+     */
     fun process(input: Long): Result {
         return process(listOf(input))
     }
@@ -61,6 +85,9 @@ class Computer(initialState: List<Long>) {
         return _state[address] ?: 0
     }
 
+    /**
+     * Class describing an Opcode with its operandModes
+     */
     private class Opcode(val code: Int, val operandModes: IntArray) {
         companion object {
             fun at(position: Long, computer: Computer): Opcode {
@@ -80,8 +107,14 @@ class Computer(initialState: List<Long>) {
         }
     }
 
+    /**
+     * Sealed class describing all the possible Operations that are possible
+     */
     private sealed class Operation {
         companion object {
+            /**
+             * Returns the relevant Operation for the integer code
+             */
             fun forCode(code: Int): Operation {
                 return when(code) {
                     1 -> Add
@@ -99,8 +132,26 @@ class Computer(initialState: List<Long>) {
             }
         }
 
+        /**
+         * Performs the operation on the computer with the specified operandModes.
+         *
+         * Returns the new position for the instruction pointer or null if processing should be stopped.
+         */
         abstract fun perform(computer: Computer, operandModes: IntArray): Long?
 
+        /**
+         * Gets the plain value for the operand at the specified zero-based index
+         * (relative to the current position of the instruction pointer)
+         */
+        private fun getValue(index: Int, computer: Computer): Long {
+            val effectivePosition = computer.position + 1 + index
+            assert(effectivePosition < computer._state.size)
+            return computer.getValue(effectivePosition)
+        }
+
+        /**
+         * Gets a value for the operand at the specified index, taking the supplied operandModes into account.
+         */
         protected fun getValue(index: Int, operandModes: IntArray, computer: Computer): Long {
             val value = getValue(index, computer)
             return when(val operandMode = operandModes[index]) {
@@ -111,12 +162,11 @@ class Computer(initialState: List<Long>) {
             }
         }
 
-        private fun getValue(index: Int, computer: Computer): Long {
-            val effectivePosition = computer.position + 1 + index
-            assert(effectivePosition < computer._state.size)
-            return computer.getValue(effectivePosition)
-        }
-
+        /**
+         * Gets an address for the operand at the specified index, taking the supplied operandModes into account.
+         *
+         * An address is different from a plain value in that it only supports operand modes 0 and 2.
+         */
         protected fun getAddress(index: Int, operandModes: IntArray, computer: Computer): Long {
             val value = getValue(index, computer)
             return when(val operandMode = operandModes[index]) {

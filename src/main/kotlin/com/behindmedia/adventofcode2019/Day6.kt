@@ -4,6 +4,12 @@ import kotlin.math.min
 
 class Day6 {
 
+    /**
+     * Class describing a star uniquely identifier by its name.
+     *
+     * The orbitedBy collection denotes the children of this star and orbiting denotes the parents of this star
+     * (should be 1 at most).
+     */
     data class Star(val name: String, val orbitedBy: MutableSet<Star> = mutableSetOf(), val orbiting: MutableSet<Star> = mutableSetOf()) {
         override fun hashCode(): Int {
             return name.hashCode()
@@ -21,6 +27,9 @@ class Day6 {
         }
     }
 
+    /**
+     * Counts the total number of orbits in the encoded list of stars
+     */
     fun numberOfTotalOrbits(encoded: List<String>): Int {
 
         val allStars = mapFromEncodedInput(encoded)
@@ -35,6 +44,9 @@ class Day6 {
         }
     }
 
+    /**
+     * Returns the minimum number of transfers needed to travel from source to target
+     */
     fun numberOfTransfers(encoded: List<String>, source: String, target: String): Int {
         val allStars = mapFromEncodedInput(encoded)
 
@@ -45,7 +57,8 @@ class Day6 {
             throw IllegalArgumentException("Invalid argument supplied")
         }
 
-        //Find the nearest common ancestor
+        // Find the nearest common ancestor. It is the first common star which is encountered in the complete path to the
+        // common center of mass
         val sourcePath = completePath(sourceStar)
         val targetPath = completePath(targetStar)
 
@@ -60,9 +73,14 @@ class Day6 {
                 break
             }
         }
+
+        // Deduct twice the common ancestor count and we have the minimum number of steps needed.
         return sourcePath.size + targetPath.size - 2 * commonAncestorCount
     }
 
+    /**
+     * The complete path of a star to the common center of mass (which should be the last element in the list)
+     */
     private fun completePath(star: Star): List<Star> {
         val path = mutableListOf<Star>()
         var parent: Star? = star.orbiting.onlyOrNull()
@@ -74,7 +92,11 @@ class Day6 {
         return path
     }
 
+    /**
+     * A recursive function to count the number of orbits
+     */
     private fun traverse(star: Star, depth: Int, counter: Reference<Int>) {
+        // Counter is incremented for each star with the depth (number of nodes) to reach the common center of mass.
         counter.value += depth
         for (child in star.orbitedBy) {
             traverse(child, depth + 1, counter)

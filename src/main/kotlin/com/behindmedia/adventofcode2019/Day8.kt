@@ -28,6 +28,7 @@ class Day8 {
         val numberOfPixelsPerLayer = width * height
         assert(input.size % numberOfPixelsPerLayer == 0)
 
+        // The visible layer, default to all transparent pixels
         val visibleLayer = MutableList(numberOfPixelsPerLayer) { 2 }
         for ((index, value) in input.withIndex()) {
             val pixelIndex = index % numberOfPixelsPerLayer
