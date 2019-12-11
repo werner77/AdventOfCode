@@ -32,26 +32,26 @@ class Day9Test {
     fun selfTest3() {
         val initialState = listOf<Long>(104,1125899906842624,99)
         val computer = Computer(initialState)
-        val output = computer.process()
-        assertEquals(initialState[1], output)
+        val result = computer.process()
+        assertEquals(initialState[1], result.lastOutput)
     }
 
     @Test
     fun puzzle1() {
         val encodedState = read("/day9.txt")
         val computer = Computer(encodedState)
-        val output = computer.process(listOf(1L))
-        println(output)
-        assertEquals(3598076521, output)
+        val result = computer.process(listOf(1L))
+        println(result.lastOutput)
+        assertEquals(3598076521, result.lastOutput)
     }
 
     @Test
     fun puzzle2() {
         val encodedState = read("/day9.txt")
         val computer = Computer(encodedState)
-        val output = computer.process(listOf(2L))
-        println(output)
-        assertEquals(90722, output)
+        val result = computer.process(listOf(2L))
+        println(result.lastOutput)
+        assertEquals(90722, result.lastOutput)
     }
 
 }
