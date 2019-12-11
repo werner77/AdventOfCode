@@ -2,6 +2,12 @@ package com.behindmedia.adventofcode2019
 
 import kotlin.math.*
 
+enum class RotationDirection {
+    Left, Right;
+
+    companion object { }
+}
+
 data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
     companion object {
@@ -43,6 +49,13 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return Coordinate(this.x / factor, this.y / factor)
     }
 
+    fun rotate(direction: RotationDirection): Coordinate {
+        return when(direction) {
+            RotationDirection.Left -> Coordinate(this.y, -this.x)
+            RotationDirection.Right -> Coordinate(-this.y, this.x)
+        }
+    }
+
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
      */
@@ -66,17 +79,15 @@ fun Double.isAlmostEqual(other: Double, allowedDifference: Double = 0.000001): B
 }
 
 val Long.numberOfDigits: Int
-    get() = numberOfDigits(this)
-
-private fun numberOfDigits(number: Long): Int {
-    var value = number
-    var digitCount = 0
-    while (value != 0L) {
-        value /= 10
-        digitCount++
+    get() {
+        var value = this
+        var digitCount = 0
+        while (value != 0L) {
+            value /= 10
+            digitCount++
+        }
+        return digitCount
     }
-    return digitCount
-}
 
 tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
     if (b == 0) {
@@ -84,3 +95,51 @@ tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
     }
     return greatestCommonDivisor(b, a % b)
 }
+
+class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>, ClosedRange<Coordinate> {
+    private val minCoordinate: Coordinate
+    private val maxCoordinate: Coordinate
+
+    init {
+        var minX = Integer.MAX_VALUE
+        var minY = Integer.MAX_VALUE
+        var maxX = Integer.MIN_VALUE
+        var maxY = Integer.MIN_VALUE
+        for (coordinate in collection) {
+            minX = min(minX, coordinate.x)
+            minY = min(minY, coordinate.y)
+            maxX = max(maxX, coordinate.x)
+            maxY = max(maxY, coordinate.y)
+        }
+        minCoordinate = Coordinate(minX, minY)
+        maxCoordinate = Coordinate(maxX, maxY)
+    }
+
+    private class CoordinateIterator(val minCoordinate: Coordinate, val maxCoordinate: Coordinate): Iterator<Coordinate> {
+        private var nextCoordinate: Coordinate? = if (minCoordinate <= maxCoordinate) minCoordinate else null
+
+        override fun hasNext(): Boolean {
+            return nextCoordinate != null
+        }
+
+        override fun next(): Coordinate {
+            val next = nextCoordinate ?: throw IllegalStateException("Next called on iterator while there are no more elements to iterate over")
+            nextCoordinate = when {
+                next.x < maxCoordinate.x -> next.offset(1, 0)
+                next.y < maxCoordinate.y -> Coordinate(minCoordinate.x, next.y + 1)
+                else -> null
+            }
+            return next
+        }
+    }
+
+    override fun iterator(): Iterator<Coordinate> = CoordinateIterator(minCoordinate, maxCoordinate)
+
+    override val endInclusive: Coordinate
+        get() = maxCoordinate
+    override val start: Coordinate
+        get() = minCoordinate
+}
+
+fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
+

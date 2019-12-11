@@ -24,8 +24,8 @@ class Day9Test {
     fun selfTest2() {
         val initialState = listOf<Long>(1102,34915192,34915192,7,4,7,99,0)
         val computer = Computer(initialState)
-        val output = computer.process()
-        assertEquals(16, output.numberOfDigits)
+        val result = computer.process()
+        assertEquals(16, result.lastOutput.numberOfDigits)
     }
 
     @Test

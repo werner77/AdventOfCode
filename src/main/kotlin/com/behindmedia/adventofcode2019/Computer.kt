@@ -14,6 +14,11 @@ class Computer(initialState: List<Long>) {
         Initial, Processing, WaitingForInput, Finished
     }
 
+    class Result(val status: Status, val outputs: List<Long>) {
+        val lastOutput: Long
+            get() = outputs.lastOrNull() ?: 0L
+    }
+
     private val _state: MutableMap<Long, Long> = initialState.toMutableMap()
     private val _inputs = mutableListOf<Long>()
     private val _outputs = mutableListOf<Long>()
@@ -36,15 +41,20 @@ class Computer(initialState: List<Long>) {
     val currentState: Map<Long, Long>
         get() = _state.toMap()
 
-    fun process(inputs: List<Long> = listOf()): Long {
+    fun process(inputs: List<Long> = listOf()): Result {
         status = Status.Processing
+        _outputs.clear()
         _inputs.addAll(inputs)
         while (true) {
             val opcode = Opcode.at(position, this)
             val operation = Operation.forCode(opcode.code)
             position = operation.perform(this, opcode.operandModes) ?: break
         }
-        return lastOutput
+        return Result(this.status, this.outputs)
+    }
+
+    fun process(input: Long): Result {
+        return process(listOf(input))
     }
 
     private fun getValue(address: Long): Long {
