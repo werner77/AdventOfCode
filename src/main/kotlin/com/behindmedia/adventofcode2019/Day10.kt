@@ -60,7 +60,6 @@ class Day10 {
     fun destroyAsteroids(asteroids: List<Coordinate>, laser: Coordinate, eliminationCount: Int = 200): Coordinate? {
         val vectors = mutableMapOf<Coordinate, TreeSet<CoordinateDistance>>()
         var asteroidCount = 0
-        val sortedVectors = TreeSet<Coordinate>(AngleComparator(Coordinate(0, -1)))
 
         for (asteroid in asteroids) {
             if (laser != asteroid) {
@@ -72,13 +71,16 @@ class Day10 {
 
                 val vectorSet = vectors.getOrPut(vector) { TreeSet() }
 
-                // Add the vector to the set of possible vectors, these are sorted by angle to the zero vector
-                sortedVectors.add(vector)
-
                 // Add the coordinate to the vectorSet, sorted by distance ascending
                 vectorSet.add(CoordinateDistance(asteroid, distance))
                 asteroidCount++
             }
+        }
+
+        // Sort all the possible normalized vectors by their angle to the zeroVector
+        val zeroVector = Coordinate(0, -1)
+        val sortedVectors = vectors.keys.sortedBy {
+            it.angle(zeroVector)
         }
 
         // Now start eliminating asteroids by looping through the possible vectors sorted by angle ascending

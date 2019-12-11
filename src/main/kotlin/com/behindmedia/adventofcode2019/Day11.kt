@@ -33,16 +33,15 @@ class Day11 {
         var currentDirection = Coordinate(0, -1)
 
         while (computer.status != Computer.Status.Finished) {
-            val paintedColor = map[currentPosition]
-            val currentColor = paintedColor ?: Color.Black
+            val currentColor = map[currentPosition] ?: Color.Black
 
             val result = computer.process(listOf(currentColor.rawValue))
             assert(result.outputs.size == 2)
 
-            val newPaintedColor = Color.from(result.outputs[0])
+            val paintedColor = Color.from(result.outputs[0])
             val turnDirection = RotationDirection.from(result.outputs[1])
 
-            map[currentPosition] = newPaintedColor
+            map[currentPosition] = paintedColor
 
             currentDirection = currentDirection.rotate(turnDirection)
             currentPosition = currentPosition.offset(currentDirection)
