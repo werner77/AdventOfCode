@@ -32,15 +32,11 @@ class Day11 {
 
         var currentDirection = Coordinate(0, -1)
 
-        while (true) {
+        while (computer.status != Computer.Status.Finished) {
             val paintedColor = map[currentPosition]
             val currentColor = paintedColor ?: Color.Black
 
             val result = computer.process(listOf(currentColor.rawValue))
-            if (result.status == Computer.Status.Finished) {
-                break
-            }
-
             assert(result.outputs.size == 2)
 
             val newPaintedColor = Color.from(result.outputs[0])
