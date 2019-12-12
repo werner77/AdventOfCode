@@ -11,6 +11,27 @@ enum class RotationDirection {
     companion object { }
 }
 
+data class Coordinate3D(var x: Int, var y: Int, var z: Int) {
+
+    fun offset(xOffset: Int, yOffset: Int, zOffset: Int) {
+        x += xOffset
+        y += yOffset
+        z += zOffset
+    }
+
+    fun offset(vector: Coordinate3D) {
+        offset(vector.x, vector.y, vector.z)
+    }
+
+    fun sumOfComponents(): Int {
+        return abs(x) + abs(y) + abs(z)
+    }
+
+    fun minus(other: Coordinate3D): Coordinate3D {
+        return Coordinate3D(this.x - other.x, this.y - other.y, this.z - other.z)
+    }
+}
+
 /**
  * Describes a two-dimensional coordinate or vector.
  */
