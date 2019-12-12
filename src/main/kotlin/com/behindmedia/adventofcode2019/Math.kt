@@ -11,7 +11,14 @@ enum class RotationDirection {
     companion object { }
 }
 
+/**
+ * Describes a three-dimensional coordinate or vector
+ */
 data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
+
+    companion object {
+        val origin = Coordinate3D(0, 0, 0)
+    }
 
     fun offset(vector: Coordinate3D): Coordinate3D {
         return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)

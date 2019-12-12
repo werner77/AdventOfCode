@@ -4,8 +4,7 @@ import kotlin.math.abs
 
 class Day12 {
 
-    data class ComponentState(val positions: List<Int>, val velocities: List<Int>) {
-    }
+    data class ComponentState(val positions: List<Int>, val velocities: List<Int>)
 
     private fun Coordinate3D.absSumOfComponents(): Int {
         return abs(x) + abs(y) + abs(z)
@@ -39,7 +38,9 @@ class Day12 {
     /**
      * Gets the total energy after simulating from the supplied input state with the specified number of iterations
      */
-    fun getTotalEnergy(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>, iterationCount: Int = 1000): Int {
+    fun getTotalEnergy(initialCoordinates: List<Coordinate3D>,
+                       initialVelocities: List<Coordinate3D>,
+                       iterationCount: Int = 1000): Int {
 
         assert(initialCoordinates.size == 4)
         assert(initialVelocities.size == 4)
@@ -70,11 +71,13 @@ class Day12 {
      *
      * The full period would be the least common multiple of the three component periods.
      */
-    fun findPeriod(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>, component: Int): Pair<Int, Int> {
+    fun findPeriod(initialCoordinates: List<Coordinate3D>,
+                   initialVelocities: List<Coordinate3D>,
+                   component: Int): Pair<Long, Long> {
         val coordinates = initialCoordinates.toMutableList()
         val velocities = initialVelocities.toMutableList()
-        val encounteredStates = mutableMapOf<ComponentState, Int>()
-        var time = 0
+        val encounteredStates = mutableMapOf<ComponentState, Long>()
+        var time = 0L
 
         while(true) {
             val state = ComponentState(coordinates.map { it[component] }, velocities.map { it[component] })
@@ -89,12 +92,16 @@ class Day12 {
         }
     }
 
+    /**
+     * Finds the total period for (x,y,z) together by determining the least common multiple of the
+     * three component periods
+     */
     fun findPeriod(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>): Long {
         var result = 1L
         for (component in 0 until 3) {
             val period = findPeriod(initialCoordinates, initialVelocities, component)
-            assert(period.first == 0)
-            result = leastCommonMultiple(result, period.second.toLong())
+            assert(period.first == 0L)
+            result = leastCommonMultiple(result, period.second)
         }
         return result
     }
