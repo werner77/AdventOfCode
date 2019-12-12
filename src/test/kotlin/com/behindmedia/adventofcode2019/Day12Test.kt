@@ -11,7 +11,8 @@ class Day12Test {
         val lines = string.split("\n")
 
         val coordinates = lines.map {
-            val components = it.split("<", ">", "=", ",", " ", "x", "y", "z").filter { s -> s.isNotEmpty() }
+            val components = it.split('<', '>', '=', ',', ' ', 'x', 'y', 'z')
+                .filter { s -> s.isNotEmpty() }
             assert(components.size == 3)
             Coordinate3D(components[0].toInt(), components[1].toInt(), components[2].toInt())
         }

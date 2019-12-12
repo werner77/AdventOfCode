@@ -42,8 +42,7 @@ class Day12 {
                        initialVelocities: List<Coordinate3D>,
                        iterationCount: Int = 1000): Int {
 
-        assert(initialCoordinates.size == 4)
-        assert(initialVelocities.size == 4)
+        assert(initialCoordinates.size == initialVelocities.size)
 
         val coordinates = initialCoordinates.toMutableList()
         val velocities = initialVelocities.toMutableList()
@@ -54,7 +53,7 @@ class Day12 {
         }
 
         var totalEnergy = 0
-        for (i in 0 until 4) {
+        for (i in initialCoordinates.indices) {
             totalEnergy += coordinates[i].absSumOfComponents() * velocities[i].absSumOfComponents()
         }
         return totalEnergy
@@ -62,10 +61,10 @@ class Day12 {
 
     /**
      * Tries to find the period where the state for the specified component (x=0, y=1, z=2) for all moons matches
-     * with a previous state.
+     * with a previous state. The minimum of this should always be the initialState assuming all moons have been in
+     * a stable orbit already.
      *
-     * A tuple is returned where the first is the initial iterations needed to reach the repeated state and the second
-     * is the number of iterations needed after this state until the state repeats again.
+     * Returns the number of iterations needed until this state repeats again.
      *
      * We can find the period per component(x,y,z) because they are completely independent.
      *
@@ -73,19 +72,19 @@ class Day12 {
      */
     fun findPeriod(initialCoordinates: List<Coordinate3D>,
                    initialVelocities: List<Coordinate3D>,
-                   component: Int): Pair<Long, Long> {
+                   component: Int): Long {
         val coordinates = initialCoordinates.toMutableList()
         val velocities = initialVelocities.toMutableList()
-        val encounteredStates = mutableMapOf<ComponentState, Long>()
+        var initialState: ComponentState? = null
         var time = 0L
 
         while(true) {
             val state = ComponentState(coordinates.map { it[component] }, velocities.map { it[component] })
-            val firstTime = encounteredStates[state]
-            if (firstTime != null) {
-                return Pair(firstTime, time - firstTime)
+            if (initialState == null) {
+                initialState = state
+            } else if (state == initialState) {
+                return time
             }
-            encounteredStates[state] = time
             applyGravity(coordinates, velocities)
             applyVelocity(coordinates, velocities)
             time++
@@ -94,14 +93,13 @@ class Day12 {
 
     /**
      * Finds the total period for (x,y,z) together by determining the least common multiple of the
-     * three component periods
+     * three component periods.
      */
     fun findPeriod(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>): Long {
         var result = 1L
         for (component in 0 until 3) {
             val period = findPeriod(initialCoordinates, initialVelocities, component)
-            assert(period.first == 0L)
-            result = leastCommonMultiple(result, period.second)
+            result = leastCommonMultiple(result, period)
         }
         return result
     }
