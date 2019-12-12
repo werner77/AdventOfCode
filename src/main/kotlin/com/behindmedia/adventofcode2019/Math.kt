@@ -93,7 +93,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
      * Normalizes the coordinate by dividing both x and y by their greatest common divisor
      */
     fun normalized(): Coordinate {
-        val factor = greatestCommonDivisor(abs(this.x), abs(this.y))
+        val factor = greatestCommonDivisor(abs(this.x.toLong()), abs(this.y.toLong())).toInt()
         return Coordinate(this.x / factor, this.y / factor)
     }
 
@@ -164,17 +164,10 @@ tailrec fun greatestCommonDivisor(a: Long, b: Long): Long {
     return greatestCommonDivisor(b, a % b)
 }
 
-tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
-    if (b == 0) {
-        return a
-    }
-    return greatestCommonDivisor(b, a % b)
-}
-
-fun leastCommonMultiple(number1: Long, number2: Long): Long {
-    return if (number1 == 0L || number2 == 0L) 0 else {
-        val gcd = greatestCommonDivisor(number1, number2)
-        abs(number1 * number2) / gcd
+fun leastCommonMultiple(a: Long, b: Long): Long {
+    return if (a == 0L || b == 0L) 0 else {
+        val gcd = greatestCommonDivisor(a, b)
+        abs(a * b) / gcd
     }
 }
 

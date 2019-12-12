@@ -7,11 +7,9 @@ import org.junit.Assert.*
 class Day12Test {
 
     private fun parseInput(string: String): Pair<List<Coordinate3D>, List<Coordinate3D>> {
-
         val lines = string.split("\n")
-
         val coordinates = lines.map {
-            val components = it.split('<', '>', '=', ',', ' ', 'x', 'y', 'z')
+            val components = it.split("[^\\-0-9]".toRegex())
                 .filter { s -> s.isNotEmpty() }
             assert(components.size == 3)
             Coordinate3D(components[0].toInt(), components[1].toInt(), components[2].toInt())
