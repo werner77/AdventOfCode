@@ -88,4 +88,14 @@ class Day12 {
             time++
         }
     }
+
+    fun findPeriod(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>): Long {
+        var result = 1L
+        for (component in 0 until 3) {
+            val period = findPeriod(initialCoordinates, initialVelocities, component)
+            assert(period.first == 0)
+            result = leastCommonMultiple(result, period.second.toLong())
+        }
+        return result
+    }
 }

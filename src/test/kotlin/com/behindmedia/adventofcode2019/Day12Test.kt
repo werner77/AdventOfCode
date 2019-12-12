@@ -34,19 +34,11 @@ class Day12Test {
 
     @Test
     fun puzzle2() {
-
         val day12 = Day12()
         val input = parseInput(read("/day12.txt"))
-
-        var lcm = 1L
-
-        for (component in 0 until 3) {
-            val period = day12.findPeriod(input.first, input.second, component)
-            assert(period.first == 0)
-            lcm = leastCommonMultiple(lcm, period.second.toLong())
-        }
-        println(lcm)
-        assertEquals(326489627728984L, lcm)
+        var result = day12.findPeriod(input.first, input.second)
+        println(result)
+        assertEquals(326489627728984L, result)
     }
 
     @Test
