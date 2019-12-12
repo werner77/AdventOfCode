@@ -6,46 +6,50 @@ import org.junit.Assert.*
 
 class Day12Test {
 
+    private fun parseInput(): Pair<List<Coordinate3D>, List<Coordinate3D>> {
+
+        val coordinates = parseLines("/day12.txt") {
+            val components = it.split("<", ">", "=", ",", " ", "x", "y", "z").filter { it.isNotEmpty() }
+            assert(components.size == 3)
+            Coordinate3D(components[0].toInt(), components[1].toInt(), components[2].toInt())
+        }
+
+        val velocities = List<Coordinate3D>(coordinates.size) {
+            Coordinate3D(0, 0, 0)
+        }
+
+        return Pair(coordinates, velocities)
+    }
+
     @Test
     fun puzzle1() {
+        val day12 = Day12()
+        val input = parseInput()
+        val result = day12.getTotalEnergy(input.first, input.second)
+        println(result)
+        assertEquals(6735, result)
+    }
+
+    @Test
+    fun puzzle2() {
 
         val day12 = Day12()
+        val input = parseInput()
 
-        /*
-        <x=15, y=-2, z=-6>
-<x=-5, y=-4, z=-11>
-<x=0, y=-6, z=0>
-<x=5, y=9, z=6>
-         */
+        var lcm = 1L
 
-        val initialCoordinates = listOf(
-            Coordinate3D(15, -2, -6),
-            Coordinate3D(-5, -4, -11),
-            Coordinate3D(0, -6, 0),
-            Coordinate3D(5, 9, 6)
-        )
-        val initialVelocities = listOf (
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0)
-        )
-
-        val result = day12.simulate(initialCoordinates, initialVelocities)
-        println(result)
+        for (component in 0 until 3) {
+            val period = day12.findPeriod(input.first, input.second, component)
+            assert(period.first == 0)
+            lcm = leastCommonMultiple(lcm, period.second.toLong())
+        }
+        println(lcm)
+        assertEquals(326489627728984L, lcm)
     }
 
     @Test
     fun sample1() {
-
         val day12 = Day12()
-
-        /*
-        <x=15, y=-2, z=-6>
-<x=-5, y=-4, z=-11>
-<x=0, y=-6, z=0>
-<x=5, y=9, z=6>
-         */
 
         val initialCoordinates = listOf(
             Coordinate3D(-1, 0, 2),
@@ -60,60 +64,7 @@ class Day12Test {
             Coordinate3D(0, 0, 0)
         )
 
-        val result = day12.simulate(initialCoordinates, initialVelocities, 10)
+        val result = day12.getTotalEnergy(initialCoordinates, initialVelocities, 10)
         println(result)
-    }
-
-    @Test
-    fun statesEqual() {
-        val initialCoordinates = listOf(
-            Coordinate3D(-1, 0, 2),
-            Coordinate3D(2, -10, -7),
-            Coordinate3D(4, -8, 8),
-            Coordinate3D(3, 5, -1)
-        )
-        val initialVelocities = listOf (
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0)
-        )
-        val initialVelocities1 = listOf (
-            Coordinate3D(1, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0)
-        )
-
-        val state1 = Day12.State(initialCoordinates, initialVelocities)
-        val state2 = Day12.State(initialCoordinates, initialVelocities)
-
-        assertTrue(state1 == state2)
-
-        val state3 = Day12.State(initialCoordinates, initialVelocities1)
-
-        assertFalse(state1 == state3)
-
-
-        // Now determine if the state is the same by offsetting only the intial coordinates
-    }
-
-    @Test
-    fun findPeriod() {
-
-        val initialCoordinates = listOf(
-            Coordinate3D(15, -2, -6),
-            Coordinate3D(-5, -4, -11),
-            Coordinate3D(0, -6, 0),
-            Coordinate3D(5, 9, 6)
-        )
-        val initialVelocities = listOf (
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0)
-        )
-        val day12 = Day12()
-        day12.findPeriod(initialCoordinates, initialVelocities)
     }
 }

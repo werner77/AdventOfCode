@@ -11,24 +11,27 @@ enum class RotationDirection {
     companion object { }
 }
 
-data class Coordinate3D(var x: Int, var y: Int, var z: Int) {
+data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
 
-    fun offset(xOffset: Int, yOffset: Int, zOffset: Int) {
-        x += xOffset
-        y += yOffset
-        z += zOffset
+    fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
+        return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
-    fun offset(vector: Coordinate3D) {
-        offset(vector.x, vector.y, vector.z)
+    fun offset(vector: Coordinate3D): Coordinate3D {
+        return offset(vector.x, vector.y, vector.z)
     }
 
-    fun sumOfComponents(): Int {
+    fun absSumOfComponents(): Int {
         return abs(x) + abs(y) + abs(z)
     }
 
-    fun minus(other: Coordinate3D): Coordinate3D {
-        return Coordinate3D(this.x - other.x, this.y - other.y, this.z - other.z)
+    fun getComponent(index: Int): Int {
+        return when (index) {
+            0 -> x
+            1 -> y
+            2 -> z
+            else -> throw IllegalArgumentException("Invalid index supplied")
+        }
     }
 }
 
@@ -143,11 +146,25 @@ val Long.numberOfDigits: Int
 /**
  * Computes the greatest common divisor of two integers.
  */
+tailrec fun greatestCommonDivisor(a: Long, b: Long): Long {
+    if (b == 0L) {
+        return a
+    }
+    return greatestCommonDivisor(b, a % b)
+}
+
 tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
     if (b == 0) {
         return a
     }
     return greatestCommonDivisor(b, a % b)
+}
+
+fun leastCommonMultiple(number1: Long, number2: Long): Long {
+    return if (number1 == 0L || number2 == 0L) 0 else {
+        val gcd = greatestCommonDivisor(number1, number2)
+        abs(number1 * number2) / gcd
+    }
 }
 
 /**
@@ -199,4 +216,3 @@ class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>
 }
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
-
