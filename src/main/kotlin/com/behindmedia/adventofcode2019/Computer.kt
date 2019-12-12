@@ -67,7 +67,7 @@ class Computer(initialState: List<Long>) {
         _outputs.clear()
         _inputs.addAll(inputs)
         while (true) {
-            val opcode = Opcode.at(position, this)
+            val opcode = Opcode.atCurrentPosition(this)
             val operation = Operation.forCode(opcode.code)
             position = operation.perform(this, opcode.operandModes) ?: break
         }
@@ -90,8 +90,8 @@ class Computer(initialState: List<Long>) {
      */
     private class Opcode(val code: Int, val operandModes: IntArray) {
         companion object {
-            fun at(position: Long, computer: Computer): Opcode {
-                var encodedOpcode = computer.getValue(position).toInt()
+            fun atCurrentPosition(computer: Computer): Opcode {
+                var encodedOpcode = computer.getValue(computer.position).toInt()
 
                 val code = encodedOpcode % 100
                 val operandModes = IntArray(3)

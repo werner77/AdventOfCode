@@ -6,9 +6,11 @@ import org.junit.Assert.*
 
 class Day12Test {
 
-    private fun parseInput(): Pair<List<Coordinate3D>, List<Coordinate3D>> {
+    private fun parseInput(string: String): Pair<List<Coordinate3D>, List<Coordinate3D>> {
 
-        val coordinates = parseLines("/day12.txt") {
+        val lines = string.split("\n")
+
+        val coordinates = lines.map {
             val components = it.split("<", ">", "=", ",", " ", "x", "y", "z").filter { it.isNotEmpty() }
             assert(components.size == 3)
             Coordinate3D(components[0].toInt(), components[1].toInt(), components[2].toInt())
@@ -24,7 +26,7 @@ class Day12Test {
     @Test
     fun puzzle1() {
         val day12 = Day12()
-        val input = parseInput()
+        val input = parseInput(read("/day12.txt"))
         val result = day12.getTotalEnergy(input.first, input.second)
         println(result)
         assertEquals(6735, result)
@@ -34,7 +36,7 @@ class Day12Test {
     fun puzzle2() {
 
         val day12 = Day12()
-        val input = parseInput()
+        val input = parseInput(read("/day12.txt"))
 
         var lcm = 1L
 
@@ -49,22 +51,15 @@ class Day12Test {
 
     @Test
     fun sample1() {
+        val inputString = "<x=-1, y=0, z=2>\n" +
+                "<x=2, y=-10, z=-7>\n" +
+                "<x=4, y=-8, z=8>\n" +
+                "<x=3, y=5, z=-1>"
         val day12 = Day12()
 
-        val initialCoordinates = listOf(
-            Coordinate3D(-1, 0, 2),
-            Coordinate3D(2, -10, -7),
-            Coordinate3D(4, -8, 8),
-            Coordinate3D(3, 5, -1)
-        )
-        val initialVelocities = listOf (
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0),
-            Coordinate3D(0, 0, 0)
-        )
+        val input = parseInput(inputString)
 
-        val result = day12.getTotalEnergy(initialCoordinates, initialVelocities, 10)
+        val result = day12.getTotalEnergy(input.first, input.second, 10)
         println(result)
         assertEquals(179, result)
     }
