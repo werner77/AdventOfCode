@@ -4,34 +4,9 @@ class Day12 {
 
     class State(coords: List<Coordinate3D>, velos: List<Coordinate3D>) {
 
-        val coordinates: List<Coordinate3D>
-        val velocities: List<Coordinate3D>
-
-        init {
-            coordinates = listOf(coords[0].copy(), coords[1].copy(), coords[2].copy(), coords[3].copy())
-            velocities = listOf(velos[0].copy(), velos[1].copy(), velos[2].copy(), velos[3].copy())
-
-            // Normalize the coordinates
-        }
-
-        fun isRelativeEqual(otherState: State): Boolean {
-            if (this.velocities != otherState.velocities) {
-                return false
-            }
-
-            // Normalize the coordinates, by subtracting the smallest value from all coordinates
-            val offset = otherState.coordinates.first().minus(this.coordinates.first())
-
-            // Apply the offset to the other coordinates and check whether they are equal
-
-            for (i in 1 until coordinates.size) {
-                val diffCoordinate = otherState.coordinates[i].minus(this.coordinates[i])
-                if (diffCoordinate != offset) {
-                    return false
-                }
-            }
-            return true
-        }
+        val coordinates: List<Coordinate3D> =
+            listOf(coords[0].minus(coords[0]), coords[1].minus(coords[0]), coords[2].minus(coords[0]), coords[3].minus(coords[0]))
+        val velocities: List<Coordinate3D> = listOf(velos[0].copy(), velos[1].copy(), velos[2].copy(), velos[3].copy())
 
         override fun hashCode(): Int {
             var hash =  17 + 37 * this.velocities.hashCode()
@@ -41,7 +16,7 @@ class Day12 {
 
         override fun equals(other: Any?): Boolean {
             if (other is State) {
-                return this.isRelativeEqual(other)
+                return this.coordinates == other.coordinates && this.velocities == other.velocities
             }
             return false
         }

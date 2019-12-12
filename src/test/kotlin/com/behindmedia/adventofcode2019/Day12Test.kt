@@ -97,4 +97,23 @@ class Day12Test {
 
         // Now determine if the state is the same by offsetting only the intial coordinates
     }
+
+    @Test
+    fun findPeriod() {
+
+        val initialCoordinates = listOf(
+            Coordinate3D(15, -2, -6),
+            Coordinate3D(-5, -4, -11),
+            Coordinate3D(0, -6, 0),
+            Coordinate3D(5, 9, 6)
+        )
+        val initialVelocities = listOf (
+            Coordinate3D(0, 0, 0),
+            Coordinate3D(0, 0, 0),
+            Coordinate3D(0, 0, 0),
+            Coordinate3D(0, 0, 0)
+        )
+        val day12 = Day12()
+        day12.findPeriod(initialCoordinates, initialVelocities)
+    }
 }
