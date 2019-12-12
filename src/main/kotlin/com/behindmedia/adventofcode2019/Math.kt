@@ -13,19 +13,15 @@ enum class RotationDirection {
 
 data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
 
-    fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
-        return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
-    }
-
     fun offset(vector: Coordinate3D): Coordinate3D {
-        return offset(vector.x, vector.y, vector.z)
+        return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)
     }
 
     fun absSumOfComponents(): Int {
         return abs(x) + abs(y) + abs(z)
     }
 
-    fun getComponent(index: Int): Int {
+    operator fun get(index: Int): Int {
         return when (index) {
             0 -> x
             1 -> y

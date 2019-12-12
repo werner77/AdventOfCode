@@ -66,5 +66,6 @@ class Day12Test {
 
         val result = day12.getTotalEnergy(initialCoordinates, initialVelocities, 10)
         println(result)
+        assertEquals(179, result)
     }
 }

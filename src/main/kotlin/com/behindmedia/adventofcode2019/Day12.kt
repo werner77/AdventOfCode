@@ -10,8 +10,8 @@ class Day12 {
             for (j in i + 1 until coordinates.size) {
                 val delta = IntArray(3)
                 for (k in 0 until 3) {
-                    val pos1 = coordinates[i].getComponent(k)
-                    val pos2 = coordinates[j].getComponent(k)
+                    val pos1 = coordinates[i][k]
+                    val pos2 = coordinates[j][k]
                     delta[k] = when {
                         pos1 < pos2 -> 1
                         pos1 > pos2 -> -1
@@ -50,6 +50,17 @@ class Day12 {
         return totalEnergy
     }
 
+    /**
+     * Tries to find the period where the state for the specified component (x=0, y=1, z=2) for all moons matches
+     * with a previous state.
+     *
+     * A tuple is returned where the first is the initial iterations needed to reach the repeated state and the second
+     * is the number of iterations needed after this state until the state repeats again.
+     *
+     * We can find the period per component(x,y,z) because they are completely independent.
+     *
+     * The full period would be the least common multiple of the three component periods.
+     */
     fun findPeriod(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>, component: Int): Pair<Int, Int> {
         val coordinates = initialCoordinates.toMutableList()
         val velocities = initialVelocities.toMutableList()
@@ -57,9 +68,8 @@ class Day12 {
         var i = 0
 
         while(true) {
-            val state = ComponentState(coordinates.map { it.getComponent(component) }, velocities.map { it.getComponent(component) })
+            val state = ComponentState(coordinates.map { it[component] }, velocities.map { it[component] })
             val existingIndex = encounteredStates[state]
-
             if (existingIndex != null) {
                 return Pair(existingIndex, i - existingIndex)
             }
