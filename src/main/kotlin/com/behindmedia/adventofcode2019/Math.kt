@@ -17,8 +17,8 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
         return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)
     }
 
-    fun absSumOfComponents(): Int {
-        return abs(x) + abs(y) + abs(z)
+    fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
+        return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
     operator fun get(index: Int): Int {
@@ -115,6 +115,14 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         val angle = atanA - atanB
 
         return if (angle < 0) angle + 2 * PI else angle
+    }
+
+    operator fun get(index: Int): Int {
+        return when (index) {
+            0 -> x
+            1 -> y
+            else -> throw IllegalArgumentException("Invalid index supplied")
+        }
     }
 }
 

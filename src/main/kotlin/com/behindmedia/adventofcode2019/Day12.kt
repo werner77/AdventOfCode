@@ -1,8 +1,14 @@
 package com.behindmedia.adventofcode2019
 
+import kotlin.math.abs
+
 class Day12 {
 
     data class ComponentState(val positions: List<Int>, val velocities: List<Int>) {
+    }
+
+    private fun Coordinate3D.absSumOfComponents(): Int {
+        return abs(x) + abs(y) + abs(z)
     }
 
     private fun applyGravity(coordinates: List<Coordinate3D>, velocities: MutableList<Coordinate3D>) {
@@ -18,8 +24,8 @@ class Day12 {
                         else -> 0
                     }
                 }
-                velocities[i] = velocities[i].offset(Coordinate3D(delta[0], delta[1], delta[2]))
-                velocities[j] = velocities[j].offset(Coordinate3D(-delta[0], -delta[1], -delta[2]))
+                velocities[i] = velocities[i].offset(delta[0], delta[1], delta[2])
+                velocities[j] = velocities[j].offset(-delta[0], -delta[1], -delta[2])
             }
         }
     }
@@ -30,7 +36,10 @@ class Day12 {
         }
     }
 
-    fun getTotalEnergy(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>, endTime: Int = 1000): Int {
+    /**
+     * Gets the total energy after simulating from the supplied input state with the specified number of iterations
+     */
+    fun getTotalEnergy(initialCoordinates: List<Coordinate3D>, initialVelocities: List<Coordinate3D>, iterationCount: Int = 1000): Int {
 
         assert(initialCoordinates.size == 4)
         assert(initialVelocities.size == 4)
@@ -38,7 +47,7 @@ class Day12 {
         val coordinates = initialCoordinates.toMutableList()
         val velocities = initialVelocities.toMutableList()
 
-        for (time in 0 until endTime) {
+        for (time in 0 until iterationCount) {
             applyGravity(coordinates, velocities)
             applyVelocity(coordinates, velocities)
         }
@@ -65,18 +74,18 @@ class Day12 {
         val coordinates = initialCoordinates.toMutableList()
         val velocities = initialVelocities.toMutableList()
         val encounteredStates = mutableMapOf<ComponentState, Int>()
-        var i = 0
+        var time = 0
 
         while(true) {
             val state = ComponentState(coordinates.map { it[component] }, velocities.map { it[component] })
-            val existingIndex = encounteredStates[state]
-            if (existingIndex != null) {
-                return Pair(existingIndex, i - existingIndex)
+            val firstTime = encounteredStates[state]
+            if (firstTime != null) {
+                return Pair(firstTime, time - firstTime)
             }
-            encounteredStates[state] = i
+            encounteredStates[state] = time
             applyGravity(coordinates, velocities)
             applyVelocity(coordinates, velocities)
-            i++
+            time++
         }
     }
 }
