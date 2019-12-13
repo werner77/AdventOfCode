@@ -62,7 +62,7 @@ class Computer(initialState: List<Long>) {
     /**
      * Processes with the specified list of inputs
      */
-    fun process(inputs: List<Long> = listOf()): Result {
+    fun process(inputs: List<Long>): Result {
         status = Status.Processing
         _outputs.clear()
         _inputs.addAll(inputs)
@@ -77,8 +77,8 @@ class Computer(initialState: List<Long>) {
     /**
      * Processes with a single input
      */
-    fun process(input: Long): Result {
-        return process(listOf(input))
+    fun process(input: Long? = null): Result {
+        return process(input?.let { listOf(it) } ?: emptyList())
     }
 
     private fun getValue(address: Long): Long {

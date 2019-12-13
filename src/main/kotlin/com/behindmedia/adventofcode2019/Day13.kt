@@ -4,8 +4,12 @@ import java.lang.StringBuilder
 
 class Day13 {
 
-    enum class Tile(val rawValue: Long) {
-        Empty(0L), Wall(1L), Block(2L), Paddle(3L), Ball(4L);
+    enum class Tile(val rawValue: Long, val stringValue: String) {
+        Empty(0L, " "),
+        Wall(1L, "X"),
+        Block(2L, "#"),
+        Paddle(3L, "="),
+        Ball(4L, "O");
 
         companion object {
             fun from(rawValue: Long): Tile {
@@ -23,6 +27,7 @@ class Day13 {
         fun parseOutputs(outputs: List<Long>) {
             var i = 0
             while (i < outputs.size) {
+                assert(i < outputs.size - 2)
                 val x = outputs[i]
                 val y = outputs[i + 1]
                 val tileValue = outputs[i + 2]
@@ -34,10 +39,10 @@ class Day13 {
                     val tile = Tile.from(tileValue)
                     val coordinate = Coordinate(x.toInt(), y.toInt())
                     map[coordinate] = tile
-
-                    when (tile) {
-                        Tile.Ball -> ballPosition = coordinate
-                        Tile.Paddle -> paddlePosition = coordinate
+                    if (tile == Tile.Ball) {
+                        ballPosition = coordinate
+                    } else if (tile == Tile.Paddle) {
+                        paddlePosition = coordinate
                     }
                 }
                 i += 3
@@ -48,20 +53,10 @@ class Day13 {
             val buffer = StringBuilder()
             val coordinates = map.keys
             val range = coordinates.range()
-
             buffer.append("Score: $score\n\n")
-
             for (coordinate in range) {
-                val value = map[coordinate] ?: throw IllegalStateException("No tile found for $coordinate")
-
-                val s = when (value) {
-                    Tile.Empty -> " "
-                    Tile.Wall -> "X"
-                    Tile.Block -> "\u25A1"
-                    Tile.Paddle -> "="
-                    Tile.Ball -> "O"
-                }
-                buffer.append(s)
+                val tile = map[coordinate] ?: throw IllegalStateException("No tile found for $coordinate")
+                buffer.append(tile.stringValue)
                 if (coordinate.x == range.endInclusive.x) {
                     buffer.append("\n")
                 }
@@ -90,13 +85,10 @@ class Day13 {
         val gameState = GameState()
 
         while (computer.status != Computer.Status.Finished) {
-            val inputs = if (input == null) listOf() else listOf(input)
-
-            val result = computer.process(inputs)
+            val result = computer.process(input)
             val outputs = result.outputs
 
             gameState.parseOutputs(outputs)
-
             onUpdate(gameState)
 
             input = when {

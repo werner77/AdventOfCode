@@ -20,22 +20,17 @@ class Day13Test {
         assertEquals(335, result)
     }
 
-
-
     @Test
     fun puzzle2() {
-        val visualize = false
         val program = read("/day13.txt")
         val day13 = Day13()
-        var gui: TextWindow? = null
-
-        if (visualize) {
-            gui = TextWindow()
-        }
+        val gui: TextWindow? = null
+        //uncomment to enable visualization
+        //val gui = TextWindow()
 
         val finalGameState = day13.play(program) { gameState ->
-            if (visualize) {
-                gui?.setText(gameState.toString())
+            gui?.let {
+                it.setText(gameState.toString())
                 Thread.sleep(1000 / 25)
             }
         }
