@@ -9,7 +9,7 @@ package com.behindmedia.adventofcode2019
 class Computer(initialState: List<Long>) {
 
     companion object {
-        private fun parseEncodedState(encodedState: String): List<Long> {
+        fun parseEncodedState(encodedState: String): List<Long> {
             return encodedState.split(",").map { value -> value.toLong() }
         }
     }
