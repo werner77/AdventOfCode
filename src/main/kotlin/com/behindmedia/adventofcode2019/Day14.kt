@@ -2,15 +2,14 @@ package com.behindmedia.adventofcode2019
 
 class Day14 {
 
-    data class Component(val amount: Long, val identifier: String) {
+    class Component(val amount: Long, val identifier: String) {
         companion object {
-            val FUEL = "FUEL"
-            val ORE = "ORE"
+            const val FUEL = "FUEL"
+            const val ORE = "ORE"
         }
     }
 
-    data class Formula(val ingredients: List<Component>, val output: Component) {
-
+    class Formula(val ingredients: List<Component>, val output: Component) {
         fun addToMap(map: MutableMap<String, Long>, multiplier: Long = 1) {
             for (ingredient in ingredients) {
                 val currentValue = map[ingredient.identifier] ?: 0L
@@ -65,14 +64,12 @@ class Day14 {
             val amount = firstEntry.value
 
             //Find the input
-            val formulaNeeded = formulaMap[identifier] ?:
-                throw IllegalStateException("No formula found for $identifier")
-
-            // Try to consume leftovers
+            val formulaNeeded = formulaMap[identifier] ?: throw IllegalStateException("No formula found for $identifier")
 
             val formulaCount = amount.divideCeil(formulaNeeded.output.amount)
             val leftOverAmount = amount - formulaCount * formulaNeeded.output.amount
 
+            // left over amount is negative
             totalComponentsNeeded[identifier] = leftOverAmount
 
             // Add the inputs of that formula to the map
