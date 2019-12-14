@@ -2,13 +2,23 @@ package com.behindmedia.adventofcode2019
 
 class Day14 {
 
-    data class Component(val amount: Long, val identifier: String)
+    data class Component(val amount: Long, val identifier: String) {
+        companion object {
+            val FUEL = "FUEL"
+            val ORE = "ORE"
+        }
+    }
+
+    fun Long.divideCeil(other: Long): Long {
+        val remainder = this % other
+        return this / other + (if (remainder > 0) 1 else 0)
+    }
 
     data class Formula(val ingredients: List<Component>, val output: Component) {
 
         fun addToMap(map: MutableMap<String, Long>, multiplier: Long = 1) {
             for (ingredient in ingredients) {
-                val currentValue = map.getOrDefault(ingredient.identifier, 0)
+                val currentValue = map[ingredient.identifier] ?: 0L
                 map[ingredient.identifier] = currentValue + (multiplier * ingredient.amount)
             }
         }
@@ -45,34 +55,35 @@ class Day14 {
 
     fun oreForFuel(formulaMap: Map<String, Formula>, fuelAmount: Long): Long {
         val totalComponentsNeeded = mutableMapOf<String, Long>()
-        val fuelFormula = formulaMap["FUEL"] ?: throw IllegalStateException("No fuel found")
+        val fuelFormula = formulaMap[Component.FUEL] ?: throw IllegalStateException("No fuel found")
         assert(fuelFormula.output.amount == 1L)
         fuelFormula.addToMap(totalComponentsNeeded, fuelAmount)
 
         while (true) {
             // Find the components needed
 
-            val firstEntry = totalComponentsNeeded.entries.find { it.key != "ORE" && it.value > 0 } ?: break
+            val firstEntry = totalComponentsNeeded.entries.find {
+                it.key != Component.ORE && it.value > 0
+            } ?: break
 
             val identifier = firstEntry.key
             val amount = firstEntry.value
 
             //Find the input
-            val formulaNeeded = formulaMap[identifier] ?: throw IllegalStateException("No formula found for $identifier")
+            val formulaNeeded = formulaMap[identifier] ?:
+                throw IllegalStateException("No formula found for $identifier")
 
             // Try to consume leftovers
 
-            val formulaCount =
-                (amount / formulaNeeded.output.amount) + (if (amount % formulaNeeded.output.amount == 0L) 0L else 1L)
+            val formulaCount = amount.divideCeil(formulaNeeded.output.amount)
+            val leftOverAmount = amount - formulaCount * formulaNeeded.output.amount
 
-            val leftOverAmount = formulaCount * formulaNeeded.output.amount - amount
-
-            totalComponentsNeeded[identifier] = -leftOverAmount
+            totalComponentsNeeded[identifier] = leftOverAmount
 
             // Add the inputs of that formula to the map
             formulaNeeded.addToMap(totalComponentsNeeded, formulaCount)
         }
-        return totalComponentsNeeded["ORE"] ?: 0
+        return totalComponentsNeeded[Component.ORE] ?: throw IllegalStateException("No ORE found")
     }
 
     fun maxAmountOfFuel(input: String, amountOfOre: Long = 1000000000000L): Long {

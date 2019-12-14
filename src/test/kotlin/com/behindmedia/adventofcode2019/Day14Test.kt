@@ -6,37 +6,6 @@ import org.junit.Assert.*
 
 class Day14Test {
 
-    data class Component(val amount: Long, val identifier: String)
-
-    data class Formula(val ingredients: List<Component>, val output: Component) {
-
-        fun addToMap(map: MutableMap<String, Long>, multiplier: Long = 1) {
-            for (ingredient in ingredients) {
-                val currentValue = map.getOrDefault(ingredient.identifier, 0)
-                map[ingredient.identifier] = currentValue + (multiplier * ingredient.amount)
-            }
-        }
-    }
-
-    fun parseInput(string: String): List<Formula> {
-        val lines = string.split("\n")
-        return lines.map {
-            val components = it.split(',', ' ', '=', '>').filter { s -> !s.isBlank() }
-            assert(components.size %2 == 0)
-
-            val input = mutableListOf<Component>()
-            val output = Component(components[components.size - 2].toLong(), components[components.size - 1])
-
-            for (i in 0 until components.size - 2 step 2) {
-                val amount = components[i].toLong()
-                val identifier = components[i + 1]
-                input.add(Component(amount, identifier))
-            }
-
-            Formula(input, output)
-        }
-    }
-
     @Test
     fun puzzle1() {
         val result = Day14().oreForSingleFuel(read("/day14.txt"))
