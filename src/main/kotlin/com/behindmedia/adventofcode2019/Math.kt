@@ -171,6 +171,10 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
     }
 }
 
+fun Long.divideCeil(other: Long): Long {
+    return (this + other - 1) / other
+}
+
 /**
  * Range to enumerate coordinates between the (minx, miny) and (maxx, maxy) found in a list of coordinates.
  */

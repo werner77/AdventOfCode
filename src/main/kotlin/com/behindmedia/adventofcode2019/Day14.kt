@@ -9,11 +9,6 @@ class Day14 {
         }
     }
 
-    fun Long.divideCeil(other: Long): Long {
-        val remainder = this % other
-        return this / other + (if (remainder > 0) 1 else 0)
-    }
-
     data class Formula(val ingredients: List<Component>, val output: Component) {
 
         fun addToMap(map: MutableMap<String, Long>, multiplier: Long = 1) {
