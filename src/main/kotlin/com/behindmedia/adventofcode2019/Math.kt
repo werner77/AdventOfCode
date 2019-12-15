@@ -89,6 +89,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return sqrt( deltaX * deltaX + deltaY * deltaY)
     }
 
+    fun inverted(): Coordinate {
+        return Coordinate(-x, -y)
+    }
+
     /**
      * Normalizes the coordinate by dividing both x and y by their greatest common divisor
      */
@@ -106,6 +110,19 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
             RotationDirection.Right -> Coordinate(-this.y, this.x)
         }
     }
+
+    /**
+     * Returns the direct neighbours of this coordinate
+     */
+    val neighbours: Array<Coordinate>
+        get() {
+            return Array<Coordinate>(4) {
+                val xOffset = it % 2
+                val sign = if (it < 1 || it > 2) -1 else 1
+                val yOffset = (it + 1) % 2
+                Coordinate(this.x + sign * xOffset, this.y + sign * yOffset)
+            }
+        }
 
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
