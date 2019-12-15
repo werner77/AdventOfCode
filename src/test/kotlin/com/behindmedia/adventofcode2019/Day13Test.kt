@@ -1,10 +1,6 @@
 package com.behindmedia.adventofcode2019
 
 import org.junit.Test
-import java.awt.Font
-import javax.swing.JFrame
-import javax.swing.JPanel
-import javax.swing.JTextArea
 import kotlin.test.assertEquals
 
 
@@ -26,7 +22,7 @@ class Day13Test {
         val day13 = Day13()
         val gui: TextWindow? = null
         //uncomment to enable visualization
-        //val gui = TextWindow()
+        //val gui = TextWindow("AdventOfCode Day 13")
 
         val finalGameState = day13.play(program) { gameState ->
             gui?.let {
