@@ -23,11 +23,4 @@ class Day15Test {
         println(result)
         assertEquals(382, result)
     }
-
-    @Test
-    fun neighbours() {
-        for (neighbour in Coordinate.origin.neighbours) {
-            println(neighbour)
-        }
-    }
 }

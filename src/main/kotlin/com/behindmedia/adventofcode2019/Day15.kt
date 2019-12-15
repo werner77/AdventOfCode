@@ -10,39 +10,39 @@ class Day15 {
 
     enum class State(val description: String, val relevance: Int) {
         Oxygen("O", 5), Wall("#", 4), Free(".", 3),
-        Destination("X", 1), Unknown(" ", 2);
+        Destination("X", 2), Unknown(" ", 1);
     }
 
-    enum class Command(val rawValue: Long, val coordinate: Coordinate) {
+    enum class Command(val value: Long, val coordinate: Coordinate) {
         Up(1, Coordinate(0, -1)), Down(2, Coordinate(0, 1)),
         Left(3, Coordinate(-1, 0)), Right(4, Coordinate(1, 0));
 
         companion object {
-            fun from(rawValue: Long): Command {
-                return values().find { it.rawValue == rawValue } ?: throw IllegalArgumentException("Invalid command value: $rawValue")
-            }
-
             fun from(direction: Coordinate): Command {
-                return values().find { it.coordinate == direction } ?: throw IllegalArgumentException("Invalid direction: $direction")
+                return values().find { it.coordinate == direction } ?:
+                    throw IllegalArgumentException("Invalid direction: $direction")
             }
         }
     }
 
-    fun fewestNumberOfMoves(input: String): Int {
-        val map = discoverMap(input)
+    fun fewestNumberOfMoves(input: String, onUpdate: ((Map<Coordinate, State>) -> Unit)? = null): Int {
+        val map = discoverMap(input, onUpdate)
 
         println("Found map:")
-        println(map.description)
+        println(descriptionFor(map))
 
-        val destination = map.entries.find { it.value == State.Destination }?.key ?: throw IllegalStateException("Destination not found")
-        return map.shortestPath(Coordinate.origin, destination) ?: throw IllegalStateException("No path found from source to destination")
+        val destination: Coordinate = map.entries.find { it.value == State.Destination }?.key ?:
+            throw IllegalStateException("Destination not found")
+
+        return map.shortestPath(Coordinate.origin, destination) ?:
+            throw IllegalStateException("No path found from source to destination")
     }
 
     fun spreadOxygen(input: String): Int {
         val map = discoverMap(input)
 
         println("Initial map:")
-        println(map.description)
+        println(descriptionFor(map))
 
         val entry = map.entries.find { it.value == State.Destination } ?: throw IllegalStateException("Destination not found")
         val destination = entry.key
@@ -50,18 +50,21 @@ class Day15 {
         //Populate the map until there are no free states left
         val populatedMap = map.toMutableMap()
         populatedMap[destination] = State.Oxygen
+
+        val oxygenCoordinates = mutableListOf<Coordinate>()
+        oxygenCoordinates.add(destination)
+
         var minutes = 0
         while(true) {
-            val oxygenEntries = populatedMap.entries.filter {
-                it.value == State.Oxygen
-            }
-
             var populatedCount = 0
-            for (oxygenEntry in oxygenEntries) {
-                for (neighbour in oxygenEntry.key.neighbours) {
+            val iterator = oxygenCoordinates.listIterator()
+
+            iterator.forEach { oxygenCoordinate ->
+                for (neighbour in oxygenCoordinate.neighbours) {
                     val neighbourState = populatedMap[neighbour]
                     if (neighbourState == State.Free) {
                         populatedMap[neighbour] = State.Oxygen
+                        iterator.add(neighbour)
                         populatedCount++
                     }
                 }
@@ -75,7 +78,7 @@ class Day15 {
         }
 
         println("Final map:")
-        println(populatedMap.description)
+        println(descriptionFor(populatedMap))
 
         return minutes
     }
@@ -83,9 +86,9 @@ class Day15 {
     /**
      * Runs the robot program until the whole map is discovered
      */
-    private fun discoverMap(program: String): Map<Coordinate, State> {
+    private fun discoverMap(program: String, onUpdate: ((Map<Coordinate, State>) -> Unit)? = null): Map<Coordinate, State> {
         val computer = Computer(program)
-        var command = Command.Right
+        var command = Command.Up
         val map = mutableMapOf<Coordinate, VisitState>()
         var currentPosition = Coordinate.origin
 
@@ -93,24 +96,29 @@ class Day15 {
 
         while (computer.status != Computer.Status.Finished) {
 
-            val currentResult = computer.process(command.rawValue)
+            val currentResult = computer.process(command.value)
             currentPosition = currentPosition.offset(command.coordinate)
+
+            val currentState = map[currentPosition] ?: VisitState(State.Unknown, 0)
 
             when (currentResult.lastOutput) {
                 0L -> {
-                    map[currentPosition] = VisitState(State.Wall, 1)
+                    map[currentPosition] = VisitState(State.Wall, currentState.visitCount + 1)
 
                     // Revert the position, we cannot go into walls
                     currentPosition = currentPosition.offset(command.coordinate.inverted())
                 }
                 1L -> {
-                    val currentState = map[currentPosition] ?: VisitState(State.Unknown, 0)
                     map[currentPosition] = VisitState(State.Free, currentState.visitCount + 1)
                 }
                 2L -> {
-                    map[currentPosition] = VisitState(State.Destination, 1)
+                    map[currentPosition] = VisitState(State.Destination, currentState.visitCount + 1)
                 }
                 else -> throw IllegalStateException("Unexpected output: ${currentResult.lastOutput}")
+            }
+
+            if (onUpdate != null) {
+                onUpdate(map.mapValues { it.value.state })
             }
 
             if (map.isFull()) {
@@ -159,10 +167,9 @@ class Day15 {
     }
 
     private fun Map<Coordinate, VisitState>.isFull(): Boolean {
-        val unexploredEntry = this.entries.find { entry ->
+        return !this.entries.any { entry ->
             entry.value.state != State.Wall && entry.key.neighbours.any { this[it] == null }
         }
-        return unexploredEntry == null
     }
 
     private fun Map<Coordinate, VisitState>.bestNextDirection(currentPosition: Coordinate): Coordinate? {
@@ -174,20 +181,19 @@ class Day15 {
         return candidates.minBy { it.second.visitCount }?.first
     }
 
-    private val Map<Coordinate, State>.description: String
-        get() {
-            val range = this.keys.range()
-            val buffer = StringBuilder()
-            for (coordinate in range) {
-                val s = when (coordinate) {
-                    Coordinate.origin -> "S"
-                    else -> (this[coordinate] ?: State.Wall).description
-                }
-                buffer.append(s)
-                if (coordinate.x == range.endInclusive.x) {
-                    buffer.append("\n")
-                }
+    fun descriptionFor(map: Map<Coordinate, State>): String {
+        val range = map.keys.range()
+        val buffer = StringBuilder()
+        for (coordinate in range) {
+            val s = when (coordinate) {
+                Coordinate.origin -> "S"
+                else -> (map[coordinate] ?: State.Unknown).description
             }
-            return buffer.toString()
+            buffer.append(s)
+            if (coordinate.x == range.endInclusive.x) {
+                buffer.append("\n")
+            }
         }
+        return buffer.toString()
+    }
 }

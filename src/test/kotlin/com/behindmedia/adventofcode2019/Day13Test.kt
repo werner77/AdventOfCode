@@ -38,27 +38,4 @@ class Day13Test {
         assertEquals(15706, finalGameState.score)
     }
 
-    private class TextWindow() {
-
-        private val theText: JTextArea
-
-        init {
-            val theFrame = JFrame()
-            theFrame.title = "AdventOfCode Day 13"
-            theFrame.setSize(300, 300)
-            theFrame.setLocation(550, 400)
-            val mainPanel = JPanel()
-            theText = JTextArea(40, 40) //create the text area
-            theText.font = Font("monospaced", Font.PLAIN, 12)
-            mainPanel.add(theText) //add the text area to the panel
-            theFrame.contentPane.add(mainPanel) //add the panel to the frame
-            theFrame.pack()
-            theFrame.isVisible = true
-        }
-
-        fun setText(string: String) {
-            theText.text = string
-        }
-    }
-
 }
