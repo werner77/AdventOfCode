@@ -116,6 +116,23 @@ fun List<Long>.toMutableMap(): MutableMap<Long, Long> {
     }
 }
 
+fun List<Int>.firstDigits(numberOfDigits: Int, offset: Int = 0): Int {
+    var result = 0
+    for (i in offset until offset + numberOfDigits) {
+        result *= 10
+        result += this[i]
+    }
+    return result
+}
+
+fun <E>List<E>.repeated(count: Int): List<E> {
+    val list = mutableListOf<E>()
+    for(i in 0 until count) {
+        list.addAll(this)
+    }
+    return list
+}
+
 /**
  * Reference to use for inout parameters
  */
