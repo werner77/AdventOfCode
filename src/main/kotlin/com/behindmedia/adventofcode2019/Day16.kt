@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode2019
 
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 class Day16 {
@@ -46,6 +47,33 @@ class Day16 {
             var sum = 0
             while (elementIndex >= messageOffset) {
                 sum += inputList[elementIndex]
+                outputList[elementIndex] = abs(sum) % 10
+                elementIndex--
+            }
+            inputList = outputList.also { outputList = inputList }
+        }
+        return inputList.firstDigits(8, messageOffset)
+    }
+
+    fun fastFFT(list: List<Int>, numberOfPhases: Int, messageOffset: Int): Int {
+        val n = list.size
+        var inputList = list.toMutableList()
+        var outputList = list.toMutableList()
+
+        for (phase in 0 until numberOfPhases) {
+            var elementIndex = n - 1
+            var sum = 0
+            var sumAbove = 0
+            while (elementIndex >= max(messageOffset, 0)) {
+                sum += inputList[elementIndex]
+
+                // TODO: optimize
+//                var j =
+//                while (j < n) {
+//
+//                }
+
+                sum -= sumAbove
                 outputList[elementIndex] = abs(sum) % 10
                 elementIndex--
             }
