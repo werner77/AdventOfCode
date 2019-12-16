@@ -5,7 +5,7 @@ import kotlin.math.min
 
 class Day16 {
 
-    fun fft(list: List<Int>, numberOfPhases: Int): List<Int> {
+    fun fft(list: List<Int>, numberOfPhases: Int): Int {
         val n = list.size
         var inputList = list.toMutableList()
         var outputList = list.toMutableList()
@@ -28,7 +28,7 @@ class Day16 {
             }
             inputList = outputList.also { outputList = inputList }
         }
-        return inputList
+        return inputList.firstDigits(8)
     }
 
     fun fft2(list: List<Int>, numberOfPhases: Int): Int {

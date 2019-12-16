@@ -14,7 +14,7 @@ class Day16Test {
             it.map { c -> c.toString().toInt() }
         }
 
-        val result = day16.fft(input, 100).firstDigits(8)
+        val result = day16.fft(input, 100)
         println(result)
         assertEquals(59281788, result)
     }
