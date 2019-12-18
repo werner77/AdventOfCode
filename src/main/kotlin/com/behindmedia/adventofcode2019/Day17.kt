@@ -1,5 +1,14 @@
 package com.behindmedia.adventofcode2019
 
+private fun String.toAsciiInput(): List<Long> {
+    val ret = mutableListOf<Long>()
+    for (c in this) {
+        ret.add(c.toLong())
+    }
+    ret.add('\n'.toLong())
+    return ret
+}
+
 class Day17 {
 
     enum class State(val rawValue: Char, val occupied: Boolean, val direction: Coordinate? = null) {
@@ -26,34 +35,29 @@ class Day17 {
 
     data class Command(val rotationDirection: RotationDirection?, val stride: Int) {
         override fun toString(): String {
+
+            if (rotationDirection == null) {
+                return stride.toString()
+            }
+
             val directionString = when(rotationDirection) {
-                null -> ""
                 RotationDirection.Right -> "R"
                 RotationDirection.Left -> "L"
             }
-            return directionString + stride.toString()
+            return "$directionString,$stride"
         }
     }
 
-    data class MovementCommands(val functions: List<Char>, val functionMap: Map<Char, List<Command>>) {
-
-        fun String.toAsciiInput(): List<Long> {
-            val ret = mutableListOf<Long>()
-            for (c in this) {
-                ret.add(c.toLong())
-            }
-            ret.add('\n'.toLong())
-            return ret
-        }
+    data class MovementCommands(val functionSequence: String, val functionA: String, val functionB: String, val functionC: String) {
 
         fun toInputList(): List<Long> {
 
-            var result = mutableListOf<Long>()
+            val result = mutableListOf<Long>()
 
-//            result += functions.joinTo(StringBuilder(), ",").toString().toAsciiInput()
-//            result += functionMap['A']!!.joinTo(StringBuilder(), ",").toAsciiInput()
-//            result += functionMap['B']!!.joinTo(StringBuilder(), ",").toAsciiInput()
-//            result += functionMap['C']!!.joinTo(StringBuilder(), ",").toAsciiInput()
+            result.addAll(functionSequence.toAsciiInput())
+            result.addAll(functionA.toAsciiInput())
+            result.addAll(functionB.toAsciiInput())
+            result.addAll(functionC.toAsciiInput())
 
             return result
         }
@@ -97,11 +101,18 @@ class Day17 {
     }
 
     fun breakUpCommandSequence(commands: List<Command>): MovementCommands {
-        return MovementCommands(listOf('A', 'B', 'C'), mapOf())
+
+        // TODO: Find three common patterns in the list with algorithm and break it up
+
+        // Discovered these by hand instead, just by putting the command list in a text editor
+        return MovementCommands("A,B,A,B,C,C,B,A,C,A",
+            "L,10,R,8,R,6,R,10",
+            "L,12,R,8,L,12",
+            "L,10,R,8,R,8")
     }
 
     fun getNumberOfDustParticles(program: List<Long>): Long {
-        val map = getMap(program)
+        val map = getMap(program, true)
         val commandSequence = findCommandSequence(map)
         val movementCommands = breakUpCommandSequence(commandSequence)
 
@@ -111,8 +122,8 @@ class Day17 {
         val computer = Computer(mutatedProgram)
 
         computer.process(movementCommands.toInputList())
-        val result = computer.process("n".toAsciiInput())
 
+        val result = computer.process("n".toAsciiInput())
         return result.lastOutput
     }
 
@@ -146,13 +157,13 @@ class Day17 {
                 val rotatedDirection = currentDirection.optionalRotate(rotation)
                 val nextPosition = currentPosition.offset(rotatedDirection)
                 if (populatedNeighbours.contains(nextPosition)) {
-                    if (currentStride > 0) {
-                        // Add last command
-                        commands.add(Command(lastRotationDirection, currentStride))
-                    }
                     if (rotation == null) {
                         currentStride++
                     } else {
+                        if (currentStride > 0) {
+                            // Add last command
+                            commands.add(Command(lastRotationDirection, currentStride))
+                        }
                         lastRotationDirection = rotation
                         currentStride = 1
                     }
@@ -164,6 +175,7 @@ class Day17 {
             }
 
             if (!foundNextPosition) {
+                printMap(map)
                 throw IllegalStateException("Found no free direction while the map has not been fully navigated")
             }
 
