@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode2019
 
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class Day17Test {
 
@@ -15,51 +16,20 @@ class Day17Test {
         }
     }
 
-    class Command(val rotationDirection: RotationDirection?, val stride: Int)
+    data class Command(val rotationDirection: RotationDirection, val stride: Int) {
+        override fun toString(): String {
+            val direction = if (rotationDirection == RotationDirection.Right) "R" else "L"
+            return direction + stride.toString()
+        }
+    }
 
     @Test
-    fun execute() {
-        val encoded = read("/day17.txt")
-        val computer = Computer(encoded)
-
-        var currentCoordinate = Coordinate.origin
-
-        val map = mutableMapOf<Coordinate, Char>()
-
-        while (computer.status != Computer.Status.Finished) {
-
-            val result = computer.process()
-
-            for (output in result.outputs) {
-                val ascii = output.toChar()
-                print(ascii)
-
-                if (ascii == '#' || ascii == '^' || ascii == 'v' || ascii == '<' || ascii == '>') {
-                    map[currentCoordinate] = ascii
-                }
-
-                if (ascii == '\n') {
-                    currentCoordinate = Coordinate(0, currentCoordinate.y + 1)
-                } else {
-                    currentCoordinate = currentCoordinate.offset(1, 0)
-                }
-            }
-        }
-
-        // Find the points in the map with have adjacent points
-        var answer = 0
-        for (coordinate in map.keys) {
-            var numberOfNeighbours = 0
-            for (neighbour in coordinate.neighbours) {
-                if (map[neighbour] != null) {
-                    numberOfNeighbours++
-                }
-            }
-            if (numberOfNeighbours == 4) {
-                answer += coordinate.x * coordinate.y
-            }
-        }
-        println(answer)
+    fun puzzle1() {
+        val day17 = Day17()
+        val program = Computer.parseEncodedState(read("/day17.txt"))
+        val result = day17.getNumberOfCrossings(program)
+        println(result)
+        assertEquals(7328, result)
     }
 
     fun getInitialMap(): Map<Coordinate, State> {
@@ -86,15 +56,58 @@ class Day17Test {
         return map
     }
 
-    @Test
-    fun execute2() {
-        val encoded = read("/day17.txt")
+    fun String.toAsciiInput(): List<Long> {
+        val ret = mutableListOf<Long>()
+        for (c in this) {
+            ret.add(c.toLong())
+        }
+        ret.add('\n'.toLong())
+        return ret
+    }
 
+    @Test
+    fun puzzle2() {
+        val encoded = read("/day17.txt")
         val state = Computer.parseEncodedState(encoded).toMutableList()
         state[0] = 2
         val computer = Computer(state)
 
-        val mapStates = setOf<State>(State.Up, State.Down, State.Left, State.Right, State.Scaffold)
+        var result = computer.process()
+
+        println(result)
+
+        result = computer.process("A,B,A,B,C,C,B,A,C,A".toAsciiInput())
+
+        println(result)
+
+        result = computer.process("L,10,R,8,R,6,R,10".toAsciiInput())
+
+        println(result)
+
+        result = computer.process("L,12,R,8,L,12".toAsciiInput())
+
+        println(result)
+
+        result = computer.process("L,10,R,8,R,8".toAsciiInput())
+
+        println(result)
+
+        result = computer.process("n".toAsciiInput())
+
+        println(result)
+
+
+    }
+
+    @Test
+    fun execute2() {
+//        val encoded = read("/day17.txt")
+
+//        val state = Computer.parseEncodedState(encoded).toMutableList()
+//        state[0] = 2
+//        val computer = Computer(state)
+//
+//        val mapStates = setOf<State>(State.Up, State.Down, State.Left, State.Right, State.Scaffold)
         val robotStates = setOf<State>(State.Up, State.Down, State.Left, State.Right)
         val map = getInitialMap()
 
@@ -142,7 +155,7 @@ class Day17Test {
             } else {
                 if (currentStride > 0) {
                     // Add last command
-                    commands.add(Command(lastRotationDirection, currentStride))
+                    commands.add(Command(lastRotationDirection!!, currentStride))
                 }
 
                 val rightNeighbour = currentPosition.offset(currentDirection.rotate(RotationDirection.Right))
@@ -158,6 +171,7 @@ class Day17Test {
                     throw IllegalStateException("No left or right neighbour found")
                 }
 
+                currentDirection = currentDirection.rotate(lastRotationDirection)
                 currentStride = 1
             }
 
@@ -166,10 +180,10 @@ class Day17Test {
 
         if (currentStride > 0) {
             // Add last command
-            commands.add(Command(lastRotationDirection, currentStride))
+            commands.add(Command(lastRotationDirection!!, currentStride))
         }
 
-        print(commands)
+        println(commands)
     }
 
     fun printMap(map: Map<Coordinate, State>) {

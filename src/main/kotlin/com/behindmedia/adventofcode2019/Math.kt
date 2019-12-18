@@ -114,6 +114,13 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         }
     }
 
+    fun optionalRotate(direction: RotationDirection?): Coordinate {
+        return when(direction) {
+            null -> this
+            else -> rotate(direction)
+        }
+    }
+
     /**
      * Returns the direct neighbours of this coordinate
      */

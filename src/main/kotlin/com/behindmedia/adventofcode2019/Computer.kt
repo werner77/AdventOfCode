@@ -26,7 +26,7 @@ class Computer(initialState: List<Long>) {
     /**
      * The processing result of the computer. Returns the status and the list of encountered outputs.
      */
-    class Result(val status: Status, val outputs: List<Long>) {
+    data class Result(val status: Status, val outputs: List<Long>) {
         val lastOutput: Long
             get() = outputs.lastOrNull() ?: 0L
     }
