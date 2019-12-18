@@ -1,6 +1,11 @@
 package com.behindmedia.adventofcode2019
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 class Day18 {
@@ -102,7 +107,10 @@ class Day18 {
             // Create a unique identifier for each position to be able to cache independently
             Node(node.coordinate, '1' + index)
         }
-        return minimumPathToCollectKeys(currentPositions, KeyCollection(), map, mutableMapOf(), mutableMapOf())
+
+        return minimumPathToCollectKeys(currentPositions, KeyCollection(), map,
+            Collections.synchronizedMap(mutableMapOf()),
+            Collections.synchronizedMap(mutableMapOf()), true)
     }
 
     private fun Map<Coordinate, Node>.getCurrentPositions(): List<Node> {
@@ -117,7 +125,8 @@ class Day18 {
                                  keysInPossession: KeyCollection,
                                  map: Map<Coordinate, Node>,
                                  pathLengthCache: MutableMap<Long, Int>,
-                                 reachableCache: MutableMap<Long, List<CoordinatePath>>): Int {
+                                 reachableCache: MutableMap<Long, List<CoordinatePath>>,
+                                    multiThreaded: Boolean = false): Int {
 
         val orderedReachableKeys = TreeSet<Pair<Int, CoordinatePath>> { pair1, pair2 ->
             pair1.second.pathLength.compareTo(pair2.second.pathLength)
@@ -132,25 +141,24 @@ class Day18 {
             return 0
         }
 
-        var minPath = Int.MAX_VALUE
+        val minPath = AtomicInteger(Int.MAX_VALUE)
 
-        for (reachableKey in orderedReachableKeys) {
-
+        fun processKey(key: Pair<Int, CoordinatePath>) {
             // Move to this key
-            val nextPosition = reachableKey.second.coordinate
+            val nextPosition = key.second.coordinate
 
             val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
             assert(node.isKey)
 
             // This is the lower bound on path needed, every additional key would take at least 1 to collect
-            if ((reachableKey.second.pathLength + orderedReachableKeys.size - 1) >= minPath) {
-                break
+            if ((key.second.pathLength + orderedReachableKeys.size - 1) >= minPath.toInt()) {
+                return
             }
 
             val nextKeys = keysInPossession.plus(node.identifier)
 
             val nextPositions = List(currentPositions.size) {
-                if (it == reachableKey.first) node else currentPositions[it]
+                if (it == key.first) node else currentPositions[it]
             }
 
             val cacheKey = nextKeys.cacheKey(nextPositions)
@@ -160,10 +168,27 @@ class Day18 {
                     map, pathLengthCache, reachableCache)
             }
 
-            minPath = min(minPath, nextPathLength + reachableKey.second.pathLength)
+            minPath.getAndUpdate { current ->
+                min(current, nextPathLength + key.second.pathLength)
+            }
         }
 
-        return minPath
+        if (multiThreaded) {
+            runBlocking {
+                withContext(Dispatchers.Default) {
+                    for (reachableKey in orderedReachableKeys) {
+                        launch {
+                            processKey(reachableKey)
+                        }
+                    }
+                }
+            }
+        } else {
+            for (reachableKey in orderedReachableKeys) {
+                processKey(reachableKey)
+            }
+        }
+        return minPath.toInt()
     }
 
     fun getMap(input: String, includeWalls: Boolean = false): Map<Coordinate, Node> {
