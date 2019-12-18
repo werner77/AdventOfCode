@@ -175,7 +175,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return reachableCoordinates(from, reachable = { map.contains(it) }, process = process)
     }
 
-    inline fun <T>reachableCoordinates(from: Coordinate, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+    /**
+     * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
+     */
+    fun <T>reachableCoordinates(from: Coordinate, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
 
         val list = LinkedList<CoordinatePath>()
         val visited = mutableSetOf<Coordinate>()

@@ -1,9 +1,13 @@
 package com.behindmedia.adventofcode2019
 
+import java.util.*
 import kotlin.math.min
 
 class Day18 {
 
+    /**
+     * Class describing the items on the map
+     */
     data class Node(val coordinate: Coordinate, val identifier: Char) {
 
         val isKey: Boolean
@@ -21,7 +25,10 @@ class Day18 {
         val isEmpty: Boolean
             get() = (identifier == '.')
 
-        fun isOpen(keys: KeyCollection): Boolean {
+        /**
+         * Whether the node is accessible given the supplied keys collection (representing the keys in possession)
+         */
+        fun isAccessible(keys: KeyCollection): Boolean {
             return isEmpty || isKey || isCurrentPosition || keys.contains(identifier.toLowerCase())
         }
 
@@ -35,7 +42,7 @@ class Day18 {
      */
     class KeyCollection {
 
-        var internalState = 0
+        private var internalState = 0
 
         fun addKey(key: Char) {
             val shift = key - 'a'
@@ -66,69 +73,105 @@ class Day18 {
             return result
         }
 
-        fun cacheKey(coordinate: Coordinate): Long {
+        /**
+         * Optimized cache key which stores the current node and internalState of this instance in a single Long
+         */
+        fun cacheKey(currentNode: Node): Long {
             var result = internalState.toLong()
-            result = result or coordinate.x.toLong().shl(48)
-            result = result or coordinate.y.toLong().shl(32)
+            result = result or currentNode.identifier.toLong().shl(32)
+            return result
+        }
+
+        fun cacheKey(currentNodes: List<Node>): Long {
+            var result = internalState.toLong()
+
+            assert(currentNodes.size <= 4)
+            var bitCount = 64
+
+            for (node in currentNodes) {
+                bitCount -= 8
+                result = result or node.identifier.toLong().shl(bitCount)
+            }
             return result
         }
     }
 
-    fun getMinimumNumberOfMoves(input: String): Int {
-        val map = getMap(input)
-        val currentPosition = getCurrentPosition(map)
-        return minimumPathToCollectKeys(currentPosition, KeyCollection(), map, mutableMapOf(), mutableMapOf())
+    fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
+        val map = getMap(input, includeWalls = false)
+        val currentPositions = map.getCurrentPositions().mapIndexed { index, node ->
+            // Create a unique identifier for each position to be able to cache independently
+            Node(node.coordinate, '1' + index)
+        }
+        return minimumPathToCollectKeys(currentPositions, KeyCollection(), map, mutableMapOf(), mutableMapOf())
     }
 
-    fun minimumPathToCollectKeys(currentPosition: Coordinate,
+    private fun Map<Coordinate, Node>.getCurrentPositions(): List<Node> {
+        return values.filter { it.isCurrentPosition }
+    }
+
+    /**
+     * Recursive function to determine the minimumPathLength given the list of currentPositions of all robots
+     * and the supplied keys in possession.
+     */
+    private fun minimumPathToCollectKeys(currentPositions: List<Node>,
                                  keysInPossession: KeyCollection,
                                  map: Map<Coordinate, Node>,
                                  pathLengthCache: MutableMap<Long, Int>,
                                  reachableCache: MutableMap<Long, List<CoordinatePath>>): Int {
 
-        val reachableKeys = orderedReachableKeyPositions(currentPosition, keysInPossession, map, reachableCache)
+        val orderedReachableKeys = TreeSet<Pair<Int, CoordinatePath>> { pair1, pair2 ->
+            pair1.second.pathLength.compareTo(pair2.second.pathLength)
+        }
 
-        if (reachableKeys.isEmpty()) {
+        for(i in currentPositions.indices) {
+            val individualReachableKeys = getReachableKeys(currentPositions[i], keysInPossession, map, reachableCache)
+            orderedReachableKeys.addAll(individualReachableKeys.map { Pair(i, it) })
+        }
+
+        if (orderedReachableKeys.isEmpty()) {
             return 0
         }
 
         var minPath = Int.MAX_VALUE
 
-        for (reachableKey in reachableKeys) {
+        for (reachableKey in orderedReachableKeys) {
 
             // Move to this key
-            val nextPosition = reachableKey.coordinate
+            val nextPosition = reachableKey.second.coordinate
 
             val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
             assert(node.isKey)
 
-            if ((reachableKey.pathLength + reachableKeys.size - 1) >= minPath) {
+            // This is the lower bound on path needed, every additional key would take at least 1 to collect
+            if ((reachableKey.second.pathLength + orderedReachableKeys.size - 1) >= minPath) {
                 break
             }
 
             val nextKeys = keysInPossession.plus(node.identifier)
-            val cacheKey = nextKeys.cacheKey(nextPosition)
+
+            val nextPositions = List(currentPositions.size) {
+                if (it == reachableKey.first) node else currentPositions[it]
+            }
+
+            val cacheKey = nextKeys.cacheKey(nextPositions)
 
             val nextPathLength = pathLengthCache.getOrPut(cacheKey) {
-                minimumPathToCollectKeys(nextPosition, nextKeys,
+                minimumPathToCollectKeys(nextPositions, nextKeys,
                     map, pathLengthCache, reachableCache)
             }
 
-            minPath = min(minPath, nextPathLength + reachableKey.pathLength)
+            minPath = min(minPath, nextPathLength + reachableKey.second.pathLength)
         }
 
         return minPath
     }
 
     fun getMap(input: String, includeWalls: Boolean = false): Map<Coordinate, Node> {
-
         val lines = input.split('\n')
-
         val map = mutableMapOf<Coordinate, Node>()
         for ((y, line) in lines.withIndex()) {
             for ((x, c) in line.withIndex()) {
                 val coordinate = Coordinate(x, y)
-
                 val node = Node(coordinate, c)
 
                 if (!node.isWall || includeWalls) {
@@ -139,20 +182,16 @@ class Day18 {
         return map
     }
 
-    fun getCurrentPosition(map: Map<Coordinate, Node>): Coordinate {
-        return map.entries.find { it.value.isCurrentPosition }?.key ?: throw IllegalStateException("Current position not found")
-    }
-
     /**
      * Finds the reachable nodes of the map, given the current set of keys in posession
      */
-    fun orderedReachableKeyPositions(currentPosition: Coordinate, currentKeys: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<CoordinatePath>>): List<CoordinatePath> {
-        val cacheKey = currentKeys.cacheKey(currentPosition)
+    fun getReachableKeys(currentPosition: Node, keysInPossession: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<CoordinatePath>>): List<CoordinatePath> {
+        val cacheKey = keysInPossession.cacheKey(currentPosition)
         return cache.getOrPut(cacheKey) {
             val result = mutableListOf<CoordinatePath>()
-            currentPosition.reachableCoordinates(currentPosition, reachable = { map[it]?.isOpen(currentKeys) ?: false }) { coordinatePath ->
+            currentPosition.coordinate.reachableCoordinates(currentPosition.coordinate, reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
                 map[coordinatePath.coordinate]?.let { node ->
-                    if (node.isKey && !currentKeys.contains(node.identifier)) {
+                    if (node.isKey && !keysInPossession.contains(node.identifier)) {
                         result.add(coordinatePath)
                     }
                 }
