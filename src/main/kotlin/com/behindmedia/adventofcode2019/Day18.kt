@@ -128,37 +128,41 @@ class Day18 {
                                  reachableCache: MutableMap<Long, List<CoordinatePath>>,
                                     multiThreaded: Boolean = false): Int {
 
-        val orderedReachableKeys = TreeSet<Pair<Int, CoordinatePath>> { pair1, pair2 ->
-            pair1.second.pathLength.compareTo(pair2.second.pathLength)
-        }
+        val reachableKeys = mutableListOf<Pair<Int, CoordinatePath>>()
 
         for(i in currentPositions.indices) {
             val individualReachableKeys = getReachableKeys(currentPositions[i], keysInPossession, map, reachableCache)
-            orderedReachableKeys.addAll(individualReachableKeys.map { Pair(i, it) })
+            reachableKeys.addAll(individualReachableKeys.map { Pair(i, it) })
         }
 
-        if (orderedReachableKeys.isEmpty()) {
+        if (reachableKeys.isEmpty()) {
             return 0
         }
 
         val minPath = AtomicInteger(Int.MAX_VALUE)
 
-        fun processKey(key: Pair<Int, CoordinatePath>) {
+        fun processKey(index: Int, key: CoordinatePath) {
             // Move to this key
-            val nextPosition = key.second.coordinate
+            val nextPosition = key.coordinate
 
             val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
             assert(node.isKey)
 
-            // This is the lower bound on path needed, every additional key would take at least 1 to collect
-            if ((key.second.pathLength + orderedReachableKeys.size - 1) >= minPath.toInt()) {
+            // This is the lower bound on path needed, every additional key would take at least the
+            // manhattenDistance to collect
+            var minimumPathLengthForThisKey = key.pathLength
+            for (otherKey in reachableKeys) {
+                minimumPathLengthForThisKey += otherKey.second.coordinate.manhattenDistance(nextPosition)
+            }
+
+            if (minimumPathLengthForThisKey >= minPath.toInt()) {
                 return
             }
 
             val nextKeys = keysInPossession.plus(node.identifier)
 
             val nextPositions = List(currentPositions.size) {
-                if (it == key.first) node else currentPositions[it]
+                if (it == index) node else currentPositions[it]
             }
 
             val cacheKey = nextKeys.cacheKey(nextPositions)
@@ -169,23 +173,23 @@ class Day18 {
             }
 
             minPath.getAndUpdate { current ->
-                min(current, nextPathLength + key.second.pathLength)
+                min(current, nextPathLength + key.pathLength)
             }
         }
 
         if (multiThreaded) {
             runBlocking {
                 withContext(Dispatchers.Default) {
-                    for (reachableKey in orderedReachableKeys) {
+                    for (reachableKey in reachableKeys) {
                         launch {
-                            processKey(reachableKey)
+                            processKey(reachableKey.first, reachableKey.second)
                         }
                     }
                 }
             }
         } else {
-            for (reachableKey in orderedReachableKeys) {
-                processKey(reachableKey)
+            for (reachableKey in reachableKeys) {
+                processKey(reachableKey.first, reachableKey.second)
             }
         }
         return minPath.toInt()
