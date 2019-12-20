@@ -143,7 +143,7 @@ class Day18 {
 
         fun processKey(index: Int, key: CoordinatePath) {
             // Move to this key
-            val nextPosition = key.node
+            val nextPosition = key.coordinate
 
             val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
             assert(node.isKey)
@@ -152,7 +152,7 @@ class Day18 {
             // manhattenDistance to collect
             var minimumPathLengthForThisKey = key.pathLength
             for (otherKey in reachableKeys) {
-                minimumPathLengthForThisKey += otherKey.second.node.manhattenDistance(nextPosition)
+                minimumPathLengthForThisKey += otherKey.second.coordinate.manhattenDistance(nextPosition)
             }
 
             if (minimumPathLengthForThisKey >= minPath.toInt()) {
@@ -218,8 +218,8 @@ class Day18 {
         val cacheKey = keysInPossession.cacheKey(currentPosition)
         return cache.getOrPut(cacheKey) {
             val result = mutableListOf<CoordinatePath>()
-            currentPosition.coordinate.reachableCoordinates(reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
-                map[coordinatePath.node]?.let { node ->
+            currentPosition.coordinate.reachableCoordinates(currentPosition.coordinate, reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
+                map[coordinatePath.coordinate]?.let { node ->
                     if (node.isKey && !keysInPossession.contains(node.identifier)) {
                         result.add(coordinatePath)
                     }

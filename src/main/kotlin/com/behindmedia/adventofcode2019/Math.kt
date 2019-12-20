@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode2019
 
 import java.util.*
+import kotlin.NoSuchElementException
 import kotlin.math.*
 
 /**
@@ -38,6 +39,8 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
         }
     }
 }
+
+data class CoordinatePath(val coordinate: Coordinate, val pathLength: Int)
 
 /**
  * Describes a two-dimensional coordinate or vector.
@@ -156,13 +159,40 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    inline fun <T>reachableCoordinates(noinline reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
-        return reachableNodes(this,
-            neighbours = { coordinate ->
-               FilteredIterable(coordinate.neighbours, reachable)
-            },
-            process = process
-        )
+    inline fun <T>reachableCoordinates(from: Coordinate, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+
+//        return reachableNodes(from,
+//            neighbours = {
+//                it.neighbours
+//            },
+//            process = process, reachable = reachable
+//        )
+
+        val list = ArrayDeque<CoordinatePath>()
+        val visited = mutableSetOf<Coordinate>()
+        visited.add(from)
+        list.add(CoordinatePath(from, 0))
+
+        while(true) {
+            val current = try {
+                list.pop()
+            } catch (e: NoSuchElementException) {
+                return null
+            }
+            if (current.coordinate != from) {
+                val result = process(current)
+                if (result != null) {
+                    return result
+                }
+            }
+
+            for (neighbour in current.coordinate.neighbours) {
+                if (reachable(neighbour) && !visited.contains(neighbour)) {
+                    list.add(CoordinatePath(neighbour, current.pathLength + 1))
+                }
+            }
+            visited.add(current.coordinate)
+        }
     }
 
     operator fun get(index: Int): Int {
@@ -266,18 +296,20 @@ class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
 
-typealias CoordinatePath = NodePath<Coordinate>
-
 data class NodePath<N>(val node: N, val pathLength: Int)
 
-inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, process: (NodePath<N>) -> T?): T? {
-    val list = LinkedList<NodePath<N>>()
+inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
+    val list = ArrayDeque<NodePath<N>>()
     val visited = mutableSetOf<N>()
     visited.add(from)
     list.add(NodePath(from, 0))
 
     while(true) {
-        val current = list.popFirst() ?: break
+        val current = try {
+            list.pop()
+        } catch (e: NoSuchElementException) {
+            return null
+        }
         if (current.node != from) {
             val result = process(current)
             if (result != null) {
@@ -285,11 +317,10 @@ inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, process
             }
         }
         for (neighbour in neighbours(current.node)) {
-            if (!visited.contains(neighbour)) {
+            if (!visited.contains(neighbour) && reachable(neighbour)) {
                 list.add(NodePath(neighbour, current.pathLength + 1))
             }
         }
         visited.add(current.node)
     }
-    return null
 }
