@@ -44,7 +44,7 @@ class Day18Test {
     @Test
     fun reachableCoordinates2() {
         val input = """
-        #######    
+        #######
         #a.#Cd#
         ##@#@##
         #######
