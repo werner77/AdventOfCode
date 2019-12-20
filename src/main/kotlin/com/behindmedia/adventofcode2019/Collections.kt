@@ -144,7 +144,7 @@ class FilteredIterable<E>(private val iterable: Iterable<E>, private val predica
 
         private var nextElement: E? = null
 
-        private inline fun initNextElement() {
+        private fun initNextElement() {
             if (nextElement == null) {
                 while (iterator.hasNext()) {
                     val element = iterator.next()
