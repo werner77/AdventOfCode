@@ -2,18 +2,16 @@ package com.behindmedia.adventofcode2019
 
 class Day20 {
 
-    data class Portal(val identifier: String, val outside: Boolean)
+    data class Portal(val identifier: String, val outside: Boolean, var connectedNode: Node? = null)
 
     data class LeveledCoordinate(val coordinate: Coordinate, val level: Int)
 
     data class Node(val coordinate: Coordinate, val portal: Portal?) {
 
-        var connectedNode: Node? = null
-
         fun isReachable(level: Int, recursiveMode: Boolean): Boolean {
             assert(level >= 0)
             if (portal != null) {
-                if (connectedNode == null) {
+                if (portal.connectedNode == null) {
                     // No connected portal, which means it is a global entry or exit, which is reachable only at level 0
                     return level == 0
                 } else if (portal.outside && recursiveMode) {
@@ -27,14 +25,15 @@ class Day20 {
         fun neighbours(level: Int, recursiveMode: Boolean): List<LeveledCoordinate> {
             val result = coordinate.neighbours.map { LeveledCoordinate(it, level) }.toMutableList()
             if (isReachable(level, recursiveMode)) {
-                connectedNode?.let {
-                    assert(portal != null)
-                    if (portal?.outside == true) {
-                        // decrease level
-                        result.add(LeveledCoordinate(it.coordinate, if (recursiveMode) level - 1 else level))
-                    } else {
-                        // increase level
-                        result.add(LeveledCoordinate(it.coordinate, if (recursiveMode) level + 1 else level))
+                portal?.let { portal ->
+                    portal.connectedNode?.let { node ->
+                        if (portal.outside) {
+                            // decrease level
+                            result.add(LeveledCoordinate(node.coordinate, if (recursiveMode) level - 1 else level))
+                        } else {
+                            // increase level
+                            result.add(LeveledCoordinate(node.coordinate, if (recursiveMode) level + 1 else level))
+                        }
                     }
                 }
             }
@@ -55,25 +54,26 @@ class Day20 {
 
     private fun parseMap(input: String): Map<Coordinate, Node> {
 
-        var x = 0
-        var y = 0
-
-        val map = mutableMapOf<Coordinate, Char>()
-        input.split('\n').map { line ->
-            x = 0
+        // First parse the input into a straight map of Coordinate -> Char
+        val map = input.split('\n').foldIndexed(mutableMapOf<Coordinate, Char>()) { y, map, line ->
+            var x = 0
             for (c in line) {
-                val coordinate = Coordinate(x, y)
-                map[coordinate] = c
+                if (c != ' ') {
+                    val coordinate = Coordinate(x, y)
+                    map[coordinate] = c
+                }
                 x++
             }
-            y++
+            map
         }
 
-        val nodeList = mutableMapOf<String?, MutableList<Node>>()
+        // Lookup map for the portals, key is identifier and value is a list of nodes corresponding with this identifier
+        val portalMap = mutableMapOf<String?, MutableList<Node>>()
+
+        // The map of nodes to return
         val nodeMap = mutableMapOf<Coordinate, Node>()
 
         val range = map.keys.range()
-
         val maxCoordinate = range.endInclusive
 
         for (coordinate in range) {
@@ -85,36 +85,38 @@ class Day20 {
 
                 for (neighbour in coordinate.neighbours) {
                     val c2 = map[neighbour] ?: ' '
-                    if ((c2 - 'A') < 26 && (c2 - 'A') >= 0) {
+                    if ((c2 - 'A') in 0..25) {
                         // Consider the next coordinate as well
                         val direction = coordinate.vector(neighbour)
                         val nextNeighbour = neighbour.offset(direction)
-                        val c3 = map[nextNeighbour] ?: throw IllegalStateException("Expected another letter to be present")
+
+                        val c3 = map[nextNeighbour] ?: throw IllegalStateException("Expected another letter to be present, portals should have two-lettered identifiers")
 
                         // Make a string of these two characters: that's the portal identifier
                         val outside = coordinate.x == 2 || coordinate.y == 2 ||
                                     coordinate.x == maxCoordinate.x - 2 || coordinate.y == maxCoordinate.y - 2
 
-                        if (direction == Coordinate(-1, 0) || direction == Coordinate(0, -1)) {
-                            portal = Portal("$c3$c2", outside)
+                        portal = if (direction == Coordinate.left || direction == Coordinate.up) {
+                            Portal("$c3$c2", outside)
                         } else {
-                            portal = Portal("$c2$c3", outside)
+                            Portal("$c2$c3", outside)
                         }
                         break
                     }
                 }
 
                 val node = Node(coordinate, portal)
-                nodeList.getOrPut(portal?.identifier) {
+                portalMap.getOrPut(portal?.identifier) {
                     mutableListOf()
                 }.add(node)
+
                 nodeMap[coordinate] = node
             }
         }
 
         // Now connect the nodes with similar portals
-        for (portals in nodeList.entries.filter { it.key != null }) {
-            assert(portals.value.size < 3)
+        for (portals in portalMap.entries.filter { it.key != null }) {
+            assert(portals.value.size in 1..2)
             if (portals.value.size == 2) {
                 val node1 = portals.value[0]
                 val node2 = portals.value[1]
@@ -123,8 +125,8 @@ class Day20 {
                 assert(node2.portal != null)
                 assert(node1.portal?.outside != node2.portal?.outside)
 
-                node1.connectedNode = node2
-                node2.connectedNode = node1
+                node1.portal?.connectedNode = node2
+                node2.portal?.connectedNode = node1
             }
         }
 

@@ -46,6 +46,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
     companion object {
         val origin = Coordinate(0, 0)
+        val up = Coordinate(0, -1)
+        val down = Coordinate(0, 1)
+        val left = Coordinate(-1, 0)
+        val right = Coordinate(1, 0)
     }
 
     /**
@@ -152,15 +156,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    fun <T>reachableCoordinates(neighbours: ((Coordinate) -> Iterable<Coordinate>)? = null, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+    inline fun <T>reachableCoordinates(noinline reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
         return reachableNodes(this,
             neighbours = { coordinate ->
-                val neighbourCoordinates = if (neighbours != null) {
-                    neighbours(coordinate)
-                } else {
-                    coordinate.neighbours
-                }
-                FilteredIterable(neighbourCoordinates, reachable)
+               FilteredIterable(coordinate.neighbours, reachable)
             },
             process = process
         )
@@ -271,7 +270,7 @@ typealias CoordinatePath = NodePath<Coordinate>
 
 data class NodePath<N>(val node: N, val pathLength: Int)
 
-fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, process: (NodePath<N>) -> T?): T? {
+inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, process: (NodePath<N>) -> T?): T? {
     val list = LinkedList<NodePath<N>>()
     val visited = mutableSetOf<N>()
     visited.add(from)
