@@ -218,7 +218,7 @@ class Day18 {
         val cacheKey = keysInPossession.cacheKey(currentPosition)
         return cache.getOrPut(cacheKey) {
             val result = mutableListOf<CoordinatePath>()
-            currentPosition.coordinate.reachableCoordinates(currentPosition.coordinate, reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
+            currentPosition.coordinate.reachableCoordinates(reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
                 map[coordinatePath.node]?.let { node ->
                     if (node.isKey && !keysInPossession.contains(node.identifier)) {
                         result.add(coordinatePath)
