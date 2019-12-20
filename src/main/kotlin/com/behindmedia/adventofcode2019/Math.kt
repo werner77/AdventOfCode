@@ -157,8 +157,8 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    inline fun <T>reachableCoordinates(from: Coordinate, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
-        return reachableNodes(from,
+    inline fun <T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (NodePath<Coordinate>) -> T?): T? {
+        return reachableNodes(this,
             neighbours = {
                 it.neighbours
             },
@@ -269,7 +269,7 @@ fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
 
 data class NodePath<N>(val node: N, val pathLength: Int)
 
-typealias CoordinatePath = NodePath<Coordinate>
+//typealias CoordinatePath = NodePath<Coordinate>
 
 inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
     val list = ArrayDeque<NodePath<N>>()

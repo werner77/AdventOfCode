@@ -42,6 +42,8 @@ class Day18 {
         }
     }
 
+    data class IndexedNodePath(val node: Node, val pathLength: Int, val positionIndex: Int)
+
     /**
      * Optimized data structure based on a bitmask to store which keys have been collected
      */
@@ -117,6 +119,41 @@ class Day18 {
         return values.filter { it.isCurrentPosition }
     }
 
+    private class CoordinatePath(val coordinate: Coordinate, val pathLength: Int)
+
+    private inline fun findReachableKeys(from: Coordinate, index: Int, keys: KeyCollection, map: Map<Coordinate, Node>):
+            List<IndexedNodePath> {
+
+        val result = mutableListOf<IndexedNodePath>()
+        val list = ArrayDeque<CoordinatePath>()
+        val visited = mutableSetOf<Coordinate>()
+        visited.add(from)
+        list.add(CoordinatePath(from, 0))
+
+        while(true) {
+            val current = try {
+                list.pop()
+            } catch (e: NoSuchElementException) {
+                break
+            }
+            if (current.coordinate != from) {
+                val node = map[current.coordinate]
+                if (node != null) {
+                    if (node.isKey && !keys.contains(node.identifier)) {
+                        result.add(IndexedNodePath(node, current.pathLength, index))
+                    }
+                }
+            }
+            for (neighbour in current.coordinate.neighbours) {
+                if (!visited.contains(neighbour) && map[neighbour]?.isAccessible(keys) == true) {
+                    list.add(CoordinatePath(neighbour, current.pathLength + 1))
+                }
+            }
+            visited.add(current.coordinate)
+        }
+        return result
+    }
+
     /**
      * Recursive function to determine the minimumPathLength given the list of currentPositions of all robots
      * and the supplied keys in possession.
@@ -125,14 +162,14 @@ class Day18 {
                                  keysInPossession: KeyCollection,
                                  map: Map<Coordinate, Node>,
                                  pathLengthCache: MutableMap<Long, Int>,
-                                 reachableCache: MutableMap<Long, List<CoordinatePath>>,
+                                 reachableCache: MutableMap<Long, List<IndexedNodePath>>,
                                     multiThreaded: Boolean = false): Int {
 
-        val reachableKeys = mutableListOf<Pair<Int, CoordinatePath>>()
+        val reachableKeys = mutableListOf<IndexedNodePath>()
 
         for(i in currentPositions.indices) {
-            val individualReachableKeys = getReachableKeys(currentPositions[i], keysInPossession, map, reachableCache)
-            reachableKeys.addAll(individualReachableKeys.map { Pair(i, it) })
+            val individualReachableKeys = getReachableKeys(currentPositions[i], i, keysInPossession, map, reachableCache)
+            reachableKeys.addAll(individualReachableKeys)
         }
 
         if (reachableKeys.isEmpty()) {
@@ -141,9 +178,9 @@ class Day18 {
 
         val minPath = AtomicInteger(Int.MAX_VALUE)
 
-        fun processKey(index: Int, key: CoordinatePath) {
+        fun processKey(key: IndexedNodePath) {
             // Move to this key
-            val nextPosition = key.node
+            val nextPosition = key.node.coordinate
 
             val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
             assert(node.isKey)
@@ -152,7 +189,7 @@ class Day18 {
             // manhattenDistance to collect
             var minimumPathLengthForThisKey = key.pathLength
             for (otherKey in reachableKeys) {
-                minimumPathLengthForThisKey += otherKey.second.node.manhattenDistance(nextPosition)
+                minimumPathLengthForThisKey += otherKey.node.coordinate.manhattenDistance(nextPosition)
             }
 
             if (minimumPathLengthForThisKey >= minPath.toInt()) {
@@ -162,7 +199,7 @@ class Day18 {
             val nextKeys = keysInPossession.plus(node.identifier)
 
             val nextPositions = List(currentPositions.size) {
-                if (it == index) node else currentPositions[it]
+                if (it == key.positionIndex) node else currentPositions[it]
             }
 
             val cacheKey = nextKeys.cacheKey(nextPositions)
@@ -182,14 +219,14 @@ class Day18 {
                 withContext(Dispatchers.Default) {
                     for (reachableKey in reachableKeys) {
                         launch {
-                            processKey(reachableKey.first, reachableKey.second)
+                            processKey(reachableKey)
                         }
                     }
                 }
             }
         } else {
             for (reachableKey in reachableKeys) {
-                processKey(reachableKey.first, reachableKey.second)
+                processKey(reachableKey)
             }
         }
         return minPath.toInt()
@@ -214,19 +251,10 @@ class Day18 {
     /**
      * Finds the reachable nodes of the map, given the current set of keys in posession
      */
-    fun getReachableKeys(currentPosition: Node, keysInPossession: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<CoordinatePath>>): List<CoordinatePath> {
+    private fun getReachableKeys(currentPosition: Node, index: Int, keysInPossession: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<IndexedNodePath>>): List<IndexedNodePath> {
         val cacheKey = keysInPossession.cacheKey(currentPosition)
         return cache.getOrPut(cacheKey) {
-            val result = mutableListOf<CoordinatePath>()
-            currentPosition.coordinate.reachableCoordinates(currentPosition.coordinate, reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
-                map[coordinatePath.node]?.let { node ->
-                    if (node.isKey && !keysInPossession.contains(node.identifier)) {
-                        result.add(coordinatePath)
-                    }
-                }
-                null
-            }
-            result
+            findReachableKeys(currentPosition.coordinate, index, keysInPossession, map)
         }
     }
 
