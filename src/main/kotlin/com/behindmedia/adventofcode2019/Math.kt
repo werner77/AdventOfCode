@@ -39,8 +39,6 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
     }
 }
 
-data class CoordinatePath(val coordinate: Coordinate, val pathLength: Int)
-
 /**
  * Describes a two-dimensional coordinate or vector.
  */
@@ -124,9 +122,9 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Returns the direct neighbours of this coordinate
      */
-    val neighbours: Array<Coordinate>
+    val neighbours: List<Coordinate>
         get() {
-            return Array<Coordinate>(4) {
+            return List<Coordinate>(4) {
                 val xOffset = it % 2
                 val sign = if (it < 1 || it > 2) -1 else 1
                 val yOffset = (it + 1) % 2
@@ -152,63 +150,20 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     }
 
     /**
-     * Finds the shortest path from coordinate 1 to coordinate 2, given the set of free coordinates available for traversal
-     */
-    fun shortestPath(from: Coordinate, to: Coordinate, map: Set<Coordinate>): Int? {
-        return reachableCoordinates(from, map) {
-            if (it.coordinate == to) it.pathLength else null
-        }
-    }
-
-    fun reachableMapOfCoordinates(from: Coordinate, map: Set<Coordinate>): Map<Coordinate, Int> {
-        val result = mutableMapOf<Coordinate, Int>()
-        reachableCoordinates(from, map) {
-            result[it.coordinate] = it.pathLength
-            null
-        }
-        return result
-    }
-
-    fun reachableListOfCoordinates(from: Coordinate, map: Set<Coordinate>): List<CoordinatePath> {
-        val result = mutableListOf<CoordinatePath>()
-        reachableCoordinates(from, map) {
-            result.add(it)
-            null
-        }
-        return result
-    }
-
-    fun <T>reachableCoordinates(from: Coordinate, map: Set<Coordinate>, process: (CoordinatePath) -> T?): T? {
-        return reachableCoordinates(from, reachable = { map.contains(it) }, process = process)
-    }
-
-    /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    fun <T>reachableCoordinates(from: Coordinate, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
-
-        val list = LinkedList<CoordinatePath>()
-        val visited = mutableSetOf<Coordinate>()
-        visited.add(from)
-        list.add(CoordinatePath(from, 0))
-
-        while(true) {
-            val current = list.popFirst() ?: break
-            if (current.coordinate != from) {
-                val result = process(current)
-                if (result != null) {
-                    return result
+    fun <T>reachableCoordinates(neighbours: ((Coordinate) -> Iterable<Coordinate>)? = null, reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+        return reachableNodes(this,
+            neighbours = { coordinate ->
+                val neighbourCoordinates = if (neighbours != null) {
+                    neighbours(coordinate)
+                } else {
+                    coordinate.neighbours
                 }
-            }
-
-            for (neighbour in current.coordinate.neighbours) {
-                if (reachable(neighbour) && !visited.contains(neighbour)) {
-                    list.add(CoordinatePath(neighbour, current.pathLength + 1))
-                }
-            }
-            visited.add(current.coordinate)
-        }
-        return null
+                FilteredIterable(neighbourCoordinates, reachable)
+            },
+            process = process
+        )
     }
 
     operator fun get(index: Int): Int {
@@ -312,36 +267,30 @@ class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
 
+typealias CoordinatePath = NodePath<Coordinate>
 
-// Function to find the minimum weight
-// Hamiltonian Cycle
-fun tsp(graph: Array<IntArray>, v: BooleanArray, currPos: Int, n: Int, count: Int, cost: Int, ans: Int): Int {
+data class NodePath<N>(val node: N, val pathLength: Int)
 
-    // If last node is reached and it has a link
-    // to the starting node i.e the source then
-    // keep the minimum value out of the total cost
-    // of traversal and "ans"
-    // Finally return to check for more possible values
-    var result = ans
-    if (count == n && graph[currPos][0] > 0) {
-        result = Math.min(result, cost + graph[currPos][0])
-        return result
-    }
+fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, process: (NodePath<N>) -> T?): T? {
+    val list = LinkedList<NodePath<N>>()
+    val visited = mutableSetOf<N>()
+    visited.add(from)
+    list.add(NodePath(from, 0))
 
-    // BACKTRACKING STEP
-    // Loop to traverse the adjacency list
-    // of currPos node and increasing the count
-    // by 1 and cost by graph[currPos,i] value
-    for (i in 0 until n) {
-        if (v[i] == false && graph[currPos][i] > 0) { // Mark as visited
-            v[i] = true
-            result = tsp(
-                graph, v, i, n, count + 1,
-                cost + graph[currPos][i], result
-            )
-            // Mark ith node as unvisited
-            v[i] = false
+    while(true) {
+        val current = list.popFirst() ?: break
+        if (current.node != from) {
+            val result = process(current)
+            if (result != null) {
+                return result
+            }
         }
+        for (neighbour in neighbours(current.node)) {
+            if (!visited.contains(neighbour)) {
+                list.add(NodePath(neighbour, current.pathLength + 1))
+            }
+        }
+        visited.add(current.node)
     }
-    return result
+    return null
 }

@@ -137,3 +137,41 @@ fun <E>List<E>.repeated(count: Int): List<E> {
  * Reference to use for inout parameters
  */
 class Reference<T>(var value: T)
+
+class FilteredIterable<E>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean): Iterable<E> {
+
+    private class FilteredIterator<E>(private val iterator: Iterator<E>, private val predicate: (E) -> Boolean): Iterator<E> {
+
+        private var nextElement: E? = null
+
+        private inline fun initNextElement() {
+            if (nextElement == null) {
+                while (iterator.hasNext()) {
+                    val element = iterator.next()
+                    if (predicate(element)) {
+                        nextElement = element
+                        return
+                    }
+                }
+            }
+        }
+
+        override fun hasNext(): Boolean {
+            initNextElement()
+            return nextElement != null
+        }
+
+        override fun next(): E {
+            try {
+                initNextElement()
+                return nextElement ?: throw NoSuchElementException("No elements left")
+            } finally {
+                nextElement = null
+            }
+        }
+    }
+
+    override fun iterator(): Iterator<E> {
+        return FilteredIterator(iterable.iterator(), predicate)
+    }
+}
