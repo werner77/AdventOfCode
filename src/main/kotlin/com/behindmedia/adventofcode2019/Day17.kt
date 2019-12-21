@@ -1,14 +1,5 @@
 package com.behindmedia.adventofcode2019
 
-private fun String.toAsciiInput(): List<Long> {
-    val ret = mutableListOf<Long>()
-    for (c in this) {
-        ret.add(c.toLong())
-    }
-    ret.add('\n'.toLong())
-    return ret
-}
-
 class Day17 {
 
     enum class State(val rawValue: Char, val occupied: Boolean, val direction: Coordinate? = null) {

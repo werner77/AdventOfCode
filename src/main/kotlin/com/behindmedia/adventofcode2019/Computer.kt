@@ -273,3 +273,12 @@ class Computer(initialState: List<Long>) {
         }
     }
 }
+
+fun String.toAsciiInput(): List<Long> {
+    val ret = mutableListOf<Long>()
+    for (c in this) {
+        ret.add(c.toLong())
+    }
+    ret.add('\n'.toLong())
+    return ret
+}
