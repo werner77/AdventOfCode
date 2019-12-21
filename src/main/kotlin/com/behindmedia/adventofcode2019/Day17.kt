@@ -1,5 +1,8 @@
 package com.behindmedia.adventofcode2019
 
+import kotlin.math.max
+import kotlin.math.min
+
 class Day17 {
 
     enum class State(val rawValue: Char, val occupied: Boolean, val direction: Coordinate? = null) {
@@ -91,9 +94,90 @@ class Day17 {
         return answer
     }
 
+    fun <E>List<E>.removingAllOccurences(sublist: List<E>): List<E> {
+        val first = sublist.firstOrNull() ?: return this
+        val result = mutableListOf<E>()
+        var i = 0
+        while(i < this.size) {
+            val e = this[i]
+            if (e == first) {
+                // Check whether there is a complete match
+                var foundMatch = true
+                for (j in 1 until sublist.size) {
+                    if (i + j >= this.size || this[i + j] != sublist[j]) {
+                        foundMatch = false
+                        break
+                    }
+                }
+                if (foundMatch) {
+                    i += sublist.size
+                    continue
+                }
+            }
+            result.add(e)
+            i++
+        }
+        return result
+    }
+
+    fun List<String>.totalSize(): Int {
+        var totalSize = 0
+        var first = true
+        for (s in this) {
+            totalSize += s.length
+            if (first) {
+                first = false
+            } else {
+                totalSize++
+            }
+        }
+        return totalSize
+    }
+
+    fun findElements(list: List<String>, totalSize: Int, elementCount: Int): Boolean {
+
+        if (elementCount == 3) {
+            return list.isEmpty()
+        } else if (elementCount > 3) {
+            return false
+        } else if (totalSize <= 20) {
+            return true
+        }
+
+        var prefix = list.subList(0, min(10, list.size))
+        var totalPrefixSize = prefix.totalSize()
+
+        while (!prefix.isEmpty()) {
+            if (totalPrefixSize <= 20) {
+                val nextList = list.removingAllOccurences(prefix)
+
+                val numberOfReplacements = (list.size - nextList.size) / prefix.size
+                assert((list.size - nextList.size) % prefix.size == 0)
+                assert(numberOfReplacements >= 1)
+
+                val nextTotalSize = totalSize - numberOfReplacements * totalPrefixSize
+                if (findElements(nextList, nextTotalSize, elementCount + 1)) {
+                    return true
+                }
+            }
+
+            // Remove last element
+            totalPrefixSize -= (prefix.last().length + 1)
+            prefix = list.subList(0, prefix.size - 1)
+        }
+        return false
+    }
+
     fun breakUpCommandSequence(commands: List<Command>): MovementCommands {
 
+        val completeCommandString = commands.joinToString(",")
+        val completeList = completeCommandString.split(",")
+        val result = findElements(completeList, completeList.totalSize(),0)
+
         // TODO: Find three common patterns in the list with algorithm and break it up
+        println(result)
+
+
 
         // Discovered these by hand instead, just by putting the command list in a text editor
         return MovementCommands("A,B,A,B,C,C,B,A,C,A",
