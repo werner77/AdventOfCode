@@ -134,7 +134,7 @@ class Day17 {
         return totalSize
     }
 
-    fun findElements(list: List<String>, totalSize: Int, elementCount: Int): Boolean {
+    fun findElements(list: List<String>, totalSize: Int, elementCount: Int, outputList: MutableList<List<String>>): Boolean {
 
         if (elementCount == 3) {
             return list.isEmpty()
@@ -156,7 +156,8 @@ class Day17 {
                 assert(numberOfReplacements >= 1)
 
                 val nextTotalSize = totalSize - numberOfReplacements * totalPrefixSize
-                if (findElements(nextList, nextTotalSize, elementCount + 1)) {
+                if (findElements(nextList, nextTotalSize, elementCount + 1, outputList)) {
+                    outputList.add(prefix)
                     return true
                 }
             }
@@ -172,12 +173,15 @@ class Day17 {
 
         val completeCommandString = commands.joinToString(",")
         val completeList = completeCommandString.split(",")
-        val result = findElements(completeList, completeList.totalSize(),0)
+
+        val outputList = mutableListOf<List<String>>()
+        val result = findElements(completeList, completeList.totalSize(),0, outputList)
 
         // TODO: Find three common patterns in the list with algorithm and break it up
         println(result)
 
-
+        println(outputList)
+        assert(outputList.size <= 3)
 
         // Discovered these by hand instead, just by putting the command list in a text editor
         return MovementCommands("A,B,A,B,C,C,B,A,C,A",
