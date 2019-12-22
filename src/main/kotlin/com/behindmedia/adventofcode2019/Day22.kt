@@ -1,5 +1,13 @@
 package com.behindmedia.adventofcode2019
 
+fun normalize(index: Long, deckSize: Long): Long {
+    var result = index % deckSize
+    while (result < 0) {
+        result += deckSize
+    }
+    return result
+}
+
 class Day22 {
 
     class Deck(val list: MutableList<Long>, var startIndex: Long) {
@@ -59,18 +67,9 @@ class Day22 {
 
         abstract fun applyOn(deck: Deck)
 
-        abstract fun applyOn(deckSize: Long, index: Long, inverse: Boolean): Long
+        abstract fun applyOn(deckSize: Long, index: Long): Long
 
-        fun normalize(index: Long, deckSize: Long): Long {
-            var result = index
-            while (result < 0) {
-                result += deckSize
-            }
-            while (result >= deckSize) {
-                result -= deckSize
-            }
-            return result
-        }
+        abstract fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long>
 
         companion object {
             fun from(input: String): ShuffleTechnique {
@@ -96,13 +95,13 @@ class Day22 {
                 deck.startIndex = normalize(startIndex, deck.size)
             }
 
-            override fun applyOn(deckSize: Long, index: Long, inverse: Boolean): Long {
-                val result = if (inverse) {
-                    index + amount
-                } else {
-                    index - amount
-                }
+            override fun applyOn(deckSize: Long, index: Long): Long {
+                val result = index - amount
                 return normalize(result, deckSize)
+            }
+
+            override fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long> {
+                return Pair(state.first, state.second - amount)
             }
         }
 
@@ -121,16 +120,12 @@ class Day22 {
                 }
             }
 
-            override fun applyOn(deckSize: Long, index: Long, inverse: Boolean): Long {
-                if (inverse) {
-                    var value = index
-                    while (value % increment != 0L) {
-                        value += deckSize
-                    }
-                    return value / increment
-                } else {
-                    return normalize(index * increment, deckSize)
-                }
+            override fun applyOn(deckSize: Long, index: Long): Long {
+                return normalize(index * increment, deckSize)
+            }
+
+            override fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long> {
+                return Pair(normalize(state.first * increment, deckSize), normalize(state.second * increment, deckSize))
             }
         }
 
@@ -143,8 +138,14 @@ class Day22 {
                 }
             }
 
-            override fun applyOn(deckSize: Long, index: Long, inverse: Boolean): Long {
-                return normalize(deckSize - 1 - index, deckSize)
+            override fun applyOn(deckSize: Long, index: Long): Long {
+                val result = DealWithIncrement(deckSize - 1).applyOn(deckSize, index)
+                return Cut(1).applyOn(deckSize, result)
+            }
+
+            override fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long> {
+                val result = DealWithIncrement(deckSize - 1).apply(deckSize, state)
+                return Cut(1).apply(deckSize, result)
             }
         }
     }
@@ -155,20 +156,18 @@ class Day22 {
         }
     }
 
-    fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, inverse: Boolean = false): Long {
-        if (inverse) {
-            var inverseIndex = index
-            for (shuffleTechnique in shuffleTechniques.reversed()) {
-                inverseIndex = shuffleTechnique.applyOn(deckSize, inverseIndex, inverse)
-            }
-            return inverseIndex
-        } else {
-            var inverseIndex = index
-            for (shuffleTechnique in shuffleTechniques) {
-                inverseIndex = shuffleTechnique.applyOn(deckSize, inverseIndex, inverse)
-            }
-            return inverseIndex
+    fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, multiplier: Long = 1L): Long {
+        var state = Pair<Long, Long>(1, 0)
+        for (shuffleTechnique in shuffleTechniques) {
+            state = shuffleTechnique.apply(deckSize, state)
         }
+
+        // Apply the state 'multiplier' times
+
+        state = Pair(state.first * multiplier, state.second * multiplier)
+
+        val result = index * state.first + state.second
+        return normalize(result, deckSize)
     }
 
 

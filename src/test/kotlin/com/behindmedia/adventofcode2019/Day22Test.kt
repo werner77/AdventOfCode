@@ -43,7 +43,7 @@ class Day22Test {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
-        val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques)
+        val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques, 101741582076661)
 
         println(result)
     }
