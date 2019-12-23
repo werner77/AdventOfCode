@@ -122,17 +122,8 @@ class Day22 {
                 var a = state.a
                 var b = state.b
                 if (inverse) {
-                    // Until it is divisible: add deckSize
-                    while (a % increment != 0.toBigInteger()) {
-                        a += deckSize
-                    }
-
-                    while (b % increment != 0.toBigInteger()) {
-                        b += deckSize
-                    }
-
-                    a /= increment
-                    b /= increment
+                    a *= increment.modularMultiplicativeInverse(deckSize)
+                    b *= increment.modularMultiplicativeInverse(deckSize)
                 } else {
                     a *= increment
                     b *= increment

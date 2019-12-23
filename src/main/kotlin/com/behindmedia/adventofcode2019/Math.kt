@@ -1,8 +1,9 @@
 package com.behindmedia.adventofcode2019
 
+import java.math.BigInteger
 import java.util.*
-import kotlin.NoSuchElementException
 import kotlin.math.*
+
 
 /**
  * Describes the rotation direction (left or right)
@@ -213,8 +214,70 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
     }
 }
 
+fun Long.modularMultiplicativeInverse(modulo: Long): Long {
+    var a = this
+    var m = modulo
+    var y = 0L
+    var x = 1L
+    if (m == 1L) return 0L
+
+    while (a > 1) {
+        val q = a / m
+        var t = m
+        m = a % m
+        a = t
+        t = y
+        y = x - q * y
+        x = t
+    }
+    if (x < 0L) x += modulo
+    return x
+}
+
+fun BigInteger.modularMultiplicativeInverse(modulo: BigInteger): BigInteger {
+    var a = this
+    var m = modulo
+    var y = 0.toBigInteger()
+    var x = 1.toBigInteger()
+    if (m == 1.toBigInteger()) return 0.toBigInteger()
+
+    while (a > 1.toBigInteger()) {
+        val q = a / m
+        var t = m
+        m = a % m
+        a = t
+        t = y
+        y = x - q * y
+        x = t
+    }
+    if (x < 0.toBigInteger()) x += modulo
+    return x
+}
+
 fun Long.divideCeil(other: Long): Long {
     return (this + other - 1) / other
+}
+
+fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
+    var a = this
+    var b = other
+
+    var result: Long = 0
+    a %= modulo
+    while (b > 0) { // If b is odd, add 'a' to result
+        if (b % 2L == 1L) {
+            result = (result + a) % modulo
+        }
+        // Multiply 'a' with 2
+        a = a * 2 % modulo
+        // Divide b by 2
+        b /= 2
+    }
+    result %= modulo
+    if (ensurePositive && result < 0) {
+        result += modulo
+    }
+    return result
 }
 
 /**
