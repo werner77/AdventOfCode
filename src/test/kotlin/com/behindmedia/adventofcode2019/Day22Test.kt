@@ -3,15 +3,9 @@ package com.behindmedia.adventofcode2019
 import org.junit.Test
 
 import org.junit.Assert.*
+import java.math.BigInteger
 
 class Day22Test {
-
-    @Test
-    fun parseInput() {
-        val input = read("/day22.txt")
-        val day22 = Day22()
-        day22.parseInput(input)
-    }
 
     @Test
     fun puzzle1() {
@@ -19,7 +13,7 @@ class Day22Test {
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
 
-        val deck = Day22.Deck()
+        val deck = Day22.Deck(10007)
 
         day22.shuffle(deck, shuffleTechniques)
 
@@ -28,8 +22,27 @@ class Day22Test {
         assertEquals(4775, result)
     }
 
+    fun reference(a: Long, increment: Long, deckSize: Long): Long {
+        var a1 = a
+        while (a1 % increment != 0L) {
+            a1 += deckSize
+        }
+        return a1 / increment
+    }
+
     @Test
-    fun puzzle1a() {
+    fun puzzle2() {
+        val input = read("/day22.txt")
+        val day22 = Day22()
+        val shuffleTechniques = day22.parseInput(input)
+        val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques, true,
+            101741582076661)
+        println(result)
+        assertEquals(37889219674304, result)
+    }
+
+    @Test
+    fun shuffleForward() {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
@@ -39,7 +52,7 @@ class Day22Test {
     }
 
     @Test
-    fun puzzle1b() {
+    fun shuffleInverse() {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
@@ -49,25 +62,26 @@ class Day22Test {
     }
 
     @Test
-    fun puzzle1c() {
+    fun shuffleRepeatedWithInverse() {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
-        val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, false, 10000)
-        val result2 = day22.shuffledCard(10007, result1, shuffleTechniques, true, 10000)
+        val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, false, 1000)
+        val result2 = day22.shuffledCard(10007, result1, shuffleTechniques, true, 1000)
 
         println(result2)
         assertEquals(result2, 2019)
     }
 
     @Test
-    fun puzzle2() {
+    fun shuffleOptimized() {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
-        val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques, true, 101741582076661)
+        val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013, false)
+        val result2 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013, true)
 
-        println(result)
+        assertEquals(result1, result2)
     }
 
     @Test
@@ -84,6 +98,7 @@ class Day22Test {
         day22.shuffle(deck, shuffleTechniques)
 
         println(deck)
+        assertEquals("0 3 6 9 2 5 8 1 4 7", deck.toString())
     }
 
     @Test
@@ -101,41 +116,38 @@ class Day22Test {
         day22.shuffle(deck, shuffleTechniques)
 
         println(deck)
+        assertEquals("3 0 7 4 1 8 5 2 9 6", deck.toString())
     }
 
     @Test
-    fun sample3() {
+    fun testInverseSimple() {
         val input = """
-            deal into new stack
-            deal with increment 9
-            deal with increment 9
+            cut 6
+            deal with increment 7
             deal into new stack
         """.trimIndent()
 
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
 
-        val deck = Day22.Deck(10)
-        day22.shuffle(deck, shuffleTechniques)
+        val result = day22.shuffledCard(10, 2, shuffleTechniques, true)
 
-        println(deck)
+        assertEquals(7 , result)
     }
 
     @Test
-    fun sample4() {
+    fun testSimple() {
         val input = """
-            deal with increment 55
-            deal with increment 55
-            deal with increment 55
-            deal with increment 55
+            cut 6
+            deal with increment 7
+            deal into new stack
         """.trimIndent()
 
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
 
-        val deck = Day22.Deck()
-        day22.shuffle(deck, shuffleTechniques)
+        val result = day22.shuffledCard(10, 7, shuffleTechniques, false)
 
-        println(deck)
+        assertEquals(2, result)
     }
 }
