@@ -122,8 +122,9 @@ class Day22 {
                 var a = state.a
                 var b = state.b
                 if (inverse) {
-                    a *= increment.modularMultiplicativeInverse(deckSize)
-                    b *= increment.modularMultiplicativeInverse(deckSize)
+                    val inverseIncrement = increment.modularMultiplicativeInverse(deckSize)
+                    a *= inverseIncrement
+                    b *= inverseIncrement
                 } else {
                     a *= increment
                     b *= increment
