@@ -64,6 +64,9 @@ class Day22 {
         }
     }
 
+    /**
+     * Base class for the different shuffle techniques
+     */
     sealed class ShuffleTechnique() {
 
         abstract fun applyOn(deck: Deck)
@@ -149,7 +152,8 @@ class Day22 {
 
             override fun apply(deckSize: BigInteger, state: LinearOperation, inverse: Boolean): LinearOperation {
                 // The inverse of this operation is the operation itself, so just ignore the inverse parameter
-                val result = DealWithIncrement(deckSize - 1.toBigInteger()).apply(deckSize, state, false)
+                // Reversing can be expressed as a function of the two other operations
+                val result = DealWithIncrement((-1).toBigInteger()).apply(deckSize, state, false)
                 return Cut(1.toBigInteger()).apply(deckSize, result, false)
             }
         }
@@ -166,19 +170,31 @@ class Day22 {
      */
     class LinearOperation(val a: BigInteger = 1.toBigInteger(), val b: BigInteger = 0.toBigInteger()) {
 
+        /**
+         * Applies this operation on itself
+         */
         fun squared(deckSize: BigInteger): LinearOperation {
             return this.apply(this, deckSize)
         }
 
+        /**
+         * Applies this operation on the supplied operation
+         */
         fun apply(on: LinearOperation, deckSize: BigInteger): LinearOperation {
             return LinearOperation(normalize(this.a * on.a, deckSize), normalize(this.a * on.b + this.b, deckSize))
         }
 
+        /**
+         * Applies this operation on the specified number
+         */
         fun apply(on: BigInteger, deckSize: BigInteger): BigInteger {
             return normalize(this.a * on + this.b, deckSize)
         }
     }
 
+    /**
+     * The resulting linear operation by applying all the operations in this list in series, optionally inverting them
+     */
     fun List<ShuffleTechnique>.resultingLinearOperation(deckSize: BigInteger, inverse: Boolean): LinearOperation {
         var state = LinearOperation()
         val techniques = if (inverse) this.reversed() else this
@@ -188,10 +204,15 @@ class Day22 {
         return state
     }
 
+    /**
+     * Computes the resulting index from the start index with the specified deckSize and shuffle techniques.
+     *
+     * The operations can optionally be inverted and repeated.
+     */
     fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, inverse: Boolean = false, multiplier: Long = 1L): Long {
         val bigDeckSize = deckSize.toBigInteger()
-        val state = shuffleTechniques.resultingLinearOperation(bigDeckSize, inverse)
-        var finalState = LinearOperation()
+        val operation = shuffleTechniques.resultingLinearOperation(bigDeckSize, inverse)
+        var finalOperation = LinearOperation() // identity operation
         var remainingTimes = multiplier
         while (remainingTimes > 0) {
 
@@ -199,19 +220,17 @@ class Day22 {
             // For that number we repeat the process of squaring again, etc
 
             var repeat = 1L
-            var squaredState = state
+            var squaredState = operation
             while (remainingTimes >= (repeat * 2L)) {
                 squaredState = squaredState.squared(bigDeckSize)
                 repeat *= 2L
             }
 
             // Apply the squaredState on the finalState
-            finalState = squaredState.apply(finalState, bigDeckSize)
-
+            finalOperation = squaredState.apply(finalOperation, bigDeckSize)
             remainingTimes -= repeat
         }
-
-        return finalState.apply(index.toBigInteger(), bigDeckSize).toLong()
+        return finalOperation.apply(index.toBigInteger(), bigDeckSize).toLong()
     }
 
     /**
