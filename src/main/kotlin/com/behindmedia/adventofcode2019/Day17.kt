@@ -134,60 +134,69 @@ class Day17 {
         return totalSize
     }
 
-    fun findElements(list: List<String>, totalSize: Int, elementCount: Int, outputList: MutableList<List<String>>): Boolean {
+    fun breakupList(list: List<String>): List<List<String>>? {
+        fun findElements(list: List<String>, totalSize: Int, elementCount: Int, outputList: MutableList<List<String>>): Boolean {
 
-        if (elementCount == 3) {
-            return list.isEmpty()
-        } else if (elementCount > 3) {
-            return false
-        } else if (totalSize <= 20) {
-            return true
-        }
-
-        var prefix = list.subList(0, min(10, list.size))
-        var totalPrefixSize = prefix.totalSize()
-
-        while (!prefix.isEmpty()) {
-            if (totalPrefixSize <= 20) {
-                val nextList = list.removingAllOccurences(prefix)
-
-                val numberOfReplacements = (list.size - nextList.size) / prefix.size
-                assert((list.size - nextList.size) % prefix.size == 0)
-                assert(numberOfReplacements >= 1)
-
-                val nextTotalSize = totalSize - numberOfReplacements * totalPrefixSize
-                if (findElements(nextList, nextTotalSize, elementCount + 1, outputList)) {
-                    outputList.add(prefix)
-                    return true
-                }
+            if (elementCount == 3) {
+                return list.isEmpty()
+            } else if (elementCount > 3) {
+                return false
+            } else if (totalSize <= 20) {
+                return true
             }
 
-            // Remove last element
-            totalPrefixSize -= (prefix.last().length + 1)
-            prefix = list.subList(0, prefix.size - 1)
+            var prefix = list.subList(0, min(10, list.size))
+            var totalPrefixSize = prefix.totalSize()
+
+            while (!prefix.isEmpty()) {
+                if (totalPrefixSize <= 20) {
+                    val nextList = list.removingAllOccurences(prefix)
+
+                    val numberOfReplacements = (list.size - nextList.size) / prefix.size
+                    assert((list.size - nextList.size) % prefix.size == 0)
+                    assert(numberOfReplacements >= 1)
+
+                    val nextTotalSize = totalSize - numberOfReplacements * totalPrefixSize
+                    if (findElements(nextList, nextTotalSize, elementCount + 1, outputList)) {
+                        outputList.add(prefix)
+                        return true
+                    }
+                }
+
+                // Remove last element
+                totalPrefixSize -= (prefix.last().length + 1)
+                prefix = list.subList(0, prefix.size - 1)
+            }
+            return false
         }
-        return false
+
+        val resultList = mutableListOf<List<String>>()
+        val foundResult = findElements(list, list.totalSize(),0, resultList)
+        return if (foundResult) resultList else null
     }
+
+
 
     fun breakUpCommandSequence(commands: List<Command>): MovementCommands {
 
         val completeCommandString = commands.joinToString(",")
         val completeList = completeCommandString.split(",")
 
-        val outputList = mutableListOf<List<String>>()
-        val result = findElements(completeList, completeList.totalSize(),0, outputList)
+        val resultList = breakupList(completeList) ?: throw IllegalStateException("Could not break up list in patterns")
+        assert(resultList.size <= 3)
 
-        // TODO: Find three common patterns in the list with algorithm and break it up
-        println(result)
+        val A = resultList.elementAtOrNull(0)?.joinToString(",") ?: ""
+        val B = resultList.elementAtOrNull(1)?.joinToString(",") ?: ""
+        val C = resultList.elementAtOrNull(2)?.joinToString(",") ?: ""
 
-        println(outputList)
-        assert(outputList.size <= 3)
+        var functionSequence = completeCommandString.replace(A, "A")
+        functionSequence = functionSequence.replace(B, "B")
+        functionSequence = functionSequence.replace(C, "C")
 
-        // Discovered these by hand instead, just by putting the command list in a text editor
-        return MovementCommands("A,B,A,B,C,C,B,A,C,A",
-            "L,10,R,8,R,6,R,10",
-            "L,12,R,8,L,12",
-            "L,10,R,8,R,8")
+        return MovementCommands(functionSequence,
+            A,
+            B,
+            C)
     }
 
     fun getNumberOfDustParticles(program: List<Long>): Long {
