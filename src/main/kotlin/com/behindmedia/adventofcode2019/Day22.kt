@@ -188,37 +188,29 @@ class Day22 {
         return state
     }
 
-    fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, inverse: Boolean = false, multiplier: Long = 1L, optimize: Boolean = true): Long {
+    fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, inverse: Boolean = false, multiplier: Long = 1L): Long {
         val bigDeckSize = deckSize.toBigInteger()
         val state = shuffleTechniques.resultingLinearOperation(bigDeckSize, inverse)
-
         var finalState = LinearOperation()
+        var remainingTimes = multiplier
+        while (remainingTimes > 0) {
 
-        if (optimize) {
-            var remainingTimes = multiplier
-            while (remainingTimes > 0) {
+            // Square the state until we cannot square anymore, then we have a number left.
+            // For that number we repeat the process of squaring again, etc
 
-                // Square the state until we cannot square anymore, then we have a number left.
-                // For that number we repeat the process of squaring again, etc
-
-                var repeat = 1L
-                var squaredState = state
-                while (remainingTimes >= (repeat * 2L)) {
-                    squaredState = squaredState.squared(bigDeckSize)
-                    repeat *= 2L
-                }
-
-                // Apply the squaredState on the finalState
-                finalState = squaredState.apply(finalState, bigDeckSize)
-
-                remainingTimes -= repeat
+            var repeat = 1L
+            var squaredState = state
+            while (remainingTimes >= (repeat * 2L)) {
+                squaredState = squaredState.squared(bigDeckSize)
+                repeat *= 2L
             }
-        } else {
-            // Just perform brute force
-            for (i in 0 until multiplier) {
-                finalState = state.apply(finalState, bigDeckSize)
-            }
+
+            // Apply the squaredState on the finalState
+            finalState = squaredState.apply(finalState, bigDeckSize)
+
+            remainingTimes -= repeat
         }
+
         return finalState.apply(index.toBigInteger(), bigDeckSize).toLong()
     }
 

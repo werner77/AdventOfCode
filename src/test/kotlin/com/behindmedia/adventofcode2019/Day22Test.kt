@@ -78,8 +78,8 @@ class Day22Test {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
-        val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013, false)
-        val result2 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013, true)
+        val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013)
+        val result2 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013)
 
         assertEquals(result1, result2)
     }
