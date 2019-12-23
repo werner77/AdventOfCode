@@ -39,11 +39,33 @@ class Day22Test {
     }
 
     @Test
+    fun puzzle1b() {
+        val input = read("/day22.txt")
+        val day22 = Day22()
+        val shuffleTechniques = day22.parseInput(input)
+        val result = day22.shuffledCard(10007, 4775, shuffleTechniques, true)
+        println(result)
+        assertEquals(2019, result)
+    }
+
+    @Test
+    fun puzzle1c() {
+        val input = read("/day22.txt")
+        val day22 = Day22()
+        val shuffleTechniques = day22.parseInput(input)
+        val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, false, 10000)
+        val result2 = day22.shuffledCard(10007, result1, shuffleTechniques, true, 10000)
+
+        println(result2)
+        assertEquals(result2, 2019)
+    }
+
+    @Test
     fun puzzle2() {
         val input = read("/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
-        val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques, 101741582076661)
+        val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques, true, 101741582076661)
 
         println(result)
     }

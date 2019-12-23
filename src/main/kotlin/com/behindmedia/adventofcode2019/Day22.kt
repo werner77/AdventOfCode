@@ -69,7 +69,7 @@ class Day22 {
 
         abstract fun applyOn(deckSize: Long, index: Long): Long
 
-        abstract fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long>
+        abstract fun apply(deckSize: Long, state: Pair<Long, Long>, inverse: Boolean): Pair<Long, Long>
 
         companion object {
             fun from(input: String): ShuffleTechnique {
@@ -100,8 +100,12 @@ class Day22 {
                 return normalize(result, deckSize)
             }
 
-            override fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long> {
-                return Pair(state.first, state.second - amount)
+            override fun apply(deckSize: Long, state: Pair<Long, Long>, inverse: Boolean): Pair<Long, Long> {
+                return if (inverse) {
+                    Pair(state.first, normalize(state.second + amount, deckSize))
+                } else {
+                    Pair(state.first, normalize(state.second - amount, deckSize))
+                }
             }
         }
 
@@ -124,8 +128,27 @@ class Day22 {
                 return normalize(index * increment, deckSize)
             }
 
-            override fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long> {
-                return Pair(normalize(state.first * increment, deckSize), normalize(state.second * increment, deckSize))
+            override fun apply(deckSize: Long, state: Pair<Long, Long>, inverse: Boolean): Pair<Long, Long> {
+                var multiplier = state.first
+                var offset = state.second
+                if (inverse) {
+                    // Until it is divisible: add deckSize
+
+                    while (multiplier % increment != 0L) {
+                        multiplier += deckSize
+                    }
+
+                    while (offset % increment != 0L) {
+                        offset += deckSize
+                    }
+
+                    multiplier /= increment
+                    offset /= increment
+                } else {
+                    multiplier *= increment
+                    offset *= increment
+                }
+                return Pair(normalize(multiplier, deckSize), normalize(offset, deckSize))
             }
         }
 
@@ -143,9 +166,10 @@ class Day22 {
                 return Cut(1).applyOn(deckSize, result)
             }
 
-            override fun apply(deckSize: Long, state: Pair<Long, Long>): Pair<Long, Long> {
-                val result = DealWithIncrement(deckSize - 1).apply(deckSize, state)
-                return Cut(1).apply(deckSize, result)
+            override fun apply(deckSize: Long, state: Pair<Long, Long>, inverse: Boolean): Pair<Long, Long> {
+                // The inverse of this operation is the operation itself, so just ignore the inverse parameter
+                val result = DealWithIncrement(deckSize - 1).apply(deckSize, state, false)
+                return Cut(1).apply(deckSize, result, false)
             }
         }
     }
@@ -156,18 +180,43 @@ class Day22 {
         }
     }
 
-    fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, multiplier: Long = 1L): Long {
+    fun shuffledCard(deckSize: Long, index: Long, shuffleTechniques: List<ShuffleTechnique>, inverse: Boolean = false, multiplier: Long = 1L): Long {
         var state = Pair<Long, Long>(1, 0)
-        for (shuffleTechnique in shuffleTechniques) {
-            state = shuffleTechnique.apply(deckSize, state)
+        val techniques = if (inverse) shuffleTechniques.reversed() else shuffleTechniques
+
+        for (shuffleTechnique in techniques) {
+            state = shuffleTechnique.apply(deckSize, state, inverse)
         }
 
-        // Apply the state 'multiplier' times
+        val a = state.first
+        val b = state.second
+        var result = index
+        var c = 0L
+        var i = 1L
 
-        state = Pair(state.first * multiplier, state.second * multiplier)
+        while (i <= multiplier) {
+            result = normalize(a * result + b, deckSize)
+            c = normalize(a * c + b, deckSize)
+            val diff = normalize(result - c, deckSize)
 
-        val result = index * state.first + state.second
-        return normalize(result, deckSize)
+            if (diff % index == 0L) {
+
+                val k = diff / index
+                val times = multiplier / i
+
+                result = normalize(index * k * times, deckSize) + c
+                result = normalize(result, deckSize)
+
+                i *= times
+
+                // y = kx + c <=> y = pow(a,i) * x + c
+
+
+
+            }
+            i++
+        }
+        return result
     }
 
 
