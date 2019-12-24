@@ -6,7 +6,7 @@ class Day23 {
 
     data class Packet(val x: Long, val y: Long)
 
-    fun Packet?.toInput(): List<Long> {
+    private fun Packet?.toInput(): List<Long> {
         return if (this == null) {
             listOf(-1L)
         } else {
@@ -14,7 +14,7 @@ class Day23 {
         }
     }
 
-    class PacketQueue {
+    private class PacketQueue {
         private val map = mutableMapOf<Long, LinkedList<Packet>>()
 
         fun isEmpty(): Boolean {
@@ -28,10 +28,6 @@ class Day23 {
 
         fun putPacket(address: Long, packet: Packet) {
             map.getOrPut(address) { LinkedList() }.add(packet)
-        }
-
-        fun getPackets(address: Long): List<Packet> {
-            return map[address] ?: emptyList()
         }
 
         fun popFirstPacket(address: Long): Packet? {

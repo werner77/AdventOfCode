@@ -22,14 +22,6 @@ class Day22Test {
         assertEquals(4775, result)
     }
 
-    fun reference(a: Long, increment: Long, deckSize: Long): Long {
-        var a1 = a
-        while (a1 % increment != 0L) {
-            a1 += deckSize
-        }
-        return a1 / increment
-    }
-
     @Test
     fun puzzle2() {
         val input = read("/day22.txt")
