@@ -10,7 +10,9 @@ class Day6 {
      * The orbitedBy collection denotes the children of this star and orbiting denotes the parents of this star
      * (should be 1 at most).
      */
-    data class Star(val name: String, val orbitedBy: MutableSet<Star> = mutableSetOf(), val orbiting: MutableSet<Star> = mutableSetOf()) {
+    data class Star(val name: String,
+                    val orbitedBy: MutableSet<Star> = mutableSetOf(),
+                    val orbiting: MutableSet<Star> = mutableSetOf()) {
         override fun hashCode(): Int {
             return name.hashCode()
         }

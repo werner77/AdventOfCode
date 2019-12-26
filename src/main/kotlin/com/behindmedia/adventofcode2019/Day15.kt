@@ -8,8 +8,8 @@ class Day15 {
     class CoordinateNode(val coordinate: Coordinate, var distance: Int)
     class VisitState(val state: State, val visitCount: Int)
 
-    enum class State(val description: String, val relevance: Int) {
-        Oxygen("O", 5), Wall("#", 4), Free(".", 3),
+    enum class State(val description: String, val relevance: Int, val isFree: Boolean = true) {
+        Oxygen("O", 5), Wall("#", 4, false), Free(".", 3),
         Destination("X", 2), Unknown(" ", 1);
     }
 
@@ -133,37 +133,11 @@ class Day15 {
         return map.mapValues { it.value.state }
     }
 
-    /**
-     * Dijkstra's algorithm to find the shortest path
-     */
     private fun Map<Coordinate, State>.shortestPath(start: Coordinate, destination: Coordinate): Int? {
-        val unvisitedNodes = this.entries.fold(mutableMapOf<Coordinate, CoordinateNode>()) { map, entry ->
-            if (entry.value != State.Wall) {
-                val distance = if (entry.key == start) 0 else Int.MAX_VALUE
-                map[entry.key] = CoordinateNode(entry.key, distance)
-            }
-            map
-        }
-
-        var currentNode: CoordinateNode
-
-        while (true) {
-
-            currentNode = unvisitedNodes.values.minBy { it.distance } ?: break
-            if (currentNode.distance == Int.MAX_VALUE) {
-                break
-            } else if (currentNode.coordinate == destination) {
-                return currentNode.distance
-            }
-
-            unvisitedNodes.remove(currentNode.coordinate)
-
-            for (neighbourCoordinate in currentNode.coordinate.neighbours) {
-                val node = unvisitedNodes[neighbourCoordinate] ?: continue
-                node.distance = min(node.distance, currentNode.distance + 1)
-            }
-        }
-        return null
+        return start.reachableCoordinates(
+            reachable = { coordinate -> this[coordinate]?.isFree ?: false },
+            process = { coordinatePath -> if (coordinatePath.node == destination) coordinatePath.pathLength else null }
+        )
     }
 
     private fun Map<Coordinate, VisitState>.isFull(): Boolean {

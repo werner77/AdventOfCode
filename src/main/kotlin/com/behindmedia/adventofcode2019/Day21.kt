@@ -2,14 +2,6 @@ package com.behindmedia.adventofcode2019
 
 class Day21 {
 
-    fun List<String>.toAsciiInput(): List<Long> {
-        val result = mutableListOf<Long>()
-        for (s in this) {
-            result.addAll(s.toAsciiInput())
-        }
-        return result
-    }
-
     fun walk(program: String): Long {
 
         val computer = Computer(program)
@@ -36,7 +28,7 @@ class Day21 {
 
         printAsciiOutput(result.outputs)
 
-        result = computer.process(instructions.toAsciiInput())
+        result = computer.processAscii(instructions)
 
         printAsciiOutput(result.outputs)
 
@@ -73,7 +65,7 @@ class Day21 {
 
         printAsciiOutput(result.outputs)
 
-        result = computer.process(instructions.toAsciiInput())
+        result = computer.processAscii(instructions)
 
         printAsciiOutput(result.outputs)
 

@@ -29,6 +29,16 @@ class Computer(initialState: List<Long>) {
     data class Result(val status: Status, val outputs: List<Long>) {
         val lastOutput: Long
             get() = outputs.lastOrNull() ?: 0L
+
+        val asciiOutput: String
+            get() {
+                val buffer = StringBuilder()
+                for (l in outputs) {
+                    buffer.append(l.toChar())
+                }
+                buffer.append('\n')
+                return buffer.toString()
+            }
     }
 
     private val _state: MutableMap<Long, Long> = initialState.toMutableMap()
@@ -79,6 +89,18 @@ class Computer(initialState: List<Long>) {
      */
     fun process(input: Long? = null): Result {
         return process(input?.let { listOf(it) } ?: emptyList())
+    }
+
+    fun processAscii(input: String?): Result {
+        return process(input?.toAsciiInput() ?: emptyList())
+    }
+
+    fun processAscii(inputs: List<String>): Result {
+        val longInputs = inputs.fold(mutableListOf<Long>()) { list, string ->
+            list.addAll(string.toAsciiInput())
+            list
+        }
+        return process(longInputs)
     }
 
     private fun getValue(address: Long): Long {
@@ -274,7 +296,7 @@ class Computer(initialState: List<Long>) {
     }
 }
 
-fun String.toAsciiInput(): List<Long> {
+private fun String.toAsciiInput(): List<Long> {
     val ret = mutableListOf<Long>()
     for (c in this) {
         ret.add(c.toLong())

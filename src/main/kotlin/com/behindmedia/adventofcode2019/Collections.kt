@@ -133,6 +133,32 @@ fun <E>List<E>.repeated(count: Int): List<E> {
     return list
 }
 
+fun <E>List<E>.removingAllOccurences(sublist: List<E>): List<E> {
+    val first = sublist.firstOrNull() ?: return this
+    val result = mutableListOf<E>()
+    var i = 0
+    while(i < this.size) {
+        val e = this[i]
+        if (e == first) {
+            // Check whether there is a complete match
+            var foundMatch = true
+            for (j in 1 until sublist.size) {
+                if (i + j >= this.size || this[i + j] != sublist[j]) {
+                    foundMatch = false
+                    break
+                }
+            }
+            if (foundMatch) {
+                i += sublist.size
+                continue
+            }
+        }
+        result.add(e)
+        i++
+    }
+    return result
+}
+
 /**
  * Reference to use for inout parameters
  */

@@ -21,13 +21,13 @@ class Day3 {
             val amount = component.substring(1).toInt()
             val vector = when (val direction = component[0]) {
                 'R' ->
-                    Coordinate(1, 0)
+                    Coordinate.right
                 'D' ->
-                    Coordinate(0, -1)
+                    Coordinate.down
                 'L' ->
-                    Coordinate(-1, 0)
+                    Coordinate.left
                 'U' ->
-                    Coordinate(0, 1)
+                    Coordinate.up
                 else ->
                     throw IllegalArgumentException("Found unknown direction: $direction")
             }

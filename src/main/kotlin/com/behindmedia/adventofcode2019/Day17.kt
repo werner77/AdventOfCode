@@ -6,10 +6,10 @@ import kotlin.math.min
 class Day17 {
 
     enum class State(val rawValue: Char, val occupied: Boolean, val direction: Coordinate? = null) {
-        Left('<', true, Coordinate(-1, 0)),
-        Right('>',true, Coordinate(1, 0)),
-        Up('^', true, Coordinate(0, -1)),
-        Down('v', true, Coordinate(0, 1)),
+        Left('<', true, Coordinate.left),
+        Right('>',true, Coordinate.right),
+        Up('^', true, Coordinate.up),
+        Down('v', true, Coordinate.down),
         Scaffold('#', true),
         Empty('.', false),
         Fallen('X', false);
@@ -44,15 +44,82 @@ class Day17 {
 
     data class MovementCommands(val functionSequence: String, val functionA: String, val functionB: String, val functionC: String) {
 
-        fun toInputList(): List<Long> {
+        companion object {
+            fun from(commands: List<Command>): MovementCommands {
+                val completeCommandString = commands.joinToString(",")
+                val completeList = completeCommandString.split(",")
 
-            val result = mutableListOf<Long>()
+                val resultList = breakupList(completeList) ?:
+                    throw IllegalArgumentException("Could not break up supplied command list in three patterns")
+                assert(resultList.size <= 3)
 
-            result.addAll(functionSequence.toAsciiInput())
-            result.addAll(functionA.toAsciiInput())
-            result.addAll(functionB.toAsciiInput())
-            result.addAll(functionC.toAsciiInput())
+                val A = resultList.elementAtOrNull(0)?.joinToString(",") ?: ""
+                val B = resultList.elementAtOrNull(1)?.joinToString(",") ?: ""
+                val C = resultList.elementAtOrNull(2)?.joinToString(",") ?: ""
 
+                var functionSequence = completeCommandString.replace(A, "A")
+                functionSequence = functionSequence.replace(B, "B")
+                functionSequence = functionSequence.replace(C, "C")
+
+                return MovementCommands(functionSequence,
+                    A,
+                    B,
+                    C)
+            }
+
+            private fun List<String>.totalSize(): Int {
+                return this.sumBy { it.length } + max(0, this.size - 1)
+            }
+
+            private fun breakupList(list: List<String>): List<List<String>>? {
+                fun findElements(list: List<String>, totalSize: Int, elementCount: Int, outputList: MutableList<List<String>>): Boolean {
+
+                    if (elementCount == 3) {
+                        return list.isEmpty()
+                    } else if (elementCount > 3) {
+                        return false
+                    } else if (totalSize <= 20) {
+                        return true
+                    }
+
+                    var prefix = list.subList(0, min(10, list.size))
+                    var totalPrefixSize = prefix.totalSize()
+
+                    while (!prefix.isEmpty()) {
+                        if (totalPrefixSize <= 20) {
+                            val nextList = list.removingAllOccurences(prefix)
+
+                            val numberOfReplacements = (list.size - nextList.size) / prefix.size
+                            assert((list.size - nextList.size) % prefix.size == 0)
+                            assert(numberOfReplacements >= 1)
+
+                            val nextTotalSize = totalSize - numberOfReplacements * totalPrefixSize
+                            if (findElements(nextList, nextTotalSize, elementCount + 1, outputList)) {
+                                outputList.add(prefix)
+                                return true
+                            }
+                        }
+
+                        // Remove last element
+                        totalPrefixSize -= (prefix.last().length + 1)
+                        prefix = list.subList(0, prefix.size - 1)
+                    }
+                    return false
+                }
+
+                val resultList = mutableListOf<List<String>>()
+                val foundResult = findElements(list, list.totalSize(),0, resultList)
+                return if (foundResult) resultList else null
+            }
+        }
+
+        fun toInputList(): List<String> {
+
+            val result = mutableListOf<String>()
+            result.add(functionSequence)
+            result.add(functionA)
+            result.add(functionB)
+            result.add(functionC)
             return result
         }
     }
@@ -94,128 +161,23 @@ class Day17 {
         return answer
     }
 
-    fun <E>List<E>.removingAllOccurences(sublist: List<E>): List<E> {
-        val first = sublist.firstOrNull() ?: return this
-        val result = mutableListOf<E>()
-        var i = 0
-        while(i < this.size) {
-            val e = this[i]
-            if (e == first) {
-                // Check whether there is a complete match
-                var foundMatch = true
-                for (j in 1 until sublist.size) {
-                    if (i + j >= this.size || this[i + j] != sublist[j]) {
-                        foundMatch = false
-                        break
-                    }
-                }
-                if (foundMatch) {
-                    i += sublist.size
-                    continue
-                }
-            }
-            result.add(e)
-            i++
-        }
-        return result
-    }
-
-    fun List<String>.totalSize(): Int {
-        var totalSize = 0
-        var first = true
-        for (s in this) {
-            totalSize += s.length
-            if (first) {
-                first = false
-            } else {
-                totalSize++
-            }
-        }
-        return totalSize
-    }
-
-    fun breakupList(list: List<String>): List<List<String>>? {
-        fun findElements(list: List<String>, totalSize: Int, elementCount: Int, outputList: MutableList<List<String>>): Boolean {
-
-            if (elementCount == 3) {
-                return list.isEmpty()
-            } else if (elementCount > 3) {
-                return false
-            } else if (totalSize <= 20) {
-                return true
-            }
-
-            var prefix = list.subList(0, min(10, list.size))
-            var totalPrefixSize = prefix.totalSize()
-
-            while (!prefix.isEmpty()) {
-                if (totalPrefixSize <= 20) {
-                    val nextList = list.removingAllOccurences(prefix)
-
-                    val numberOfReplacements = (list.size - nextList.size) / prefix.size
-                    assert((list.size - nextList.size) % prefix.size == 0)
-                    assert(numberOfReplacements >= 1)
-
-                    val nextTotalSize = totalSize - numberOfReplacements * totalPrefixSize
-                    if (findElements(nextList, nextTotalSize, elementCount + 1, outputList)) {
-                        outputList.add(prefix)
-                        return true
-                    }
-                }
-
-                // Remove last element
-                totalPrefixSize -= (prefix.last().length + 1)
-                prefix = list.subList(0, prefix.size - 1)
-            }
-            return false
-        }
-
-        val resultList = mutableListOf<List<String>>()
-        val foundResult = findElements(list, list.totalSize(),0, resultList)
-        return if (foundResult) resultList else null
-    }
-
-
-
-    fun breakUpCommandSequence(commands: List<Command>): MovementCommands {
-
-        val completeCommandString = commands.joinToString(",")
-        val completeList = completeCommandString.split(",")
-
-        val resultList = breakupList(completeList) ?: throw IllegalStateException("Could not break up list in patterns")
-        assert(resultList.size <= 3)
-
-        val A = resultList.elementAtOrNull(0)?.joinToString(",") ?: ""
-        val B = resultList.elementAtOrNull(1)?.joinToString(",") ?: ""
-        val C = resultList.elementAtOrNull(2)?.joinToString(",") ?: ""
-
-        var functionSequence = completeCommandString.replace(A, "A")
-        functionSequence = functionSequence.replace(B, "B")
-        functionSequence = functionSequence.replace(C, "C")
-
-        return MovementCommands(functionSequence,
-            A,
-            B,
-            C)
-    }
-
     fun getNumberOfDustParticles(program: List<Long>): Long {
         val map = getMap(program, true)
         val commandSequence = findCommandSequence(map)
-        val movementCommands = breakUpCommandSequence(commandSequence)
+        val movementCommands = MovementCommands.from(commandSequence)
 
         val mutatedProgram = program.toMutableList()
         mutatedProgram[0] = 2
 
         val computer = Computer(mutatedProgram)
 
-        computer.process(movementCommands.toInputList())
+        computer.processAscii(movementCommands.toInputList())
 
-        val result = computer.process("n".toAsciiInput())
+        val result = computer.processAscii("n")
         return result.lastOutput
     }
 
-    fun findCommandSequence(map: Map<Coordinate, State>): List<Command> {
+    private fun findCommandSequence(map: Map<Coordinate, State>): List<Command> {
         val robotEntry = map.entries.find { State.robotStates.contains(it.value) } ?:
             throw IllegalStateException("Robot not found")
 
@@ -278,7 +240,7 @@ class Day17 {
         return commands
     }
 
-    fun printMap(map: Map<Coordinate, State>) {
+    private fun printMap(map: Map<Coordinate, State>) {
         val range = map.keys.range()
         for (coordinate in range) {
             val state = map[coordinate] ?: State.Empty
