@@ -1,2 +1,2 @@
-# AdventOfCode2019
-Solutions to the AdventOfCode puzzles of 2019
+# AdventOfCode
+Solutions to the AdventOfCode puzzles
