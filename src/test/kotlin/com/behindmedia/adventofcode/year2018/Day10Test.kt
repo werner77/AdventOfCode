@@ -1,7 +1,7 @@
 package com.behindmedia.adventofcode.year2018
-import org.junit.Test
 
-import org.junit.Assert.*
+import com.behindmedia.adventofcode.common.parseLines
+import org.junit.Test
 
 class Day10Test {
 
@@ -9,7 +9,7 @@ class Day10Test {
     fun determineMessageSimple() {
         val day10 = Day10()
 
-        val entries = parseList("/2018/day10-simple.txt") {
+        val entries = parseLines("/2018/day10-simple.txt") {
             day10.parseLine(it)
         }
 
@@ -20,7 +20,7 @@ class Day10Test {
     fun determineMessage() {
         val day10 = Day10()
 
-        val entries = parseList("/2018/day10.txt") {
+        val entries = parseLines("/2018/day10.txt") {
             day10.parseLine(it)
         }
 

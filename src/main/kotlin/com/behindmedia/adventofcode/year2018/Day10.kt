@@ -16,7 +16,7 @@ class Day10 {
                 return Entry(Position.fromString(first), Position.fromString(second))
             }
         }
-        throw IllegalArgumentException("Could not com.behindmedia.adventofcode.year2018.parse string: ${line}")
+        throw IllegalArgumentException("Could not parse string: ${line}")
     }
 
     data class Position(var x: Int, var y: Int) {

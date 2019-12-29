@@ -1,11 +1,12 @@
 package com.behindmedia.adventofcode.year2018
+import com.behindmedia.adventofcode.common.parseLines
 import org.junit.Test
 
 class Day6Test {
 
     @Test
     fun largestAreaSimple() {
-        val points = parseList("/2018/day6-simple.txt") {
+        val points = parseLines("/2018/day6-simple.txt") {
             Day6.Point.fromString(it)
         }
 
@@ -15,7 +16,7 @@ class Day6Test {
 
     @Test
     fun largestArea() {
-        val points = parseList("/2018/day6.txt") {
+        val points = parseLines("/2018/day6.txt") {
             Day6.Point.fromString(it)
         }
 
@@ -25,7 +26,7 @@ class Day6Test {
 
     @Test
     fun largestArea2Simple() {
-        val points = parseList("/2018/day6-simple.txt") {
+        val points = parseLines("/2018/day6-simple.txt") {
             Day6.Point.fromString(it)
         }
 
@@ -35,7 +36,7 @@ class Day6Test {
 
     @Test
     fun largestArea2() {
-        val points = parseList("/2018/day6.txt") {
+        val points = parseLines("/2018/day6.txt") {
             Day6.Point.fromString(it)
         }
 

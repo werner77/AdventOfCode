@@ -1,4 +1,5 @@
 package com.behindmedia.adventofcode.year2018
+import com.behindmedia.adventofcode.common.read
 import org.junit.Assert.*
 import org.junit.Test
 

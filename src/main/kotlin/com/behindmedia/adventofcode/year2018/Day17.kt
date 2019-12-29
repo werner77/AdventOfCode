@@ -1,7 +1,5 @@
 package com.behindmedia.adventofcode.year2018
 
-import java.lang.Thread.sleep
-
 class Day17 {
 
     enum class Direction {

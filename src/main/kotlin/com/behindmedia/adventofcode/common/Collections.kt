@@ -24,6 +24,13 @@ fun <T>Collection<T>.onlyOrNull(): T? {
     }
 }
 
+fun <T>Collection<T>.only(): T {
+    if (this.size != 1) {
+        throw IllegalStateException("Expected exactly one element to be present")
+    }
+    return this.first()
+}
+
 /**
  * Slices a list in sub lists of the specified count. The last list can be smaller if the total list size is not fully
  * divisible by the count.
@@ -199,5 +206,18 @@ class FilteredIterable<E>(private val iterable: Iterable<E>, private val predica
 
     override fun iterator(): Iterator<E> {
         return FilteredIterator(iterable.iterator(), predicate)
+    }
+}
+
+fun Array<IntArray>.printMatrix() {
+    val size = this.size
+    for (i in 0 until size) {
+        for (j in 0 until size) {
+            if (j > 0) {
+                print("\t")
+            }
+            print(this[i][j])
+        }
+        println()
     }
 }

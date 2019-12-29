@@ -1,7 +1,8 @@
 package com.behindmedia.adventofcode.year2018
-import org.junit.Test
 
-import org.junit.Assert.*
+import com.behindmedia.adventofcode.common.parseLines
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class Day7Test {
 
@@ -10,7 +11,7 @@ class Day7Test {
 
         val expected = "CABDFE"
 
-        val entries = parseList("/2018/day7-simple.txt") {
+        val entries = parseLines("/2018/day7-simple.txt") {
             Day7.Entry.fromString(it)
         }
 
@@ -46,7 +47,7 @@ class Day7Test {
 
         val expected = "ABCDEFGHIJ"
 
-        val entries = parseList("/2018/day7-test.txt") {
+        val entries = parseLines("/2018/day7-test.txt") {
             Day7.Entry.fromString(it)
         }
 
@@ -62,7 +63,7 @@ class Day7Test {
     @Test
     fun process() {
 
-        val entries = parseList("/2018/day7.txt") {
+        val entries = parseLines("/2018/day7.txt") {
             Day7.Entry.fromString(it)
         }
 
@@ -72,7 +73,7 @@ class Day7Test {
 
     @Test
     fun processWithWorkersSimple() {
-        val entries = parseList("/2018/day7-simple.txt") {
+        val entries = parseLines("/2018/day7-simple.txt") {
             Day7.Entry.fromString(it)
         }
 
@@ -85,7 +86,7 @@ class Day7Test {
 
     @Test
     fun processWithWorkers() {
-        val entries = parseList("/2018/day7.txt") {
+        val entries = parseLines("/2018/day7.txt") {
             Day7.Entry.fromString(it)
         }
 

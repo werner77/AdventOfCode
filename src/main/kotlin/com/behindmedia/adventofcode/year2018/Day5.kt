@@ -1,6 +1,6 @@
 package com.behindmedia.adventofcode.year2018
 
-import com.behindmedia.adventofcode.year2018.popFirst
+import com.behindmedia.adventofcode.common.popFirst
 import java.util.*
 
 class Day5 {

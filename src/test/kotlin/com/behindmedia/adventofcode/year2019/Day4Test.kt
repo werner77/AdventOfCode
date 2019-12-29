@@ -1,8 +1,7 @@
 package com.behindmedia.adventofcode.year2019
 
-import org.junit.Test
-
 import org.junit.Assert.*
+import org.junit.Test
 
 class Day4Test {
 

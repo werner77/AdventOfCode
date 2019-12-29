@@ -1,5 +1,4 @@
 package com.behindmedia.adventofcode.year2018
-import java.lang.StringBuilder
 
 import kotlin.math.min
 

@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.year2018
 
+import com.behindmedia.adventofcode.common.popFirst
 import java.util.*
 import kotlin.math.max
 
@@ -24,7 +25,7 @@ class Day7 {
                         return Entry(first, second)
                     }
                 }
-                throw IllegalArgumentException("Could not com.behindmedia.adventofcode.year2018.parse string: ${s}")
+                throw IllegalArgumentException("Could not parse string: ${s}")
             }
         }
     }

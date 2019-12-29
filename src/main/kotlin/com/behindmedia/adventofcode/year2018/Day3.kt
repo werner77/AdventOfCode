@@ -1,7 +1,5 @@
 package com.behindmedia.adventofcode.year2018
 
-import java.lang.IllegalArgumentException
-
 class Day3 {
 
     class IntArray2D(n: Int, m: Int) {

@@ -2,7 +2,6 @@ package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.range
-import java.lang.StringBuilder
 
 class Day15 {
 

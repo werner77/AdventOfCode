@@ -1,5 +1,4 @@
 package com.behindmedia.adventofcode.year2018
-import java.util.*
 
 class Day13 {
 

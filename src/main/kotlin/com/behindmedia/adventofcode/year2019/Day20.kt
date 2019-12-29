@@ -58,7 +58,7 @@ class Day20 {
 
     private fun parseMap(input: String): Map<Coordinate, Node> {
 
-        // First com.behindmedia.adventofcode.year2018.parse the input into a straight map of com.behindmedia.adventofcode.year2018.Coordinate -> Char
+        // First parse the input into a straight map of com.behindmedia.adventofcode.year2018.Coordinate -> Char
         val map = input.split('\n').foldIndexed(mutableMapOf<Coordinate, Char>()) { y, map, line ->
             var x = 0
             for (c in line) {

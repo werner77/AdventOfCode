@@ -2,9 +2,8 @@ package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate3D
 import com.behindmedia.adventofcode.common.read
+import org.junit.Assert.assertEquals
 import org.junit.Test
-
-import org.junit.Assert.*
 
 class Day12Test {
 

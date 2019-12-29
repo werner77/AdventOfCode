@@ -1,14 +1,13 @@
 package com.behindmedia.adventofcode.year2018
 
+import com.behindmedia.adventofcode.common.parseLines
 import org.junit.Test
-
-import org.junit.Assert.*
 
 class Day1Test {
 
     @Test
     fun calculateFrequency() {
-        val numbers = parseList("/2018/day1.txt") {
+        val numbers = parseLines("/2018/day1.txt") {
             it.toInt()
         }
         val result = Day1().calculateFrequency(0, numbers)
@@ -17,7 +16,7 @@ class Day1Test {
 
     @Test
     fun findFirstDuplicateFrequency() {
-        val numbers = parseList("/2018/day1.txt") {
+        val numbers = parseLines("/2018/day1.txt") {
             it.toInt()
         }
         val result = Day1().findFirstDuplicateFrequency(0, numbers)

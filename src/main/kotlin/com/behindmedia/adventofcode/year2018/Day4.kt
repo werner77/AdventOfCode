@@ -30,7 +30,7 @@ class Day4 {
                     when(s) {
                         "falls asleep" -> Sleep
                         "wakes up" -> WakeUp
-                        else -> throw IllegalArgumentException("Could not com.behindmedia.adventofcode.year2018.parse string: $s")
+                        else -> throw IllegalArgumentException("Could not parse string: $s")
                     }
                 }
             }

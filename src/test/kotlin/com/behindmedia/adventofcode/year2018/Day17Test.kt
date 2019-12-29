@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.year2018
-import org.junit.Assert.*
+import com.behindmedia.adventofcode.common.read
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class Day17Test {

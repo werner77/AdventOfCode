@@ -4,7 +4,7 @@ import com.behindmedia.adventofcode.common.numberOfDigits
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.retainingAll
 import com.behindmedia.adventofcode.common.toMap
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class Day9Test {

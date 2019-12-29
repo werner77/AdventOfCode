@@ -1,7 +1,8 @@
 package com.behindmedia.adventofcode.year2018
-import org.junit.Test
 
-import org.junit.Assert.*
+import com.behindmedia.adventofcode.common.parseLines
+import com.behindmedia.adventofcode.common.read
+import org.junit.Test
 import java.util.*
 
 class Day16Test {
@@ -24,7 +25,7 @@ class Day16Test {
 
         day16.process(samples)
 
-        val instructions = parseList("/2018/day16b.txt") {
+        val instructions = parseLines("/2018/day16b.txt") {
             it.split("[", "]", ",", " ").filter { !it.isEmpty() }.map { it.toInt() }.toIntArray()
         }
 

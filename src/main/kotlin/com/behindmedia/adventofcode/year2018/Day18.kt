@@ -1,5 +1,7 @@
 package com.behindmedia.adventofcode.year2018
 
+import com.behindmedia.adventofcode.common.Coordinate
+
 class Day18 {
 
     enum class AcreType(val rawValue: Char) {

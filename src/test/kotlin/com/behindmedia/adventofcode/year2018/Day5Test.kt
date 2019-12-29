@@ -1,8 +1,7 @@
 package com.behindmedia.adventofcode.year2018
 
+import com.behindmedia.adventofcode.common.parse
 import org.junit.Test
-
-import org.junit.Assert.*
 
 class Day5Test {
 
