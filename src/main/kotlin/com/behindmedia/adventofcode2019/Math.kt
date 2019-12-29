@@ -96,6 +96,9 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return sqrt( deltaX * deltaX + deltaY * deltaY)
     }
 
+    /**
+     * The invers
+     */
     fun inverted(): Coordinate {
         return Coordinate(-x, -y)
     }
@@ -118,6 +121,9 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         }
     }
 
+    /**
+     * Optionally rotates this coordinate (representing a vector). Does nothing if the supplied direction is null.
+     */
     fun optionalRotate(direction: RotationDirection?): Coordinate {
         return when(direction) {
             null -> this
@@ -212,46 +218,6 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
         val gcd = greatestCommonDivisor(a, b)
         abs(a * b) / gcd
     }
-}
-
-fun Long.modularMultiplicativeInverse(modulo: Long): Long {
-    var a = this
-    var m = modulo
-    var y = 0L
-    var x = 1L
-    if (m == 1L) return 0L
-
-    while (a > 1) {
-        val q = a / m
-        var t = m
-        m = a % m
-        a = t
-        t = y
-        y = x - q * y
-        x = t
-    }
-    if (x < 0L) x += modulo
-    return x
-}
-
-fun BigInteger.modularMultiplicativeInverse(modulo: BigInteger): BigInteger {
-    var a = this
-    var m = modulo
-    var y = 0.toBigInteger()
-    var x = 1.toBigInteger()
-    if (m == 1.toBigInteger()) return 0.toBigInteger()
-
-    while (a > 1.toBigInteger()) {
-        val q = a / m
-        var t = m
-        m = a % m
-        a = t
-        t = y
-        y = x - q * y
-        x = t
-    }
-    if (x < 0.toBigInteger()) x += modulo
-    return x
 }
 
 fun Long.divideCeil(other: Long): Long {

@@ -122,7 +122,7 @@ class Day22 {
                 var a = state.a
                 var b = state.b
                 if (inverse) {
-                    val inverseIncrement = increment.modularMultiplicativeInverse(deckSize)
+                    val inverseIncrement = increment.modInverse(deckSize)
                     a *= inverseIncrement
                     b *= inverseIncrement
                 } else {
@@ -222,7 +222,7 @@ class Day22 {
             finalOperation = squaredState.apply(finalOperation, bigDeckSize)
             remainingTimes -= repeat
         }
-        return finalOperation.apply(index.toBigInteger(), bigDeckSize).toLong()
+        return finalOperation.apply(index.toBigInteger(), bigDeckSize).longValueExact()
     }
 
     /**

@@ -17,17 +17,11 @@ class Day25Test {
             take mouse
             north
             take ornament
-            west
-            east
             south
             east
             north
             take astronaut ice cream
             north
-            east
-            west
-            west
-            east
             south
             south
             west
@@ -42,43 +36,27 @@ class Day25Test {
             take prime number
             west
             south
-            south
-            north
-            north
-            inv
-            south
-            south
-            north
             west
             north
             west
             north
             take wreath
             south
-            west
-            east
             east
             south
             south
             west
             take mug
             west
-            inv
-            inv
             east
             east
             east
             take ornament
             south
             take mouse
-            inv
             east
             north
             north
-            west
-            east
-            east
-            west
             south
             south
             west
