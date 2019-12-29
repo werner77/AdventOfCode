@@ -9,7 +9,7 @@ class Day21Test {
     fun puzzle1() {
         val day21 = Day21()
 
-        val program = read("/day21.txt")
+        val program = read("/2019/day21.txt")
         val result = day21.walk(program)
 
         println(result)
@@ -19,7 +19,7 @@ class Day21Test {
     fun puzzle2() {
         val day21 = Day21()
 
-        val program = read("/day21.txt")
+        val program = read("/2019/day21.txt")
         val result = day21.run(program)
 
         println(result)

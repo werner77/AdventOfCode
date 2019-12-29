@@ -9,7 +9,7 @@ class Day15Test {
 
     @Test
     fun puzzle1() {
-        val input = read("/day15.txt")
+        val input = read("/2019/day15.txt")
         val day15 = Day15()
         val result = day15.fewestNumberOfMoves(input)
         println(result)
@@ -18,7 +18,7 @@ class Day15Test {
 
     @Test
     fun puzzle2() {
-        val input = read("/day15.txt")
+        val input = read("/2019/day15.txt")
         val day15 = Day15()
         val result = day15.spreadOxygen(input)
         println(result)

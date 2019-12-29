@@ -9,7 +9,7 @@ class Day19Test {
 
     @Test
     fun puzzle1() {
-        val encoded = read("/day19.txt")
+        val encoded = read("/2019/day19.txt")
         val day19 = Day19()
 
         val result = day19.numberOfBeamPoints(encoded, 50)
@@ -19,7 +19,7 @@ class Day19Test {
 
     @Test
     fun puzzle2() {
-        val encoded = read("/day19.txt")
+        val encoded = read("/2019/day19.txt")
 
         val day19 = Day19()
         val result = day19.findSquareLocation(encoded, 100)

@@ -27,7 +27,7 @@ class Day12Test {
     @Test
     fun puzzle1() {
         val day12 = Day12()
-        val input = parseInput(read("/day12.txt"))
+        val input = parseInput(read("/2019/day12.txt"))
         val result = day12.getTotalEnergy(input.first, input.second)
         println(result)
         assertEquals(6735, result)
@@ -36,7 +36,7 @@ class Day12Test {
     @Test
     fun puzzle2() {
         val day12 = Day12()
-        val input = parseInput(read("/day12.txt"))
+        val input = parseInput(read("/2019/day12.txt"))
         val result = day12.findPeriod(input.first, input.second)
         println(result)
         assertEquals(326489627728984L, result)

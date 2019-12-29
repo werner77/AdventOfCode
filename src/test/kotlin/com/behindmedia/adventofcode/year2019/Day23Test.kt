@@ -8,7 +8,7 @@ class Day23Test {
 
     @Test
     fun puzzle1() {
-        val program = read("/day23.txt")
+        val program = read("/2019/day23.txt")
         val day23 = Day23()
 
         val packet = day23.processNetwork(program) { _, _, isNat ->
@@ -21,7 +21,7 @@ class Day23Test {
 
     @Test
     fun puzzle2() {
-        val program = read("/day23.txt")
+        val program = read("/2019/day23.txt")
         val day23 = Day23()
 
         var lastNatPacket: Day23.Packet? = null

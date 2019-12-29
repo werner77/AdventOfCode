@@ -42,7 +42,7 @@ class Day9Test {
 
     @Test
     fun puzzle1() {
-        val encodedState = read("/day9.txt")
+        val encodedState = read("/2019/day9.txt")
         val computer = Computer(encodedState)
         val result = computer.process(listOf(1L))
         println(result.lastOutput)
@@ -51,7 +51,7 @@ class Day9Test {
 
     @Test
     fun puzzle2() {
-        val encodedState = read("/day9.txt")
+        val encodedState = read("/2019/day9.txt")
         val computer = Computer(encodedState)
         val result = computer.process(listOf(2L))
         println(result.lastOutput)

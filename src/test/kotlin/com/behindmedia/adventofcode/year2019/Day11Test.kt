@@ -11,7 +11,7 @@ class Day11Test {
     @Test
     fun puzzle1() {
         val day11 = Day11()
-        val encodedState = read("/day11.txt")
+        val encodedState = read("/2019/day11.txt")
         val map = day11.paintLicensePlate(encodedState)
         println(map.size)
         assertEquals(2415, map.size)
@@ -37,7 +37,7 @@ class Day11Test {
     @Test
     fun puzzle2() {
         val day11 = Day11()
-        val encodedState = read("/day11.txt")
+        val encodedState = read("/2019/day11.txt")
         val map = day11.paintLicensePlate(encodedState, Day11.Color.White)
         printMap(map)
     }

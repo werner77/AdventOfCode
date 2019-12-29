@@ -26,7 +26,7 @@ class Day3Test {
 
     @Test
     fun puzzle1() {
-        val lines = parseLines("/day3.txt") {
+        val lines = parseLines("/2019/day3.txt") {
             it
         }
         val day3 = Day3()
@@ -56,7 +56,7 @@ class Day3Test {
 
     @Test
     fun puzzle2() {
-        val lines = parseLines("/day3.txt") {
+        val lines = parseLines("/2019/day3.txt") {
             it
         }
         val day3 = Day3()

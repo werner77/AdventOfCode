@@ -24,7 +24,7 @@ class Day8Test {
     }
 
     private fun getInput(): List<Int> {
-        return parse("/day8.txt") {
+        return parse("/2019/day8.txt") {
             it.fold(mutableListOf()) { list, c ->
                 val number: Int = c - '0'
                 assert(number in 0..9)

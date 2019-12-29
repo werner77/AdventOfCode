@@ -67,7 +67,7 @@ class Day25Test {
 
         val day25 = Day25()
 
-        val result = day25.adventure(read("/day25.txt"), initialInput, false)
+        val result = day25.adventure(read("/2019/day25.txt"), initialInput, false)
 
         println(result)
     }

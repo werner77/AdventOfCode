@@ -9,14 +9,14 @@ class Day24Test {
     @Test
     fun parseInput() {
         val day24 = Day24()
-        val state  = day24.parseInput(read("/day24.txt"))
+        val state  = day24.parseInput(read("/2019/day24.txt"))
         day24.print(state)
     }
 
     @Test
     fun puzzle1() {
         val day24 = Day24()
-        val result = day24.findFirstRepeatedState(read("/day24.txt"))
+        val result = day24.findFirstRepeatedState(read("/2019/day24.txt"))
         println(result)
         assertEquals(23846449, result)
     }
@@ -24,7 +24,7 @@ class Day24Test {
     @Test
     fun puzzle2() {
         val day24 = Day24()
-        val result = day24.numberOfBugs(read("/day24.txt"))
+        val result = day24.numberOfBugs(read("/2019/day24.txt"))
         println(result)
         assertEquals(1934, result)
     }

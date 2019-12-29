@@ -11,7 +11,7 @@ class Day13Test {
     @Test
     fun puzzle1() {
         val day13 = Day13()
-        val program = read("/day13.txt")
+        val program = read("/2019/day13.txt")
         val result = day13.numberOfBlocks(program)
 
         println(result)
@@ -20,7 +20,7 @@ class Day13Test {
 
     @Test
     fun puzzle2() {
-        val program = read("/day13.txt")
+        val program = read("/2019/day13.txt")
         val day13 = Day13()
         val gui: TextWindow? = null
         //uncomment to enable visualization

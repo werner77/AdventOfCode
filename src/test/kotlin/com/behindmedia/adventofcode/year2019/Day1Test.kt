@@ -30,7 +30,7 @@ class Day1Test {
     fun puzzle1() {
         val day1 = Day1()
 
-        val masses = parseLines("/day1.txt") {
+        val masses = parseLines("/2019/day1.txt") {
             it.toInt()
         }
         val result = day1.getTotalFuel(masses)
@@ -51,7 +51,7 @@ class Day1Test {
     fun puzzle2() {
         val day1 = Day1()
 
-        val masses = parseLines("/day1.txt") {
+        val masses = parseLines("/2019/day1.txt") {
             it.toInt()
         }
         val result = day1.cumulativeTotalFuel(masses)

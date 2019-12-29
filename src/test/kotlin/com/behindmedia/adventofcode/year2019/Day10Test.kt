@@ -13,7 +13,7 @@ class Day10Test {
     @Test
     fun puzzle1() {
         val day10 = Day10()
-        val asteroids = day10.decodeInput(read("/day10.txt"))
+        val asteroids = day10.decodeInput(read("/2019/day10.txt"))
         val result = day10.findBestLocation(asteroids)
         println(result)
         assertEquals(Pair(Coordinate(28,29), 340), result)
@@ -22,7 +22,7 @@ class Day10Test {
     @Test
     fun puzzle2() {
         val day10 = Day10()
-        val asteroids = day10.decodeInput(read("/day10.txt"))
+        val asteroids = day10.decodeInput(read("/2019/day10.txt"))
         val bestLocation = day10.findBestLocation(asteroids)
         val result = day10.destroyAsteroids(asteroids, bestLocation.first)!!
         println(result.x * 100 + result.y)

@@ -9,7 +9,7 @@ class Day7Test {
 
     @Test
     fun puzzle1() {
-        val opcodes = parse("/day7.txt") {
+        val opcodes = parse("/2019/day7.txt") {
             it.split(",").map { value -> value.toInt() }
         }
         val day7 = Day7()
@@ -20,7 +20,7 @@ class Day7Test {
 
     @Test
     fun puzzle2() {
-        val opcodes = parse("/day7.txt") {
+        val opcodes = parse("/2019/day7.txt") {
             it.split(",").map { value -> value.toInt() }
         }
         val day7 = Day7()

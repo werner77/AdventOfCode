@@ -9,7 +9,7 @@ class Day14Test {
 
     @Test
     fun puzzle1() {
-        val result = Day14().oreForSingleFuel(read("/day14.txt"))
+        val result = Day14().oreForSingleFuel(read("/2019/day14.txt"))
         println(result)
 
         assertEquals(273638, result)
@@ -17,7 +17,7 @@ class Day14Test {
 
     @Test
     fun puzzle2() {
-        val result = Day14().maxAmountOfFuel(read("/day14.txt"))
+        val result = Day14().maxAmountOfFuel(read("/2019/day14.txt"))
         println(result)
         assertEquals(4200533, result)
     }

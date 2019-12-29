@@ -9,7 +9,7 @@ class Day22Test {
 
     @Test
     fun puzzle1() {
-        val input = read("/day22.txt")
+        val input = read("/2019/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
 
@@ -24,7 +24,7 @@ class Day22Test {
 
     @Test
     fun puzzle2() {
-        val input = read("/day22.txt")
+        val input = read("/2019/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
         val result = day22.shuffledCard(119315717514047, 2020, shuffleTechniques, true,
@@ -35,7 +35,7 @@ class Day22Test {
 
     @Test
     fun shuffleForward() {
-        val input = read("/day22.txt")
+        val input = read("/2019/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
         val result = day22.shuffledCard(10007, 2019, shuffleTechniques)
@@ -45,7 +45,7 @@ class Day22Test {
 
     @Test
     fun shuffleInverse() {
-        val input = read("/day22.txt")
+        val input = read("/2019/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
         val result = day22.shuffledCard(10007, 4775, shuffleTechniques, true)
@@ -55,7 +55,7 @@ class Day22Test {
 
     @Test
     fun shuffleRepeatedWithInverse() {
-        val input = read("/day22.txt")
+        val input = read("/2019/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
         val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, false, 1000)
@@ -67,7 +67,7 @@ class Day22Test {
 
     @Test
     fun shuffleOptimized() {
-        val input = read("/day22.txt")
+        val input = read("/2019/day22.txt")
         val day22 = Day22()
         val shuffleTechniques = day22.parseInput(input)
         val result1 = day22.shuffledCard(10007, 2019, shuffleTechniques, true, 1013)
