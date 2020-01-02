@@ -155,6 +155,15 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
             }
         }
 
+    val crossNeighbours: List<Coordinate>
+        get() {
+            return List<Coordinate>(4) {
+                val xOffset = if (it == 0 || it == 1) 1 else -1
+                val yOffset = if (it == 0 || it == 2) 1 else -1
+                Coordinate(this.x + xOffset, this.y + yOffset)
+            }
+        }
+
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
      */
@@ -372,40 +381,45 @@ inline fun binarySearch(lowerBound: Long, upperBound: Long, targetValue: Long, i
     return result
 }
 
-inline fun optimumSearch(minimumValue: Long, inverted: Boolean = false, process: (Long) -> Long): Long {
+fun optimumSearch(startValue: Long, inverted: Boolean = false, process: (Long) -> Long): Long {
+    fun compareEval(first: Long, second: Long): Int {
+        return if (inverted) second.compareTo(first) else first.compareTo(second)
+    }
     var exceededOptimum = false
     var delta = 1
-    var currentValue = minimumValue
-    var lastEvaluation = process(currentValue)
-    var sign = 1
+    var currentValue = startValue
+    var bestEvaluation = process(currentValue)
     while(true) {
-        var currentEvaluation = 0L
         if (exceededOptimum) {
-            var better = false
-            for (i in 0 until 2) {
-                currentEvaluation = process(currentValue + sign * delta)
-                better = if (inverted) currentEvaluation < lastEvaluation else currentEvaluation > lastEvaluation
-                if (better) break
-                sign = -sign
+            val leftEvaluation = process(currentValue - delta)
+            val rightEvaluation = process(currentValue + delta)
+            val comparisonResult = compareEval(leftEvaluation, rightEvaluation)
+            val (currentEvaluation, sign) = if (comparisonResult > 0) {
+                Pair(leftEvaluation, -1)
+            } else {
+                Pair(rightEvaluation, 1)
             }
-            if (better) {
+
+            if (compareEval(currentEvaluation, bestEvaluation) > 0) {
                 currentValue += sign * delta
+                bestEvaluation = currentEvaluation
             } else if (delta == 1) {
                 process(currentValue)
                 return currentValue
             }
             delta = max(1, delta / 2)
         } else {
-            currentValue += delta
-            currentEvaluation = process(currentValue)
-            val better = if (inverted) currentEvaluation < lastEvaluation else currentEvaluation > lastEvaluation
-            if (better) {
+            // First increase delta by powers of two until the evaluation gets worse
+            val currentEvaluation = process(currentValue + delta)
+            val comparisonResult = compareEval(currentEvaluation, bestEvaluation)
+            if (comparisonResult > 0) {
+                currentValue += delta
                 delta *= 2
+                bestEvaluation = currentEvaluation
             } else {
-                sign = -sign
                 exceededOptimum = true
+                delta = max(1, delta / 2)
             }
         }
-        lastEvaluation = currentEvaluation
     }
 }
