@@ -54,9 +54,7 @@ class Day10 {
         for (i in 0 until entries.size) {
             val position1 = entries[i].position
             var minDistance = Double.MAX_VALUE
-            for (j in 0 until entries.size) {
-                if (i == j) continue
-
+            for (j in i + 1 until entries.size) {
                 val position2 = entries[j].position
                 minDistance = Math.min(minDistance, position1.distance(position2))
             }
