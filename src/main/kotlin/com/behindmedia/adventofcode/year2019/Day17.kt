@@ -157,7 +157,7 @@ class Day17 {
         // Find the points in the map with have adjacent points
         var answer = 0
         for (coordinate in map.keys) {
-            val numberOfNeighbours = coordinate.neighbours.filter { map[it] != null }.size
+            val numberOfNeighbours = coordinate.directNeighbours.filter { map[it] != null }.size
             if (numberOfNeighbours == 4) {
                 answer += coordinate.x * coordinate.y
             }
@@ -200,7 +200,7 @@ class Day17 {
 
         while (untouchedMap.isNotEmpty()) {
 
-            val populatedNeighbours = currentPosition.neighbours.filter {
+            val populatedNeighbours = currentPosition.directNeighbours.filter {
                 map[it] == State.Scaffold
             }.toSet()
 

@@ -95,18 +95,8 @@ class Day14 {
     }
 
     private fun binarySearch(formulaMap: Map<String, Formula>, lowerBound: Long, upperBound: Long, maxAmountOre: Long): Long {
-        var begin = lowerBound
-        var end = upperBound
-        var result: Long? = null
-        while (begin <= end) {
-            val mid = (begin + end) / 2L
-            if (oreForFuel(formulaMap, mid) <= maxAmountOre) {
-                result = mid
-                begin = mid + 1
-            } else {
-                end = mid - 1
-            }
-        }
-        return result ?: throw IllegalStateException("No result found for specified bounds")
+        return com.behindmedia.adventofcode.common.binarySearch(lowerBound, upperBound, maxAmountOre) {
+            oreForFuel(formulaMap, it)
+        } ?: throw IllegalStateException("No result found for specified bounds")
     }
 }

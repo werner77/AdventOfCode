@@ -60,7 +60,7 @@ class Day15 {
             val iterator = oxygenCoordinates.listIterator()
 
             iterator.forEach { oxygenCoordinate ->
-                for (neighbour in oxygenCoordinate.neighbours) {
+                for (neighbour in oxygenCoordinate.directNeighbours) {
                     val neighbourState = populatedMap[neighbour]
                     if (neighbourState == State.Free) {
                         populatedMap[neighbour] = State.Oxygen
@@ -142,13 +142,13 @@ class Day15 {
 
     private fun Map<Coordinate, VisitState>.isFull(): Boolean {
         return !this.entries.any { entry ->
-            entry.value.state != State.Wall && entry.key.neighbours.any { this[it] == null }
+            entry.value.state != State.Wall && entry.key.directNeighbours.any { this[it] == null }
         }
     }
 
     private fun Map<Coordinate, VisitState>.bestNextDirection(currentPosition: Coordinate): Coordinate? {
         // Get all the neighbours of the current position as pairs of (direction, visitState)
-        val candidates: List<Pair<Coordinate, VisitState>> = currentPosition.neighbours.mapNotNull { coordinate ->
+        val candidates: List<Pair<Coordinate, VisitState>> = currentPosition.directNeighbours.mapNotNull { coordinate ->
             val visitState = this[coordinate] ?: VisitState(State.Unknown, 0)
             if (visitState.state == State.Wall) null else Pair(currentPosition.vector(coordinate), visitState)
         }

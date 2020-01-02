@@ -133,13 +133,25 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Returns the direct neighbours of this coordinate
      */
-    val neighbours: List<Coordinate>
+    val directNeighbours: List<Coordinate>
         get() {
             return List<Coordinate>(4) {
                 val xOffset = it % 2
                 val sign = if (it < 1 || it > 2) -1 else 1
                 val yOffset = (it + 1) % 2
-                Coordinate(this.x + sign * xOffset, this.y + sign * yOffset)
+                offset(sign * xOffset, sign * yOffset)
+            }
+        }
+
+    /**
+     * Returns the indirect neighbours of this coordinate, defined as the diagonal neighbours
+     */
+    val indirectNeighbours: List<Coordinate>
+        get() {
+            return List<Coordinate>(4) {
+                val xOffset = if (it == 0 || it == 1) 1 else -1
+                val yOffset = if (it == 0 || it == 2) 1 else -1
+                offset(xOffset, yOffset)
             }
         }
 
@@ -166,7 +178,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     inline fun <T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
         return reachableNodes(this,
             neighbours = {
-                it.neighbours
+                it.directNeighbours
             },
             process = process, reachable = reachable
         )
@@ -178,6 +190,22 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
             1 -> y
             else -> throw IllegalArgumentException("Invalid index supplied")
         }
+    }
+
+    operator fun plus(other: Coordinate): Coordinate {
+        return offset(other)
+    }
+
+    operator fun unaryMinus(): Coordinate {
+        return inverted()
+    }
+
+    operator fun minus(other: Coordinate): Coordinate {
+        return offset(other.inverted())
+    }
+
+    operator fun rangeTo(other: Coordinate): ClosedRange<Coordinate> {
+        return CoordinateRange(this, other)
     }
 }
 
@@ -248,23 +276,25 @@ fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
 /**
  * Range to enumerate coordinates between the (minx, miny) and (maxx, maxy) found in a list of coordinates.
  */
-class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>, ClosedRange<Coordinate> {
-    private val minCoordinate: Coordinate
-    private val maxCoordinate: Coordinate
+class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>) : Iterable<Coordinate>, ClosedRange<Coordinate> {
 
-    init {
-        var minX = Integer.MAX_VALUE
-        var minY = Integer.MAX_VALUE
-        var maxX = Integer.MIN_VALUE
-        var maxY = Integer.MIN_VALUE
-        for (coordinate in collection) {
-            minX = min(minX, coordinate.x)
-            minY = min(minY, coordinate.y)
-            maxX = max(maxX, coordinate.x)
-            maxY = max(maxY, coordinate.y)
+    constructor(minCoordinate: Coordinate, maxCoordinate: Coordinate): this(Pair(minCoordinate, maxCoordinate))
+    constructor(collection: Collection<Coordinate>): this(collection.minMaxCoordinate())
+
+    companion object {
+        private fun Collection<Coordinate>.minMaxCoordinate(): Pair<Coordinate, Coordinate>  {
+            var minX = Integer.MAX_VALUE
+            var minY = Integer.MAX_VALUE
+            var maxX = Integer.MIN_VALUE
+            var maxY = Integer.MIN_VALUE
+            for (coordinate in this) {
+                minX = min(minX, coordinate.x)
+                minY = min(minY, coordinate.y)
+                maxX = max(maxX, coordinate.x)
+                maxY = max(maxY, coordinate.y)
+            }
+            return Pair(Coordinate(minX, minY), Coordinate(maxX, maxY))
         }
-        minCoordinate = Coordinate(minX, minY)
-        maxCoordinate = Coordinate(maxX, maxY)
     }
 
     private class CoordinateIterator(val minCoordinate: Coordinate, val maxCoordinate: Coordinate): Iterator<Coordinate> {
@@ -285,12 +315,12 @@ class CoordinateRange(collection: Collection<Coordinate>) : Iterable<Coordinate>
         }
     }
 
-    override fun iterator(): Iterator<Coordinate> = CoordinateIterator(minCoordinate, maxCoordinate)
+    override fun iterator(): Iterator<Coordinate> = CoordinateIterator(minMaxCoordinate.first, minMaxCoordinate.second)
 
     override val endInclusive: Coordinate
-        get() = maxCoordinate
+        get() = minMaxCoordinate.second
     override val start: Coordinate
-        get() = minCoordinate
+        get() = minMaxCoordinate.first
 }
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
@@ -323,5 +353,59 @@ inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachab
             }
         }
         visited.add(current.node)
+    }
+}
+
+inline fun binarySearch(lowerBound: Long, upperBound: Long, targetValue: Long, inverted: Boolean = false, evaluation: (Long) -> Long): Long? {
+    var begin = lowerBound
+    var end = upperBound
+    var result: Long? = null
+    while (begin <= end) {
+        val mid = (begin + end) / 2L
+        if (evaluation(mid) <= targetValue) {
+            result = mid
+            begin = if (inverted) mid - 1 else mid + 1
+        } else {
+            end = if (inverted) mid + 1 else mid - 1
+        }
+    }
+    return result
+}
+
+inline fun optimumSearch(minimumValue: Long, inverted: Boolean = false, process: (Long) -> Long): Long {
+    var exceededOptimum = false
+    var delta = 1
+    var currentValue = minimumValue
+    var lastEvaluation = process(currentValue)
+    var sign = 1
+    while(true) {
+        var currentEvaluation = 0L
+        if (exceededOptimum) {
+            var better = false
+            for (i in 0 until 2) {
+                currentEvaluation = process(currentValue + sign * delta)
+                better = if (inverted) currentEvaluation < lastEvaluation else currentEvaluation > lastEvaluation
+                if (better) break
+                sign = -sign
+            }
+            if (better) {
+                currentValue += sign * delta
+            } else if (delta == 1) {
+                process(currentValue)
+                return currentValue
+            }
+            delta = max(1, delta / 2)
+        } else {
+            currentValue += delta
+            currentEvaluation = process(currentValue)
+            val better = if (inverted) currentEvaluation < lastEvaluation else currentEvaluation > lastEvaluation
+            if (better) {
+                delta *= 2
+            } else {
+                sign = -sign
+                exceededOptimum = true
+            }
+        }
+        lastEvaluation = currentEvaluation
     }
 }

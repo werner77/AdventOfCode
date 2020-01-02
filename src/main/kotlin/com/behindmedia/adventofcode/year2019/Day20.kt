@@ -27,7 +27,7 @@ class Day20 {
         }
 
         fun neighbours(level: Int, recursiveMode: Boolean): List<LeveledCoordinate> {
-            val result = coordinate.neighbours.map { LeveledCoordinate(it, level) }.toMutableList()
+            val result = coordinate.directNeighbours.map { LeveledCoordinate(it, level) }.toMutableList()
             if (isReachable(level, recursiveMode)) {
                 portal?.let { portal ->
                     portal.connectedNode?.let { node ->
@@ -87,7 +87,7 @@ class Day20 {
             if (c1 == '.') {
                 var portal: Portal? = null
 
-                for (neighbour in coordinate.neighbours) {
+                for (neighbour in coordinate.directNeighbours) {
                     val c2 = map[neighbour] ?: ' '
                     if ((c2 - 'A') in 0..25) {
                         // Consider the next coordinate as well

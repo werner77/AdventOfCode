@@ -1,5 +1,9 @@
 package com.behindmedia.adventofcode.year2018
 
+import com.behindmedia.adventofcode.common.optimumSearch
+import kotlin.math.max
+import kotlin.math.min
+
 class Day10 {
 
     data class Entry(val position: Position, val velocity: Position)
@@ -42,45 +46,36 @@ class Day10 {
         }
     }
 
-    fun List<Entry>.extraPolate(steps: Int) {
+    fun List<Entry>.extrapolate(steps: Int) {
         for (entry in this) {
             entry.position.add(entry.velocity, steps)
         }
     }
 
-    fun entropy(entries: List<Entry>): Double {
-        //calculate the avg minimum distance to the nearest neighbour
-        var sum = 0.0
-        for (i in 0 until entries.size) {
-            val position1 = entries[i].position
-            var minDistance = Double.MAX_VALUE
-            for (j in i + 1 until entries.size) {
-                val position2 = entries[j].position
-                minDistance = Math.min(minDistance, position1.distance(position2))
-            }
-            sum += minDistance
+    fun entropy(entries: List<Entry>): Int {
+        val minPoint = Position(Int.MAX_VALUE, Int.MAX_VALUE)
+        val maxPoint = Position(Int.MIN_VALUE, Int.MIN_VALUE)
+        for (entry in entries) {
+            minPoint.x = min(minPoint.x, entry.position.x)
+            minPoint.y = min(minPoint.y, entry.position.y)
+
+            maxPoint.x = max(maxPoint.x, entry.position.x)
+            maxPoint.y = max(maxPoint.y, entry.position.y)
         }
-        return sum / entries.size
+        return maxPoint.x - minPoint.x + maxPoint.y - minPoint.y
     }
 
     fun determineMessage(entries: List<Entry>) {
-        var seconds = 0
-        var lastEntropy = Double.MAX_VALUE
-        while (true) {
-            entries.extraPolate(1)
-            val currentEntropy = entropy(entries)
+        var lastTime = 0
 
-            if (currentEntropy > lastEntropy) {
-                //The last one was the message: print it
-                entries.extraPolate(-1)
-                print(entries.map { it.position })
-                println("Waited for ${seconds} seconds")
-                break
-            }
-
-            lastEntropy = currentEntropy
-            seconds++
+        val optimumTime = optimumSearch(0, true) {
+            val delta = it.toInt() - lastTime
+            entries.extrapolate(delta)
+            lastTime = it.toInt()
+            entropy(entries).toLong()
         }
+        print(entries.map { it.position })
+        println("Waited for ${optimumTime} seconds")
     }
 
     fun print(positions: List<Position>) {
@@ -102,7 +97,7 @@ class Day10 {
                 if (positionSet.contains(Position(x, y))) {
                     print("#")
                 } else {
-                    print(".")
+                    print(" ")
                 }
             }
             println()
