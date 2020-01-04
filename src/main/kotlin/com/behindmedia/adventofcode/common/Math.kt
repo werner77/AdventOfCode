@@ -213,7 +213,11 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         return offset(other.inverted())
     }
 
-    operator fun rangeTo(other: Coordinate): ClosedRange<Coordinate> {
+    operator fun times(other: Coordinate): Coordinate {
+        return Coordinate(this.x * other.x, this.y * other.y)
+    }
+
+    operator fun rangeTo(other: Coordinate): CoordinateRange {
         return CoordinateRange(this, other)
     }
 }
