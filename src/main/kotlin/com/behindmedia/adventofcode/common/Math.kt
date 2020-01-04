@@ -30,6 +30,10 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
         return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
+    fun manhattenDistace(other: Coordinate3D): Int {
+        return abs(this.x - other.x) + abs(this.y - other.y) + abs(this.z - other.z)
+    }
+
     operator fun get(index: Int): Int {
         return when (index) {
             0 -> x

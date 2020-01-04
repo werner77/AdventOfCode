@@ -2,7 +2,7 @@ package com.behindmedia.adventofcode.year2018
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.only
-import com.behindmedia.adventofcode.common.popFirst
+import kotlin.math.min
 
 class Day22 {
 
@@ -76,21 +76,22 @@ class Day22 {
         return RegionType.from(erosionLevel).compatibleGears
     }
 
-    private fun shortestPath(
-        map: Map<Coordinate, Long>,
-        target: Coordinate
-    ): Int {
+    private fun cost(currentGear: Gear, requiredGear: Gear): Int {
+        return if (currentGear == requiredGear) 0 else 7
+    }
+
+    private fun shortestPath(map: Map<Coordinate, Long>, target: Coordinate): Int {
         val pending = sortedSetOf<CaveNodePath>()
         val visited = mutableSetOf<CaveNode>()
-        val candidates = mutableListOf<Int>()
         pending.add(CaveNodePath(CaveNode(Coordinate.origin, Gear.Torch), 0))
+        var minimumPath = Int.MAX_VALUE
 
         while (pending.isNotEmpty()) {
             val current = pending.pollFirst() ?: break
             if (current.node in visited) continue
+            if (current.path >= minimumPath) break
             if (current.node.coordinate == target) {
-                val finalCost = if (current.node.gear == Gear.Torch) 0 else 7
-                candidates.add(current.path + finalCost)
+                minimumPath = min(minimumPath, current.path + cost(current.node.gear, Gear.Torch))
             }
 
             current.node.coordinate.forDirectNeighbours { neighbour ->
@@ -103,13 +104,12 @@ class Day22 {
                         val currentErosionLevel = map.getValue(current.node.coordinate)
                         (compatibleGears intersect compatibleGears(currentErosionLevel)).only()
                     }
-                    val cost = if (nextGear == current.node.gear) 0 else 7
-                    pending.add(CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost))
+                    pending.add(CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost(current.node.gear, nextGear)))
                 }
             }
             visited.add(current.node)
         }
-        return candidates.min() ?: throw IllegalStateException("No valid path to target found")
+        return minimumPath
     }
 
     fun determineRiskLevel(depth: Long, target: Coordinate): Int {
