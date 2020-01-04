@@ -86,24 +86,26 @@ class Day22 {
         pending.add(CaveNodePath(CaveNode(Coordinate.origin, Gear.Torch), 0))
 
         while (pending.isNotEmpty()) {
-            val current = pending.popFirst() ?: break
+            val current = pending.pollFirst() ?: break
             if (current.node in visited) continue
             if (current.node.coordinate == target) {
                 val finalCost = if (current.node.gear == Gear.Torch) 0 else 7
                 candidates.add(current.path + finalCost)
             }
 
-            for (neighbour in current.node.coordinate.directNeighbours) {
-                val erosionLevel = map[neighbour] ?: continue
-                val compatibleGears = compatibleGears(erosionLevel)
-                val nextGear = if (current.node.gear in compatibleGears) {
-                    current.node.gear
-                } else {
-                    val currentErosionLevel = map.getValue(current.node.coordinate)
-                    (compatibleGears intersect compatibleGears(currentErosionLevel)).only()
+            current.node.coordinate.forDirectNeighbours { neighbour ->
+                val erosionLevel = map[neighbour]
+                if (erosionLevel != null) {
+                    val compatibleGears = compatibleGears(erosionLevel)
+                    val nextGear = if (current.node.gear in compatibleGears) {
+                        current.node.gear
+                    } else {
+                        val currentErosionLevel = map.getValue(current.node.coordinate)
+                        (compatibleGears intersect compatibleGears(currentErosionLevel)).only()
+                    }
+                    val cost = if (nextGear == current.node.gear) 0 else 7
+                    pending.add(CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost))
                 }
-                val cost = if (nextGear == current.node.gear) 0 else 7
-                pending.add(CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost))
             }
             visited.add(current.node)
         }

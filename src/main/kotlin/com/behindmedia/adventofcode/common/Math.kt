@@ -130,6 +130,15 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         }
     }
 
+    inline fun forDirectNeighbours(perform: (Coordinate) -> Unit) {
+        for (i in 0 until 4) {
+            val xOffset = i % 2
+            val sign = if (i < 1 || i > 2) -1 else 1
+            val yOffset = (i + 1) % 2
+            perform(offset(sign * xOffset, sign * yOffset))
+        }
+    }
+
     /**
      * Returns the direct neighbours of this coordinate
      */
