@@ -22,9 +22,19 @@ class Day22 {
         Torch, Climbing, Neither;
     }
 
-    private data class CaveNode(val coordinate: Coordinate, val gear: Gear)
+    private data class CaveNode(val coordinate: Coordinate, val gear: Gear): Comparable<CaveNode> {
+        override fun compareTo(other: CaveNode): Int {
+            val result = coordinate.compareTo(other.coordinate)
+            return if (result == 0) gear.compareTo(other.gear) else result
+        }
+    }
 
-    private data class CaveNodePath(val node: CaveNode, val path: Int)
+    private data class CaveNodePath(val node: CaveNode, val path: Int): Comparable<CaveNodePath> {
+        override fun compareTo(other: CaveNodePath): Int {
+            val result = path.compareTo(other.path)
+            return if (result == 0) node.compareTo(other.node) else result
+        }
+    }
 
     /*
     The region at 0,0 (the mouth of the cave) has a geologic index of 0.
@@ -67,13 +77,12 @@ class Day22 {
     }
 
     private fun shortestPath(map: Map<Coordinate, Long>, target: Coordinate, depth: Long): Int {
-        val pending = mutableListOf<CaveNodePath>()
+        val pending = sortedSetOf<CaveNodePath>()
         val visited = mutableSetOf<CaveNode>()
         val candidates = mutableListOf<Int>()
         pending.add(CaveNodePath(CaveNode(Coordinate.origin, Gear.Torch), 0))
 
         while (pending.isNotEmpty()) {
-            pending.sortBy(CaveNodePath::path)
             val current = pending.popFirst() ?: break
             if (current.node in visited) continue
             if (current.node.coordinate == target) {
@@ -87,15 +96,10 @@ class Day22 {
                 val nextGear = if (current.node.gear in compatibleGears) {
                     current.node.gear
                 } else {
-                    (compatibleGears(map.getValue(current.node.coordinate)) intersect
-                            compatibleGears(map.getValue(neighbour))).only()
+                    (compatibleGears intersect compatibleGears(map.getValue(current.node.coordinate))).only()
                 }
-
                 val cost = if (nextGear == current.node.gear) 0 else 7
-                val nextNodePath = CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost)
-                if (!visited.contains(nextNodePath.node)) {
-                    pending.add(nextNodePath)
-                }
+                pending.add(CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost))
             }
             visited.add(current.node)
         }
