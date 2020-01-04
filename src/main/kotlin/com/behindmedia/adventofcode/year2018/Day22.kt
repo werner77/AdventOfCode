@@ -76,7 +76,10 @@ class Day22 {
         return RegionType.from(erosionLevel).compatibleGears
     }
 
-    private fun shortestPath(map: Map<Coordinate, Long>, target: Coordinate, depth: Long): Int {
+    private fun shortestPath(
+        map: Map<Coordinate, Long>,
+        target: Coordinate
+    ): Int {
         val pending = sortedSetOf<CaveNodePath>()
         val visited = mutableSetOf<CaveNode>()
         val candidates = mutableListOf<Int>()
@@ -86,8 +89,8 @@ class Day22 {
             val current = pending.popFirst() ?: break
             if (current.node in visited) continue
             if (current.node.coordinate == target) {
-                val changeCost = if (current.node.gear == Gear.Torch) 0 else 7
-                candidates.add(current.path + changeCost)
+                val finalCost = if (current.node.gear == Gear.Torch) 0 else 7
+                candidates.add(current.path + finalCost)
             }
 
             for (neighbour in current.node.coordinate.directNeighbours) {
@@ -96,7 +99,8 @@ class Day22 {
                 val nextGear = if (current.node.gear in compatibleGears) {
                     current.node.gear
                 } else {
-                    (compatibleGears intersect compatibleGears(map.getValue(current.node.coordinate))).only()
+                    val currentErosionLevel = map.getValue(current.node.coordinate)
+                    (compatibleGears intersect compatibleGears(currentErosionLevel)).only()
                 }
                 val cost = if (nextGear == current.node.gear) 0 else 7
                 pending.add(CaveNodePath(CaveNode(neighbour, nextGear), current.path + 1 + cost))
@@ -113,7 +117,7 @@ class Day22 {
 
     fun shortestPath(depth: Long, target: Coordinate): Int {
         val erosionMap = getErosionMap(target, depth, target * Coordinate(2, 2))
-        return shortestPath(erosionMap, target, depth)
+        return shortestPath(erosionMap, target)
     }
 
 }
