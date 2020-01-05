@@ -24,6 +24,10 @@ class Day23 {
 
     private data class Box(val origin: Coordinate3D, val length: Int) {
 
+        init {
+            assert(length > 0 && (length == 1 || length % 2 == 0))
+        }
+
         fun manhattenDistance(from: Coordinate3D): Int {
             var distance = 0
             for (component in 0..2) {
@@ -45,10 +49,8 @@ class Day23 {
 
         fun split(): List<Box> {
             if (length == 1) {
-                return listOf(this)
+                throw IllegalStateException("Cannot split a box of length 1")
             }
-
-            assert(length % 2 == 0)
 
             val result = mutableListOf<Box>()
             val newLength = length / 2

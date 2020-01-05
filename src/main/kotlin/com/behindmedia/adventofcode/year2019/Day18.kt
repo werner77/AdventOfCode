@@ -215,7 +215,7 @@ class Day18 {
     }
 
     /**
-     * Finds the reachable nodes of the map, given the current set of keys in posession
+     * Finds the reachable nodes of the map, given the current set of keys in possession
      */
     fun getReachableKeys(currentPosition: Node, keysInPossession: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<CoordinatePath>>): List<CoordinatePath> {
         val cacheKey = keysInPossession.cacheKey(currentPosition)
