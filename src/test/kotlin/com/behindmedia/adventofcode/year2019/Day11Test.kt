@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate
+import com.behindmedia.adventofcode.common.printMap
 import com.behindmedia.adventofcode.common.range
 import com.behindmedia.adventofcode.common.read
 import org.junit.Test
@@ -18,20 +19,7 @@ class Day11Test {
     }
 
     private fun printMap(map: Map<Coordinate, Day11.Color>) {
-        val coordinates = map.keys
-        val range = coordinates.range()
-
-        for (coordinate in range) {
-            val value = map[coordinate]
-            if (value == Day11.Color.White) {
-                print("#")
-            } else {
-                print(" ")
-            }
-            if (coordinate.x == range.endInclusive.x) {
-                println()
-            }
-        }
+        map.mapValues { if (it.value == Day11.Color.White) "#" else " " }.printMap(" ")
     }
 
     @Test

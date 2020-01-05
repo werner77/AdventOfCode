@@ -1,28 +1,36 @@
 package com.behindmedia.adventofcode.year2018
 
 import com.behindmedia.adventofcode.common.Coordinate
+import com.behindmedia.adventofcode.common.CoordinatePath
+import com.behindmedia.adventofcode.common.printMap
 
 class Day20 {
 
-    // ^ENWWW(NEEE|SSE(EE|N))$
+    private val directions = mapOf(
+        Pair('N', Coordinate.up),
+        Pair('S', Coordinate.down),
+        Pair('E', Coordinate.right),
+        Pair('W', Coordinate.left)
+    )
 
-    fun MutableMap<Coordinate, Char>.markRoom(coordinate: Coordinate, marker: Char = '.') {
+    private fun MutableMap<Coordinate, Char>.markRoom(coordinate: Coordinate, marker: Char = '.') {
         this[coordinate] = marker
-        for (direction in coordinate.crossNeighbours) {
-            this[coordinate - direction] = '#'
+        for (neighbour in coordinate.indirectNeighbours) {
+            this[neighbour] = '#'
         }
     }
 
-    fun flattenOptions(chars: List<Char>, startIndex: Int): List<List<Char>> {
+    private fun flattenOptions(encoding: List<Char>, startIndex: Int): List<List<Char>> {
         var level = 1
         val options = mutableListOf<MutableList<Char>>()
         var currentOption = mutableListOf<Char>()
-        for (i in startIndex until chars.size) {
-            val c = chars[i]
+        loop@ for (i in startIndex until encoding.size) {
+            val c = encoding[i]
             when {
                 c == '|' && level == 1 -> {
                     options.add(currentOption)
                     currentOption = mutableListOf()
+                    continue@loop
                 }
                 c == '(' -> level++
                 c == ')' -> level--
@@ -30,7 +38,7 @@ class Day20 {
             if (level == 0) {
                 options.add(currentOption)
                 for (option in options) {
-                    option.addAll(chars.subList(i + 1, chars.size))
+                    option.addAll(encoding.subList(i + 1, encoding.size))
                 }
                 break
             }
@@ -39,49 +47,49 @@ class Day20 {
         return options
     }
 
-    fun traverseMap(map: MutableMap<Coordinate, Char>, position: Coordinate, string: List<Char>) {
+    private fun traverseMap(map: MutableMap<Coordinate, Char>, position: Coordinate, encoding: List<Char>) {
         var currentPosition = position
-        loop@ for ((i, c) in string.withIndex()) {
-            when (c) {
-                '^' -> map.markRoom(currentPosition, 'X')
-                '$' -> break@loop
-                '(' -> {
-                    flattenOptions(string, i + 1).forEach {
-                        traverseMap(map, currentPosition, it)
+        for ((i, c) in encoding.withIndex()) {
+            directions[c]?.let {
+                for (j in 0..1) {
+                    currentPosition += it
+                    if (currentPosition in map) return
+                    if (j == 0) {
+                        map[currentPosition] = if (it.x == 0) '-' else '|'
+                    } else {
+                        map.markRoom(currentPosition)
                     }
-                    break@loop
                 }
-
-                else -> throw IllegalStateException("Invalid character encountered: $c")
+            } ?: run {
+                when (c) {
+                    '^' -> map.markRoom(currentPosition, 'X')
+                    '$' -> return
+                    '(' -> {
+                        flattenOptions(encoding, i + 1).forEach {
+                            traverseMap(map, currentPosition, it)
+                        }
+                        return
+                    }
+                    else -> throw IllegalStateException("Invalid character encountered: $c")
+                }
             }
         }
     }
 
     fun parse(input: String): Map<Coordinate, Char> {
-
-        val directions = mapOf<Char, Coordinate>(
-            Pair('N', Coordinate.up),
-            Pair('S', Coordinate.down),
-            Pair('E', Coordinate.right),
-            Pair('W', Coordinate.left)
-        )
-
-        for ((i, c) in input.withIndex()) {
-
-            if (c in "NSEW") {
-
-            }
-
-            val direction = directions[c]
-            if (direction != null) {
-
-            } else {
-
-            }
-        }
-
-
-        return mutableMapOf()
+        val map = mutableMapOf<Coordinate, Char>()
+        traverseMap(map, Coordinate.origin, input.toList())
+        return map
     }
 
+    fun shortestPaths(start: Coordinate = Coordinate.origin, map: Map<Coordinate, Char>): List<CoordinatePath> {
+        val allPaths = mutableListOf<CoordinatePath>()
+        start.reachableCoordinates(reachable = {
+            map.getOrDefault(it, '#') != '#'
+        }, process = {
+            if (map[it.node] == '.') allPaths.add(it)
+            null
+        })
+        return allPaths
+    }
 }

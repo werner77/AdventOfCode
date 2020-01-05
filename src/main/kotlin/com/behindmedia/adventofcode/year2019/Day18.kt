@@ -232,31 +232,4 @@ class Day18 {
             result
         }
     }
-
-    fun printMap(map: Map<Coordinate, Node>) {
-        val range = map.keys.range()
-
-        var numberOfKeys = 0
-        var numberOfDoors = 0
-        for (coordinate in range) {
-            val state = map[coordinate] ?: Node(coordinate, '#')
-
-            print(state.identifier)
-
-            if (state.isDoor) {
-                numberOfDoors++
-            }
-
-            if (state.isKey) {
-                numberOfKeys++
-            }
-
-            if (coordinate.x == range.endInclusive.x) {
-                println()
-            }
-        }
-
-        println("Number of keys: $numberOfKeys")
-        println("Number of doors: $numberOfDoors")
-    }
 }

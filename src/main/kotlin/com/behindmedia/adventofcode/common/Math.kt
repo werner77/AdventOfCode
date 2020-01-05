@@ -16,7 +16,9 @@ enum class RotationDirection {
 /**
  * Describes a three-dimensional coordinate or vector
  */
-data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
+data class Coordinate3D(val x: Int, val y: Int, val z: Int): Comparable<Coordinate3D> {
+
+    constructor(components: List<Int>): this(components[0], components[1], components[2])
 
     companion object {
         val origin = Coordinate3D(0, 0, 0)
@@ -34,6 +36,18 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
         return abs(this.x - other.x) + abs(this.y - other.y) + abs(this.z - other.z)
     }
 
+    operator fun plus(other: Coordinate3D): Coordinate3D {
+        return offset(other)
+    }
+
+    operator fun unaryMinus(): Coordinate3D {
+        return Coordinate3D(-x, -y, -z)
+    }
+
+    operator fun minus(other: Coordinate3D): Coordinate3D {
+        return offset(-other)
+    }
+
     operator fun get(index: Int): Int {
         return when (index) {
             0 -> x
@@ -41,6 +55,10 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) {
             2 -> z
             else -> throw IllegalArgumentException("Invalid index supplied")
         }
+    }
+
+    override fun compareTo(other: Coordinate3D): Int {
+        return compare({ this[0].compareTo(other[0]) }, { this[1].compareTo(other[1]) }, { this[2].compareTo(other[2]) })
     }
 }
 
@@ -165,15 +183,6 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
                 val xOffset = if (it == 0 || it == 1) 1 else -1
                 val yOffset = if (it == 0 || it == 2) 1 else -1
                 offset(xOffset, yOffset)
-            }
-        }
-
-    val crossNeighbours: List<Coordinate>
-        get() {
-            return List<Coordinate>(4) {
-                val xOffset = if (it == 0 || it == 1) 1 else -1
-                val yOffset = if (it == 0 || it == 2) 1 else -1
-                Coordinate(this.x + xOffset, this.y + yOffset)
             }
         }
 
@@ -350,6 +359,16 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
 }
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
+
+fun <E>Map<Coordinate, E>.printMap(default: E) {
+    val range = this.keys.range()
+    for (c in range) {
+        print(this[c] ?: default)
+        if (c.x == range.endInclusive.x) {
+            println()
+        }
+    }
+}
 
 data class NodePath<N>(val node: N, val pathLength: Int)
 

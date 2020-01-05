@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2018
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.only
+import java.util.*
 import kotlin.math.min
 
 class Day22 {
@@ -81,13 +82,13 @@ class Day22 {
     }
 
     private fun shortestPath(map: Map<Coordinate, Long>, target: Coordinate): Int {
-        val pending = sortedSetOf<CaveNodePath>()
+        val pending = PriorityQueue<CaveNodePath>()
         val visited = mutableSetOf<CaveNode>()
         pending.add(CaveNodePath(CaveNode(Coordinate.origin, Gear.Torch), 0))
         var minimumPath = Int.MAX_VALUE
 
         while (pending.isNotEmpty()) {
-            val current = pending.pollFirst() ?: break
+            val current = pending.poll() ?: break
             if (current.node in visited) continue
             if (current.path >= minimumPath) break
             if (current.node.coordinate == target) {

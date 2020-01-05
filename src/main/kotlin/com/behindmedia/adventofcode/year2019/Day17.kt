@@ -1,9 +1,6 @@
 package com.behindmedia.adventofcode.year2019
 
-import com.behindmedia.adventofcode.common.Coordinate
-import com.behindmedia.adventofcode.common.RotationDirection
-import com.behindmedia.adventofcode.common.range
-import com.behindmedia.adventofcode.common.removingAllOccurences
+import com.behindmedia.adventofcode.common.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -245,15 +242,7 @@ class Day17 {
     }
 
     private fun printMap(map: Map<Coordinate, State>) {
-        val range = map.keys.range()
-        for (coordinate in range) {
-            val state = map[coordinate] ?: State.Empty
-            print(state.rawValue)
-
-            if (coordinate.x == range.endInclusive.x) {
-                println()
-            }
-        }
+        map.printMap(default = State.Empty)
     }
 
 }
