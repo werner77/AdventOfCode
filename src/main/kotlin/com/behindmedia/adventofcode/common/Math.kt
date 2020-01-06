@@ -1,7 +1,5 @@
 package com.behindmedia.adventofcode.common
 
-import org.jgrapht.util.FibonacciHeap
-import org.jgrapht.util.FibonacciHeapNode
 import java.util.*
 import kotlin.math.*
 
@@ -207,7 +205,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    inline fun <reified T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+    inline fun <T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
         return reachableNodes(this,
             neighbours = {
                 it.directNeighbours
@@ -379,7 +377,10 @@ data class NodePath<N>(val node: N, val pathLength: Int): Comparable<NodePath<N>
 
 typealias CoordinatePath = NodePath<Coordinate>
 
-inline fun <reified N, reified T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
+/**
+ * Breadth first search algorithm to find the shortest paths between unweighted nodes.
+ */
+inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
     val list = ArrayDeque<NodePath<N>>()
     val visited = mutableSetOf<N>()
     list.add(NodePath(from, 0))
@@ -394,50 +395,42 @@ inline fun <reified N, reified T>reachableNodes(from: N, neighbours: (N) -> Iter
                 return it
             }
         }
+        visited.add(current.node)
         for (neighbour in neighbours(current.node)) {
             if (!visited.contains(neighbour) && reachable(neighbour)) {
                 list.add(NodePath(neighbour, current.pathLength + 1))
             }
         }
-        visited.add(current.node)
     }
 }
 
-inline fun <reified N, reified T>dijkstra(from: N, neighbours: (N) -> Iterable<N>, weight: (N, N) -> Double?, process: (N, Double) -> T?): T? {
+/**
+ * Dijkstra's algorithm to find the shortest path between weighted nodes.
+ */
+inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pair<N, Int>>, process: (NodePath<N>) -> T?): T? {
     val pending = FibonacciHeap<N>()
-    pending.insert(FibonacciHeapNode<N>(from), 0.0)
-    val seen = mutableMapOf<N, FibonacciHeapNode<N>>()
+    pending.update(from, 0)
     val settled = mutableSetOf<N>()
     var start = true
     while (true) {
-        val current = pending.removeMin() ?: return null
-        val currentNode = current.data
-        val currentDistance = current.key
+        val current = pending.poll() ?: break
         if (start) {
             start = false
         } else {
-            process(currentNode, currentDistance)?.let {
+            process(current)?.let {
                 return it
             }
         }
+        val currentNode = current.node
         settled.add(currentNode)
-        for (neighbour in neighbours(currentNode)) {
+        for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
             if (!settled.contains(neighbour)) {
-                val neighbourWeight = weight(currentNode, neighbour) ?: continue
-                val seenNode = seen[neighbour]
-                val newDistance = currentDistance + neighbourWeight
-                if (seenNode == null) {
-                    val node = FibonacciHeapNode(neighbour)
-                    pending.insert(node, newDistance)
-                    seen[neighbour] = node
-                } else {
-                    if (newDistance < seenNode.key) {
-                        pending.decreaseKey(seenNode, newDistance)
-                    }
-                }
+                val newDistance = current.pathLength + neighbourWeight
+                pending.update(neighbour, newDistance)
             }
         }
     }
+    return null
 }
 
 inline fun binarySearch(lowerBound: Long, upperBound: Long, targetValue: Long, inverted: Boolean = false, evaluation: (Long) -> Long): Long? {
