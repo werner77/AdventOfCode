@@ -1,5 +1,7 @@
 package com.behindmedia.adventofcode.common
 
+import org.jgrapht.util.FibonacciHeap
+import org.jgrapht.util.FibonacciHeapNode
 import java.util.*
 import kotlin.math.*
 
@@ -79,11 +81,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
      * Comparison, ordering from top-left to bottom-right
      */
     override fun compareTo(other: Coordinate): Int {
-        var result = this.y.compareTo(other.y)
-        if (result == 0) {
-            result = this.x.compareTo(other.x)
-        }
-        return result
+        return compare(
+            { this.y.compareTo(other.y) },
+            { this.x.compareTo(other.x) }
+        )
     }
 
     fun offset(xOffset: Int, yOffset: Int): Coordinate {
@@ -206,7 +207,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    inline fun <T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+    inline fun <reified T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
         return reachableNodes(this,
             neighbours = {
                 it.directNeighbours
@@ -370,26 +371,27 @@ fun <E>Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
-data class NodePath<N>(val node: N, val pathLength: Int)
+data class NodePath<N>(val node: N, val pathLength: Int): Comparable<NodePath<N>> {
+    override fun compareTo(other: NodePath<N>): Int {
+        return this.pathLength.compareTo(other.pathLength)
+    }
+}
 
 typealias CoordinatePath = NodePath<Coordinate>
 
-inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
+inline fun <reified N, reified T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
     val list = ArrayDeque<NodePath<N>>()
     val visited = mutableSetOf<N>()
-    visited.add(from)
     list.add(NodePath(from, 0))
-
+    var start = true
     while(true) {
-        val current = try {
-            list.pop()
-        } catch (e: NoSuchElementException) {
-            return null
-        }
-        if (current.node != from) {
-            val result = process(current)
-            if (result != null) {
-                return result
+        val current = list.pollFirst() ?: return null
+
+        if (start) {
+            start = false
+        } else {
+            process(current)?.let {
+                return it
             }
         }
         for (neighbour in neighbours(current.node)) {
@@ -398,6 +400,43 @@ inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachab
             }
         }
         visited.add(current.node)
+    }
+}
+
+inline fun <reified N, reified T>dijkstra(from: N, neighbours: (N) -> Iterable<N>, weight: (N, N) -> Double?, process: (N, Double) -> T?): T? {
+    val pending = FibonacciHeap<N>()
+    pending.insert(FibonacciHeapNode<N>(from), 0.0)
+    val seen = mutableMapOf<N, FibonacciHeapNode<N>>()
+    val settled = mutableSetOf<N>()
+    var start = true
+    while (true) {
+        val current = pending.removeMin() ?: return null
+        val currentNode = current.data
+        val currentDistance = current.key
+        if (start) {
+            start = false
+        } else {
+            process(currentNode, currentDistance)?.let {
+                return it
+            }
+        }
+        settled.add(currentNode)
+        for (neighbour in neighbours(currentNode)) {
+            if (!settled.contains(neighbour)) {
+                val neighbourWeight = weight(currentNode, neighbour) ?: continue
+                val seenNode = seen[neighbour]
+                val newDistance = currentDistance + neighbourWeight
+                if (seenNode == null) {
+                    val node = FibonacciHeapNode(neighbour)
+                    pending.insert(node, newDistance)
+                    seen[neighbour] = node
+                } else {
+                    if (newDistance < seenNode.key) {
+                        pending.decreaseKey(seenNode, newDistance)
+                    }
+                }
+            }
+        }
     }
 }
 

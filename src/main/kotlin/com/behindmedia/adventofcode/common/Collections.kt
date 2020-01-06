@@ -222,14 +222,6 @@ fun Array<IntArray>.printMatrix() {
     }
 }
 
-inline fun <E>compare(object1: E, object2: E, comparator: (E, E, Int) -> Pair<Int, Boolean>): Int {
-    var index = 0
-    while(true) {
-        val (result, hasMore) = comparator(object1, object2, index++)
-        if (result != 0 || !hasMore) return result
-    }
-}
-
 fun compare(vararg comparators: () -> Int): Int {
     var lastResult = 0
     for (comparator in comparators) {
