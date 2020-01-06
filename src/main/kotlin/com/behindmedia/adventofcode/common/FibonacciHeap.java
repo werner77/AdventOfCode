@@ -159,6 +159,7 @@ public class FibonacciHeap<T> {
     public NodePath<T> poll() {
         FibonacciHeapNode<T> minNode = removeMin();
         if (minNode != null) {
+            existingNodes.remove(minNode.data);
             return new NodePath<T>(minNode.data, minNode.key);
         }
         return null;
@@ -172,7 +173,7 @@ public class FibonacciHeap<T> {
         update(nodePath.getNode(), nodePath.getPathLength());
     }
 
-    public void update(T node, int pathLength) {
+    public void update(@NotNull T node, int pathLength) {
         FibonacciHeapNode<T> existingNode = existingNodes.get(node);
         if (existingNode == null) {
             FibonacciHeapNode<T> newNode = new FibonacciHeapNode<>(node);
