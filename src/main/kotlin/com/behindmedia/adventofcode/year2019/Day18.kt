@@ -2,7 +2,6 @@ package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.CoordinatePath
-import com.behindmedia.adventofcode.common.range
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -14,9 +13,9 @@ import kotlin.math.min
 class Day18 {
 
     /**
-     * Class describing the items on the map
+     * Class describing the items on the map. The identifier is the character describing the item.
      */
-    data class Node(val coordinate: Coordinate, val identifier: Char) {
+    private data class Node(val coordinate: Coordinate, val identifier: Char) {
 
         val isKey: Boolean
             get() = (identifier - 'a') in 0..25
@@ -46,19 +45,28 @@ class Day18 {
     }
 
     /**
-     * Optimized data structure based on a bitmask to store which keys have been collected
+     * Optimized data structure based on bitmasks to store which keys have been collected
      */
-    class KeyCollection {
+    private class KeyCollection(initialState: Int = 0) {
 
-        private var internalState = 0
+        companion object {
+            private const val completeState: Int = (1 shl 26) - 1
+        }
 
-        fun addKey(key: Char) {
+        val isComplete: Boolean
+            get() = internalState == completeState
+
+        private var internalState = initialState
+
+        private fun addKey(key: Char) {
             val shift = key - 'a'
+            assert(shift in 0..25)
             internalState = internalState.or( 1.shl(shift) )
         }
 
         fun contains(key: Char): Boolean {
             val shift = key - 'a'
+            assert(shift in 0..25)
             val mask = 1.shl(shift)
             return internalState.and(mask) == mask
         }
@@ -74,15 +82,23 @@ class Day18 {
             return false
         }
 
-        fun plus(key: Char): KeyCollection {
-            val result = KeyCollection()
-            result.internalState = this.internalState
+        /**
+         * Adds the supplied key to this key collection
+         */
+        operator fun plus(key: Char): KeyCollection {
+            assert(key - 'a' in 0..25)
+            val result = KeyCollection(this.internalState)
             result.addKey(key)
             return result
         }
 
         /**
-         * Optimized cache key which stores the current node and internalState of this instance in a single Long
+         * Optimized cache key which stores the current node
+         * (the identifier of the current position which is either a key or the initial position: '@')
+         * and internalState of this instance in a single Long.
+         *
+         * The identifier of a the node supplied is stored in the higher order bits (32+) while the internal state of
+         * the key collection is stored in the lower order bits (<32)
          */
         fun cacheKey(currentNode: Node): Long {
             var result = internalState.toLong()
@@ -90,12 +106,19 @@ class Day18 {
             return result
         }
 
+        /**
+         * Optimized cache key which stores the current node and internalState of this instance in a single Long.
+         *
+         * The identifier of a the nodes supplied is stored in the higher order bits (32+) while the internal state of
+         * the key collection is stored in the lower order bits (<32).
+         * The initial positions for the 4 drones should be uniquely encoded (e.g. as '1', '2', '3', '4' to avoid conflicts).
+         *
+         * The list of currentNodes should be of size <= 4.
+         */
         fun cacheKey(currentNodes: List<Node>): Long {
-            var result = internalState.toLong()
-
             assert(currentNodes.size <= 4)
+            var result = internalState.toLong()
             var bitCount = 64
-
             for (node in currentNodes) {
                 bitCount -= 8
                 result = result or node.identifier.toLong().shl(bitCount)
@@ -104,20 +127,40 @@ class Day18 {
         }
     }
 
-    fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
-        val map = getMap(input, includeWalls = false)
-        val currentPositions = map.getCurrentPositions().mapIndexed { index, node ->
-            // Create a unique identifier for each position to be able to cache independently
-            Node(node.coordinate, '1' + index)
+    private fun parseMap(input: String): Map<Coordinate, Node> {
+        val lines = input.split('\n')
+        val map = mutableMapOf<Coordinate, Node>()
+        for ((y, line) in lines.withIndex()) {
+            for ((x, c) in line.withIndex()) {
+                val coordinate = Coordinate(x, y)
+                val node = Node(coordinate, c)
+                if (!node.isWall) {
+                    map[coordinate] = node
+                }
+            }
         }
-
-        return minimumPathToCollectKeys(currentPositions, KeyCollection(), map,
-            Collections.synchronizedMap(mutableMapOf()),
-            Collections.synchronizedMap(mutableMapOf()), true)
+        return map
     }
 
     private fun Map<Coordinate, Node>.getCurrentPositions(): List<Node> {
-        return values.filter { it.isCurrentPosition }
+        return values.filter { it.isCurrentPosition }.mapIndexed { index, node ->
+            // Create a unique identifier (different than all the keys) for each position to be able to cache independently
+            Node(node.coordinate, '1' + index)
+        }
+    }
+
+    fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
+        val map = parseMap(input)
+        val currentPositions = map.getCurrentPositions()
+
+        // Call the recursive function to find all minimum paths. The top level is multithreaded.
+        return minimumPathToCollectKeys(
+            currentPositions,
+            KeyCollection(),
+            map,
+            Collections.synchronizedMap(mutableMapOf()),
+            Collections.synchronizedMap(mutableMapOf()),
+            true)
     }
 
     /**
@@ -131,11 +174,10 @@ class Day18 {
                                          reachableCache: MutableMap<Long, List<CoordinatePath>>,
                                          multiThreaded: Boolean = false): Int {
 
-        val reachableKeys = mutableListOf<Pair<Int, CoordinatePath>>()
-
-        for(i in currentPositions.indices) {
-            val individualReachableKeys = getReachableKeys(currentPositions[i], keysInPossession, map, reachableCache)
-            reachableKeys.addAll(individualReachableKeys.map { Pair(i, it) })
+        val reachableKeys: List<Pair<Int, CoordinatePath>> = currentPositions.foldIndexed(mutableListOf()) { index, list, node ->
+            val individualReachableKeys = getReachableKeys(node, keysInPossession, map, reachableCache)
+            list.addAll(individualReachableKeys.map { Pair(index, it) })
+            list
         }
 
         if (reachableKeys.isEmpty()) {
@@ -143,92 +185,100 @@ class Day18 {
         }
 
         val minPath = AtomicInteger(Int.MAX_VALUE)
-
-        fun processKey(index: Int, key: CoordinatePath) {
-            // Move to this key
-            val nextPosition = key.node
-
-            val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
-            assert(node.isKey)
-
-            // This is the lower bound on path needed, every additional key would take at least the
-            // manhattenDistance to collect
-            var minimumPathLengthForThisKey = key.pathLength
-            for (otherKey in reachableKeys) {
-                minimumPathLengthForThisKey += otherKey.second.node.manhattenDistance(nextPosition)
-            }
-
-            if (minimumPathLengthForThisKey >= minPath.toInt()) {
-                return
-            }
-
-            val nextKeys = keysInPossession.plus(node.identifier)
-
-            val nextPositions = List(currentPositions.size) {
-                if (it == index) node else currentPositions[it]
-            }
-
-            val cacheKey = nextKeys.cacheKey(nextPositions)
-
-            val nextPathLength = pathLengthCache.getOrPut(cacheKey) {
-                minimumPathToCollectKeys(nextPositions, nextKeys,
-                    map, pathLengthCache, reachableCache)
-            }
-
-            minPath.getAndUpdate { current ->
-                min(current, nextPathLength + key.pathLength)
-            }
-        }
-
         if (multiThreaded) {
             runBlocking {
                 withContext(Dispatchers.Default) {
                     for (reachableKey in reachableKeys) {
                         launch {
-                            processKey(reachableKey.first, reachableKey.second)
+                            processKey(reachableKey.first,
+                                reachableKey.second,
+                                keysInPossession,
+                                currentPositions,
+                                map,
+                                minPath,
+                                pathLengthCache,
+                                reachableCache)
                         }
                     }
                 }
             }
         } else {
             for (reachableKey in reachableKeys) {
-                processKey(reachableKey.first, reachableKey.second)
+                processKey(reachableKey.first,
+                    reachableKey.second,
+                    keysInPossession,
+                    currentPositions,
+                    map,
+                    minPath,
+                    pathLengthCache,
+                    reachableCache)
             }
         }
         return minPath.toInt()
     }
 
-    fun getMap(input: String, includeWalls: Boolean = false): Map<Coordinate, Node> {
-        val lines = input.split('\n')
-        val map = mutableMapOf<Coordinate, Node>()
-        for ((y, line) in lines.withIndex()) {
-            for ((x, c) in line.withIndex()) {
-                val coordinate = Coordinate(x, y)
-                val node = Node(coordinate, c)
+    private fun processKey(currentPositionIndex: Int,
+                           keyPath: CoordinatePath,
+                           keysInPossession: KeyCollection,
+                           currentPositions: List<Node>,
+                           map: Map<Coordinate, Node>,
+                           minPath: AtomicInteger,
+                           pathLengthCache: MutableMap<Long, Int>,
+                           reachableCache: MutableMap<Long, List<CoordinatePath>>) {
 
-                if (!node.isWall || includeWalls) {
-                    map[coordinate] = node
-                }
-            }
+        // Move to this key
+        val nextPosition = keyPath.coordinate
+        val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate $nextPosition")
+
+        if (keyPath.pathLength >= minPath.toInt()) {
+            return
         }
-        return map
+
+        val nextKeys = keysInPossession.plus(node.identifier)
+
+        val nextPositions = List(currentPositions.size) {
+            if (it == currentPositionIndex) node else currentPositions[it]
+        }
+
+        val cacheKey = nextKeys.cacheKey(nextPositions)
+
+        // Do a recursive call
+        val nextPathLength = pathLengthCache.getOrPut(cacheKey) {
+            minimumPathToCollectKeys(nextPositions, nextKeys, map, pathLengthCache, reachableCache)
+        }
+
+        minPath.getAndUpdate { current ->
+            min(current, nextPathLength + keyPath.pathLength)
+        }
     }
 
+
     /**
-     * Finds the reachable nodes of the map, given the current set of keys in posession
+     * Finds the reachable nodes of the map, given the current set of keys in possession
      */
-    fun getReachableKeys(currentPosition: Node, keysInPossession: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<CoordinatePath>>): List<CoordinatePath> {
+    private fun getReachableKeys(currentPosition: Node,
+                         keysInPossession: KeyCollection,
+                         map: Map<Coordinate, Node>,
+                         cache: MutableMap<Long, List<CoordinatePath>>
+    ): List<CoordinatePath> {
         val cacheKey = keysInPossession.cacheKey(currentPosition)
         return cache.getOrPut(cacheKey) {
             val result = mutableListOf<CoordinatePath>()
-            currentPosition.coordinate.reachableCoordinates(reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
-                map[coordinatePath.node]?.let { node ->
-                    if (node.isKey && !keysInPossession.contains(node.identifier)) {
-                        result.add(coordinatePath)
+            var keys = keysInPossession
+            currentPosition.coordinate.reachableCoordinates(
+                reachable = { coordinate ->
+                    map[coordinate]?.isAccessible(keysInPossession) ?: false
+                },
+                process= { coordinatePath ->
+                    map[coordinatePath.coordinate]?.let { node ->
+                        if (node.isKey && !keys.contains(node.identifier)) {
+                            result.add(coordinatePath)
+                            keys += node.identifier
+                        }
                     }
+                    if (keys.isComplete) true else null
                 }
-                null
-            }
+            )
             result
         }
     }

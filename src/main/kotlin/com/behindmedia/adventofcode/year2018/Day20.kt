@@ -87,7 +87,7 @@ class Day20 {
         start.reachableCoordinates(reachable = {
             map.getOrDefault(it, '#') != '#'
         }, process = {
-            if (map[it.node] == '.') allPaths.add(it)
+            if (map[it.coordinate] == '.') allPaths.add(it)
             null
         })
         return allPaths
