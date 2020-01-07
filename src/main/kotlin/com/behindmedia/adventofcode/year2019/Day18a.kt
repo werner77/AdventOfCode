@@ -26,6 +26,10 @@ private fun Int.setIdentifier(identifier: Int): Int {
     return (this and completeMask) or (identifier shl 26)
 }
 
+private fun Int.isSuperSetOf(other: Int): Boolean {
+    return (other and this) == other
+}
+
 private val Int.identifier: Int
     inline get() = this.shr(26)
 
@@ -52,6 +56,51 @@ private fun Char.isAccessible(keys: Int): Boolean {
 private typealias KeyNodePath = NodePath<Int>
 
 class Day18a {
+
+    data class Edge(val to: Int, val weight: Int, val requiredKeys: Int) {
+        fun isAvailable(currentKeys: Int): Boolean {
+            return currentKeys.isSuperSetOf(requiredKeys)
+        }
+    }
+
+    fun findAllPaths(from: Coordinate, map: NodeMap, onFound: (NodePath<Pair<Char, Int>>) -> Unit) {
+        fun recurse(current: Coordinate, visited: MutableSet<Coordinate>, pathLength: Int, requiredKeys: Int) {
+            val node = map.nodeAt(current)
+            if (node.isKey && pathLength != 0) {
+                // Found
+                onFound(NodePath(Pair(node, requiredKeys), pathLength))
+                return
+            }
+            visited.add(current)
+            current.forDirectNeighbours {
+                if (map.isAccessible(it, completeMask) && !visited.contains(it)) {
+                    val neighbourNode = map.nodeAt(it)
+                    val nextRequiredKeys = if (neighbourNode.isDoor) {
+                        requiredKeys.addKey(neighbourNode.toLowerCase())
+                    } else {
+                        requiredKeys
+                    }
+                    recurse(it, visited, pathLength + 1, nextRequiredKeys)
+                }
+            }
+            visited.remove(current)
+        }
+        recurse(from, mutableSetOf(), 0, 0)
+    }
+
+    fun constructWeightedMap(input: String): Map<Int, List<Edge>> {
+        val map = NodeMap.from(input)
+        val result = mutableMapOf<Int, MutableList<Edge>>()
+        for (key in map.keyIndices) {
+            val edges = result.getOrPut(key) { mutableListOf() }
+            val keyCoordinate = map.keyCoordinate(key) ?: throw IllegalStateException("Could not find coordinate for key")
+            findAllPaths(keyCoordinate, map) { nodePath ->
+                val (keyNode, requiredKeys) = nodePath.node
+                edges.add(Edge(keyNode - 'a', nodePath.pathLength, requiredKeys))
+            }
+        }
+        return result
+    }
 
     class NodeMap {
         companion object {
@@ -84,6 +133,9 @@ class Day18a {
         private val keyCoordinates = Array<Coordinate?>(32) {
             null
         }
+
+        val keyIndices: List<Int>
+            get() = keyCoordinates.mapIndexedNotNull { index, coordinate -> if (coordinate == null) null else index }
 
         fun nodeAt(coordinate: Coordinate): Char {
             return matrix[coordinate.x][coordinate.y]
@@ -119,30 +171,19 @@ class Day18a {
         }
     }
 
-    private fun weightedNeighboursForNode(node: Int, map: NodeMap): List<Pair<Int, Int>> {
-        val result = ArrayList<Pair<Int, Int>>(26)
-        var collectedKeys = node
-        val nodeCoordinate = map.keyCoordinate(node.identifier) ?: throw IllegalStateException("Invalid node identifier: ${node.identifier}")
-
-        nodeCoordinate.reachableCoordinates(reachable = {
-            map.isAccessible(it, node)
-        }, process = {
-            val c = map.nodeAt(it.coordinate)
-            if (map.isKeyNode(c) && !collectedKeys.containsKey(c)) {
-                result.add(Pair(node.addKey(c).setIdentifier(c - 'a'), it.pathLength))
-                collectedKeys = collectedKeys.addKey(c)
-            }
-            if (collectedKeys.isComplete) true else null
-        })
-        return result
+    private fun weightedNeighboursForNode(node: Int, graph: Map<Int, List<Edge>>): List<Pair<Int, Int>> {
+        val edges = graph[node.identifier] ?: throw IllegalStateException("Could not find node in graph")
+        return edges.mapNotNull { edge ->
+            val keyNode: Char = 'a' + edge.to
+            assert(edge.to in 0..25)
+            if (node.isSuperSetOf(edge.requiredKeys) && !node.containsKey(keyNode)) Pair(node.addKey(keyNode).setIdentifier(edge.to), edge.weight) else null
+        }
     }
 
-    private fun minimumPath(initialNodes: List<Int>, map: NodeMap): Int? {
+    private fun minimumPath(graph: Map<Int, List<Edge>>): Int? {
         var count = 0
         val pending = PriorityQueue<KeyNodePath>()
-        for (initialNode in initialNodes) {
-            pending.add(KeyNodePath(initialNode, 0))
-        }
+        pending.add(KeyNodePath(0.setIdentifier(26), 0))
         val settled = mutableSetOf<Int>()
         while (true) {
             val current = pending.poll() ?: break
@@ -154,7 +195,7 @@ class Day18a {
             }
             settled.add(currentNode)
             count++
-            for ((neighbour, neighbourWeight) in weightedNeighboursForNode(currentNode, map)) {
+            for ((neighbour, neighbourWeight) in weightedNeighboursForNode(currentNode, graph)) {
                 if (!settled.contains(neighbour)) {
                     val newDistance = current.pathLength + neighbourWeight
                     pending.add(KeyNodePath(neighbour, newDistance))
@@ -165,8 +206,7 @@ class Day18a {
     }
 
     fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
-        val map = NodeMap.from(input)
-        val initialNodes = map.getInitialNodes()
-        return minimumPath(initialNodes, map) ?: throw IllegalStateException("Could not find minimum path")
+        val graph = constructWeightedMap(input)
+        return minimumPath(graph) ?: throw IllegalStateException("Could not find minimum path")
     }
 }
