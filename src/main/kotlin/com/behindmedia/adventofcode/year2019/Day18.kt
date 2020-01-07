@@ -190,48 +190,66 @@ class Day18 {
                 withContext(Dispatchers.Default) {
                     for (reachableKey in reachableKeys) {
                         launch {
-                            processKey(reachableKey.first,
+                            processKey(
+                                reachableKey.first,
                                 reachableKey.second,
                                 keysInPossession,
                                 currentPositions,
-                                map,
+                                reachableKeys,
                                 minPath,
+                                map,
                                 pathLengthCache,
-                                reachableCache)
+                                reachableCache
+                            )
                         }
                     }
                 }
             }
         } else {
             for (reachableKey in reachableKeys) {
-                processKey(reachableKey.first,
+                processKey(
+                    reachableKey.first,
                     reachableKey.second,
                     keysInPossession,
                     currentPositions,
-                    map,
+                    reachableKeys,
                     minPath,
+                    map,
                     pathLengthCache,
-                    reachableCache)
+                    reachableCache
+                )
             }
         }
         return minPath.toInt()
     }
 
-    private fun processKey(currentPositionIndex: Int,
-                           keyPath: CoordinatePath,
-                           keysInPossession: KeyCollection,
-                           currentPositions: List<Node>,
-                           map: Map<Coordinate, Node>,
-                           minPath: AtomicInteger,
-                           pathLengthCache: MutableMap<Long, Int>,
-                           reachableCache: MutableMap<Long, List<CoordinatePath>>) {
+    private fun processKey(
+        currentPositionIndex: Int,
+        keyPath: CoordinatePath,
+        keysInPossession: KeyCollection,
+        currentPositions: List<Node>,
+        reachableKeys: Collection<Pair<Int, CoordinatePath>>,
+        minPath: AtomicInteger,
+        map: Map<Coordinate, Node>,
+        pathLengthCache: MutableMap<Long, Int>,
+        reachableCache: MutableMap<Long, List<CoordinatePath>>
+    ) {
 
         // Move to this key
         val nextPosition = keyPath.coordinate
         val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate $nextPosition")
 
-        if (keyPath.pathLength >= minPath.toInt()) {
-            return
+        var minimumProjectedPath = keyPath.pathLength
+        for (otherKey in reachableKeys) {
+            val baseNode = if (otherKey.first == currentPositionIndex) {
+                node
+            } else {
+                currentPositions[otherKey.first]
+            }
+            minimumProjectedPath += baseNode.coordinate.manhattenDistance(otherKey.second.coordinate)
+            if (minimumProjectedPath >= minPath.toInt()) {
+                return
+            }
         }
 
         val nextKeys = keysInPossession.plus(node.identifier)
