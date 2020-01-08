@@ -261,25 +261,20 @@ class Day18 {
     }
 
     /**
-     * Returns all the neighbours of the nodes in the specified node collection in this weighted graph.
+     * Performs the specified lambda for each relevant edge of the specified node collection
      *
-     * Returned are all possible paths to other key nodes with a weight (path length) attached.
+     * Relevant means that the key the edge points to has not been collected yet and that it is reachable given the keys
+     * in possession.
      */
-    private fun Map<Node, List<Edge>>.weightedNeighboursForNodes(
-        nodeCollection: KeyedNodeCollection
-    ): List<NodePath<KeyedNodeCollection>> {
-        return nodeCollection.nodes.foldIndexed(ArrayList(26)) { index, list, subNode ->
+    private inline fun Map<Node, List<Edge>>.forEachRelevantEdge(nodeCollection: KeyedNodeCollection, perform: (Int, Edge) -> Unit) {
+        nodeCollection.nodes.forEachIndexed { index, subNode ->
             val subEdges = this[subNode] ?: throw IllegalStateException("Could not find specified subNode ${subNode} in graph")
             subEdges.forEach { edge ->
                 // Only add keys that have not yet been collected and from paths that are actually available
                 if (edge.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.to.identifier)) {
-                    val nextList = nodeCollection.nodes.toMutableList()
-                    nextList[index] = edge.to
-                    val nextNode = KeyedNodeCollection(nextList, nodeCollection.keys + edge.to.identifier)
-                    list.add(NodePath(nextNode, edge.weight))
+                    perform(index, edge)
                 }
             }
-            list
         }
     }
 
@@ -326,11 +321,12 @@ class Day18 {
             // Add to the settled set to avoid revisiting the same node
             settled.add(currentNodeCollection)
 
-            for (neighbourPath in weightedNeighboursForNodes(currentNodeCollection)) {
-                val neighbour = neighbourPath.item
+            forEachRelevantEdge(currentNodeCollection) { nodeIndex, edge ->
+                val nextList = currentNodeCollection.nodes.toMutableList()
+                nextList[nodeIndex] = edge.to
+                val neighbour = KeyedNodeCollection(nextList, currentNodeCollection.keys + edge.to.identifier)
                 if (!settled.contains(neighbour)) {
-                    val newDistance = current.pathLength + neighbourPath.pathLength
-                    pending.update(neighbour, newDistance)
+                    pending.update(neighbour, current.pathLength + edge.weight)
                 }
             }
         }
