@@ -1,9 +1,9 @@
 package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate
+import com.behindmedia.adventofcode.common.FibonacciHeap
 import com.behindmedia.adventofcode.common.NodePath
 import com.behindmedia.adventofcode.common.printMap
-import java.util.*
 import kotlin.math.min
 
 // private utility method to determine the type of identifier (key, door, wall, current position or empty)
@@ -234,11 +234,16 @@ class Day18 {
      *
      * Returned are all possible paths to other key nodes with a weight (path length) attached.
      */
-    private fun weightedNeighboursForNodes(nodeCollection: KeyedNodeCollection, graph: Map<Node, List<Edge>>): List<Pair<KeyedNodeCollection, Int>> {
+    private fun weightedNeighboursForNodes(
+        nodeCollection: KeyedNodeCollection,
+        graph: Map<Node, List<Edge>>
+    ): List<Pair<KeyedNodeCollection, Int>> {
+
         return nodeCollection.nodes.foldIndexed(mutableListOf()) { index, list, subNode ->
             val subEdges = graph[subNode] ?: throw IllegalStateException("Could not find specified subNode ${subNode} in graph")
             subEdges.forEach { edge ->
-                if (edge.isAvailable(nodeCollection.keys)) {
+                // Only add keys that have not yet been collected and from paths that are actually available
+                if (edge.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.to.identifier)) {
                     val nextList = nodeCollection.nodes.toMutableList()
                     nextList[index] = edge.to
                     val nextNode = KeyedNodeCollection(nextList, nodeCollection.keys + edge.to.identifier)
@@ -251,29 +256,30 @@ class Day18 {
 
     /**
      * Finds the minimum path given the initial positions and keys in the graph to collect all keys.
+     *
+     * This uses the Dijkstra algorithm with a Fibonacci Heap as a priority queue for faster performance.
      */
     private fun minimumPath(graph: Map<Node, List<Edge>>): Int? {
-        val pending = PriorityQueue<NodePath<KeyedNodeCollection>>()
+        val pending = FibonacciHeap<KeyedNodeCollection>()
         val initialNodes = graph.keys.filter {
             it.identifier.isCurrentPosition
         }
-        val completeCollection = KeyCollection.from(graph.keys.map { it.identifier }.filter { it.isKey })
+        val completeKeyCollection = KeyCollection.from(graph.keys.map { it.identifier }.filter { it.isKey })
         val initialNodeCollection = KeyedNodeCollection(initialNodes, KeyCollection.none)
-        pending.add(NodePath(initialNodeCollection, 0))
+        pending.update(initialNodeCollection, 0)
         val settled = mutableSetOf<KeyedNodeCollection>()
         while (true) {
             val current = pending.poll() ?: break
             val currentNodeCollection = current.item
-            if (settled.contains(currentNodeCollection)) continue
 
-            if (currentNodeCollection.keys.containsAll(completeCollection)) {
+            if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {
                 return current.pathLength
             }
             settled.add(currentNodeCollection)
             for ((neighbour, neighbourWeight) in weightedNeighboursForNodes(currentNodeCollection, graph)) {
                 if (!settled.contains(neighbour)) {
                     val newDistance = current.pathLength + neighbourWeight
-                    pending.add(NodePath(neighbour, newDistance))
+                    pending.update(neighbour, newDistance)
                 }
             }
         }
