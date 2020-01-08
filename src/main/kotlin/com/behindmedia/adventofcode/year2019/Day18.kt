@@ -38,6 +38,18 @@ class Day18 {
         companion object {
             private const val completeState: Int = (1 shl 26) - 1
 
+            private val Char.shift: Int
+                inline get() = this - 'a'
+
+            fun from(keys: List<Char>): KeyCollection {
+                var state = 0
+                for (key in keys) {
+                    assert(key.isKey)
+                    state = state or (1 shl key.shift)
+                }
+                return KeyCollection(state)
+            }
+
             /**
              * All keys
              */
@@ -48,9 +60,6 @@ class Day18 {
              */
             val none = KeyCollection(0)
         }
-
-        private val Char.shift: Int
-            inline get() = this - 'a'
 
         /**
          * Whether this collection contains all keys
@@ -248,6 +257,7 @@ class Day18 {
         val initialNodes = graph.keys.filter {
             it.identifier.isCurrentPosition
         }
+        val completeCollection = KeyCollection.from(graph.keys.map { it.identifier }.filter { it.isKey })
         val initialNodeCollection = KeyedNodeCollection(initialNodes, KeyCollection.none)
         pending.add(NodePath(initialNodeCollection, 0))
         val settled = mutableSetOf<KeyedNodeCollection>()
@@ -256,7 +266,7 @@ class Day18 {
             val currentNodeCollection = current.item
             if (settled.contains(currentNodeCollection)) continue
 
-            if (currentNodeCollection.keys.isComplete) {
+            if (currentNodeCollection.keys.containsAll(completeCollection)) {
                 return current.pathLength
             }
             settled.add(currentNodeCollection)
