@@ -34,6 +34,15 @@ class Day18Test {
     }
 
     @Test
+    fun puzzle2a() {
+        val day18 = Day18a()
+        val input = read("/2019/day18-2.txt")
+        val result = day18.getMinimumNumberOfMovesToCollectAllKeys(input)
+        println(result)
+        assertEquals(1648, result)
+    }
+
+    @Test
     fun reachableCoordinates() {
         val day18 = Day18()
 
