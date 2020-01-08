@@ -16,26 +16,8 @@ class Day18Test {
     }
 
     @Test
-    fun puzzle1a() {
-        val day18 = Day18a()
-        val input = read("/2019/day18.txt")
-        val result = day18.getMinimumNumberOfMovesToCollectAllKeys(input)
-        println(result)
-        assertEquals(6316, result)
-    }
-
-    @Test
     fun puzzle2() {
         val day18 = Day18()
-        val input = read("/2019/day18-2.txt")
-        val result = day18.getMinimumNumberOfMovesToCollectAllKeys(input)
-        println(result)
-        assertEquals(1648, result)
-    }
-
-    @Test
-    fun puzzle2a() {
-        val day18 = Day18a()
         val input = read("/2019/day18-2.txt")
         val result = day18.getMinimumNumberOfMovesToCollectAllKeys(input)
         println(result)

@@ -170,7 +170,7 @@ public class FibonacciHeap<T> {
      * If the existing key is already < than the supplied key this operation does nothing.
      */
     public void update(@NotNull NodePath<T> nodePath) {
-        update(nodePath.getNode(), nodePath.getPathLength());
+        update(nodePath.getItem(), nodePath.getPathLength());
     }
 
     public void update(@NotNull T node, int pathLength) {

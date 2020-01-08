@@ -383,7 +383,7 @@ fun <E>Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
-class NodePath<N>(val node: N, val pathLength: Int): Comparable<NodePath<N>> {
+class NodePath<N>(val item: N, val pathLength: Int): Comparable<NodePath<N>> {
     override fun compareTo(other: NodePath<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
@@ -413,8 +413,8 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>,
                 return it
             }
         }
-        visited.add(current.node)
-        for (neighbour in neighbours(current.node)) {
+        visited.add(current.item)
+        for (neighbour in neighbours(current.item)) {
             if (!visited.contains(neighbour) && reachable(neighbour)) {
                 list.add(NodePath(neighbour, current.pathLength + 1))
             }
@@ -432,7 +432,7 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pai
     var start = true
     while (true) {
         val current = pending.poll() ?: break
-        if (settled.contains(current.node)) continue
+        if (settled.contains(current.item)) continue
         if (start) {
             start = false
         } else {
@@ -440,7 +440,7 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pai
                 return it
             }
         }
-        val currentNode = current.node
+        val currentNode = current.item
         settled.add(currentNode)
         for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
             if (!settled.contains(neighbour)) {
