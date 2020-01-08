@@ -215,11 +215,11 @@ class Day18 {
          *
          * This method uses a depth first search to traverse all possible unique paths.
          */
-        private fun findAllKeyPaths(from: Node, onFound: (NodePath<KeyedNode>) -> Unit) {
+        private fun findAllKeyPaths(from: Node, onFound: (Path<KeyedNode>) -> Unit) {
             fun recurse(current: Node, visited: MutableSet<Coordinate>, pathLength: Int, requiredKeys: KeyCollection) {
                 if (current.identifier.isKey && pathLength != 0) {
                     // Found
-                    onFound(NodePath(KeyedNode(current, requiredKeys), pathLength))
+                    onFound(Path(KeyedNode(current, requiredKeys), pathLength))
                 }
                 val currentCoordinate = current.coordinate
                 visited.add(currentCoordinate)
@@ -251,7 +251,7 @@ class Day18 {
             for (baseNode in this.getNodes { it.identifier.isKey || it.identifier.isCurrentPosition }) {
                 val foundPaths = HashMap<KeyedNode, Int>()
                 findAllKeyPaths(baseNode) { nodePath ->
-                    foundPaths[nodePath.item] = min(nodePath.pathLength, foundPaths[nodePath.item] ?: Int.MAX_VALUE)
+                    foundPaths[nodePath.destination] = min(nodePath.pathLength, foundPaths[nodePath.destination] ?: Int.MAX_VALUE)
                 }
                 val edges = result.getOrPut(baseNode) { ArrayList(26) }
                 edges.addAll(foundPaths.map { Edge(baseNode, it.key.node, it.value, it.key.keys) })
@@ -311,7 +311,7 @@ class Day18 {
             val current = pending.poll() ?: break
 
             // Process the node collection with the lowest path length
-            val currentNodeCollection = current.item
+            val currentNodeCollection = current.destination
 
             // If this collection contains all the keys we were looking for: we're done!
             if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {

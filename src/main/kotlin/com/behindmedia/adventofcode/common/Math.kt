@@ -383,8 +383,8 @@ fun <E>Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
-class NodePath<N>(val item: N, val pathLength: Int): Comparable<NodePath<N>> {
-    override fun compareTo(other: NodePath<N>): Int {
+class Path<N>(val destination: N, val pathLength: Int): Comparable<Path<N>> {
+    override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
 }
@@ -398,10 +398,10 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int): Comparabl
 /**
  * Breadth first search algorithm to find the shortest paths between unweighted nodes.
  */
-inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
-    val list = ArrayDeque<NodePath<N>>()
+inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (Path<N>) -> T?): T? {
+    val list = ArrayDeque<Path<N>>()
     val visited = mutableSetOf<N>()
-    list.add(NodePath(from, 0))
+    list.add(Path(from, 0))
     var start = true
     while(true) {
         val current = list.pollFirst() ?: return null
@@ -413,10 +413,10 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>,
                 return it
             }
         }
-        visited.add(current.item)
-        for (neighbour in neighbours(current.item)) {
+        visited.add(current.destination)
+        for (neighbour in neighbours(current.destination)) {
             if (!visited.contains(neighbour) && reachable(neighbour)) {
-                list.add(NodePath(neighbour, current.pathLength + 1))
+                list.add(Path(neighbour, current.pathLength + 1))
             }
         }
     }
@@ -425,14 +425,14 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>,
 /**
  * Dijkstra's algorithm to find the shortest path between weighted nodes.
  */
-inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pair<N, Int>>, process: (NodePath<N>) -> T?): T? {
-    val pending = PriorityQueue<NodePath<N>>()
-    pending.add(NodePath(from, 0))
+inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pair<N, Int>>, process: (Path<N>) -> T?): T? {
+    val pending = PriorityQueue<Path<N>>()
+    pending.add(Path(from, 0))
     val settled = mutableSetOf<N>()
     var start = true
     while (true) {
         val current = pending.poll() ?: break
-        if (settled.contains(current.item)) continue
+        if (settled.contains(current.destination)) continue
         if (start) {
             start = false
         } else {
@@ -440,12 +440,12 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pai
                 return it
             }
         }
-        val currentNode = current.item
+        val currentNode = current.destination
         settled.add(currentNode)
         for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
             if (!settled.contains(neighbour)) {
                 val newDistance = current.pathLength + neighbourWeight
-                pending.add(NodePath(neighbour, newDistance))
+                pending.add(Path(neighbour, newDistance))
             }
         }
     }

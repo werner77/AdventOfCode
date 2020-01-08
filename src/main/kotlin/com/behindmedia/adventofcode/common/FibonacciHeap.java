@@ -156,11 +156,11 @@ public class FibonacciHeap<T> {
     private final Map<T, FibonacciHeapNode<T>> existingNodes = new HashMap<>();
 
     @Nullable
-    public NodePath<T> poll() {
+    public Path<T> poll() {
         FibonacciHeapNode<T> minNode = removeMin();
         if (minNode != null) {
             existingNodes.remove(minNode.data);
-            return new NodePath<T>(minNode.data, minNode.key);
+            return new Path<T>(minNode.data, minNode.key);
         }
         return null;
     }
@@ -169,8 +169,8 @@ public class FibonacciHeap<T> {
      * Inserts the node if it does not exists, else updates its priority using the supplied key.
      * If the existing key is already < than the supplied key this operation does nothing.
      */
-    public void update(@NotNull NodePath<T> nodePath) {
-        update(nodePath.getItem(), nodePath.getPathLength());
+    public void update(@NotNull Path<T> path) {
+        update(path.getDestination(), path.getPathLength());
     }
 
     public void update(@NotNull T node, int pathLength) {
@@ -185,9 +185,9 @@ public class FibonacciHeap<T> {
     }
 
     @Nullable
-    public NodePath<T> first() {
+    public Path<T> first() {
         if (minNode != null) {
-            return new NodePath<T>(minNode.data, minNode.key);
+            return new Path<T>(minNode.data, minNode.key);
         }
         return null;
     }
