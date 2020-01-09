@@ -5,24 +5,26 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.math.min
 
+private typealias Node = Char
+
 // private utility method to determine the type of identifier (key, door, wall, current position or empty)
-private val Char.isKey: Boolean
+private val Node.isKey: Boolean
     inline get() = (this - 'a') in 0..25
 
-private val Char.isDoor: Boolean
+private val Node.isDoor: Boolean
     inline get() = (this - 'A') in 0..25
 
-private val Char.isWall: Boolean
+private val Node.isWall: Boolean
     inline get() = (this == '#')
 
-private val Char.isCurrentPosition: Boolean
+private val Node.isCurrentPosition: Boolean
     inline get() = (this == '@' || (this - '0') in 0..9)
 
-private val Char.isEmpty: Boolean
+private val Node.isEmpty: Boolean
     inline get() = (this == '.')
 
 // Gets the key corresponding with the door, does not make any sense for none door nodes.
-private val Char.correspondingKey: Char
+private val Node.correspondingKey: Char
     inline get() {
         assert(this.isDoor)
         return this.toLowerCase()
@@ -101,18 +103,6 @@ class Day18 {
     }
 
     /**
-     * Class describing a point on the map with its identifier and coordinate.
-     *
-     * Each node is uniquely identified by its identifier.
-     */
-    private data class Node(val identifier: Char) {
-        fun isAccessible(keysInPossession: KeyCollection): Boolean {
-            val door = identifier.isDoor
-            return (!door && !identifier.isWall) || (door && keysInPossession.contains(identifier.toLowerCase()))
-        }
-    }
-
-    /**
      * Combination of node and collected (or required) keys.
      */
     private data class KeyedNode(val node: Node, val keys: KeyCollection)
@@ -127,7 +117,7 @@ class Day18 {
                 var state = 0
                 nodes.forEachIndexed { index, node ->
                     val shift = shiftFor(index)
-                    state = state or (node.identifier.toInt() shl shift)
+                    state = state or (node.toInt() shl shift)
                 }
                 return NodeCollection(state)
             }
@@ -140,16 +130,16 @@ class Day18 {
         inline fun forEachIndexed(perform: (Int, Node) -> Unit) {
             for (i in 0..3) {
                 val shift = shiftFor(i)
-                val identifier = (state shr shift) and 0xFF
-                if (identifier == 0) break
-                perform(i, Node(identifier.toChar()))
+                val node = (state shr shift) and 0xFF
+                if (node == 0) break
+                perform(i, node.toChar())
             }
         }
 
         fun replacingNode(index: Int, node: Node): NodeCollection {
             val shift = shiftFor(index)
             var newState = state and (0xFF shl shift).inv()
-            newState = newState or (node.identifier.toInt() shl shift)
+            newState = newState or (node.toInt() shl shift)
             return NodeCollection(newState)
         }
     }
@@ -183,7 +173,7 @@ class Day18 {
                 val sizeX = lines.maxBy { it.length }?.length ?: 0
                 val matrix = Array(sizeX) {
                     Array(sizeY) {
-                        Node('#')
+                        '#'
                     }
                 }
                 val keyNodeCoordinates = Array<Coordinate?>(128) { null }
@@ -192,12 +182,12 @@ class Day18 {
                     for ((x, c) in line.withIndex()) {
                         val node = if (c.isCurrentPosition) {
                             // Give each current position a unique index (1, 2, 3, 4)
-                            Node('0' + currentPositionIndex++)
+                            '0' + currentPositionIndex++
                         } else {
-                            Node(c)
+                            c
                         }
-                        if (node.identifier.isCurrentPosition || node.identifier.isKey) {
-                            keyNodeCoordinates[node.identifier.toInt()] = Coordinate(x, y)
+                        if (node.isCurrentPosition || node.isKey) {
+                            keyNodeCoordinates[node.toInt()] = Coordinate(x, y)
                         }
                         matrix[x][y] = node
                     }
@@ -211,7 +201,7 @@ class Day18 {
         }
 
         fun coordinateFor(node: Node): Coordinate {
-            return keyNodeCoordinates[node.identifier.toInt()] ?: throw IllegalArgumentException("Coordinate requested for none key node: $node")
+            return keyNodeCoordinates[node.toInt()] ?: throw IllegalArgumentException("Coordinate requested for none key node: $node")
         }
 
         fun isAccessible(coordinate: Coordinate, keysInPossession: KeyCollection): Boolean {
@@ -222,7 +212,8 @@ class Day18 {
                 val s = matrix[x]
                 if (y in s.indices) {
                     val node = s[y]
-                    return node.isAccessible(keysInPossession)
+                    val door = node.isDoor
+                    return (!door && !node.isWall) || (door && keysInPossession.contains(node.toLowerCase()))
                 }
             }
             return false
@@ -251,7 +242,7 @@ class Day18 {
         private fun findAllKeyPaths(from: Node, onFound: (Path<KeyedNode>) -> Unit) {
             fun recurse(currentCoordinate: Coordinate, currentNode: Node, visited: MutableSet<Coordinate>,
                         pathLength: Int, requiredKeys: KeyCollection) {
-                if (currentNode.identifier.isKey && pathLength != 0) {
+                if (currentNode.isKey && pathLength != 0) {
                     // Found
                     onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength))
                 }
@@ -259,8 +250,8 @@ class Day18 {
                 currentCoordinate.forDirectNeighbours {
                     if (this.isAccessible(it, KeyCollection.all) && !visited.contains(it)) {
                         val neighbourNode = this.nodeAt(it)
-                        val nextRequiredKeys = if (neighbourNode.identifier.isDoor) {
-                            requiredKeys + neighbourNode.identifier.correspondingKey
+                        val nextRequiredKeys = if (neighbourNode.isDoor) {
+                            requiredKeys + neighbourNode.correspondingKey
                         } else {
                             requiredKeys
                         }
@@ -279,7 +270,7 @@ class Day18 {
          * Returned is a map with the Node as key and all reachable edges (paths) from this node as value.
          */
         fun toWeightedGraph(): Map<Node, List<Edge>> {
-            val baseNodes = this.getNodes { it.identifier.isKey || it.identifier.isCurrentPosition }
+            val baseNodes = this.getNodes { it.isKey || it.isCurrentPosition }
 
             return baseNodes.fold(HashMap()) { map, baseNode ->
                 val foundPaths = HashMap<KeyedNode, Int>()
@@ -303,7 +294,7 @@ class Day18 {
             val subEdges = this[subNode] ?: throw IllegalStateException("Could not find specified subNode ${subNode} in graph")
             subEdges.forEach { edge ->
                 // Only add keys that have not yet been collected and from paths that are actually available
-                if (edge.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.to.identifier)) {
+                if (edge.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.to)) {
                     perform(index, edge)
                 }
             }
@@ -325,11 +316,11 @@ class Day18 {
 
         // The initial positions
         val initialNodes = this.keys.filter {
-            it.identifier.isCurrentPosition
+            it.isCurrentPosition
         }
 
         // This is the collection of keys to check against for completeness
-        val completeKeyCollection = KeyCollection.from(this.keys.map { it.identifier }.filter { it.isKey })
+        val completeKeyCollection = KeyCollection.from(this.keys.filter { it.isKey })
 
         // The initial nodes (starting positions of the robots) in combination with an empty key collection
         val initialNodeCollection = KeyedNodeCollection(NodeCollection.from(initialNodes), KeyCollection.none)
@@ -355,7 +346,7 @@ class Day18 {
 
             forEachRelevantEdge(currentNodeCollection) { nodeIndex, edge ->
                 val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.to),
-                    currentNodeCollection.keys + edge.to.identifier)
+                    currentNodeCollection.keys + edge.to)
                 if (!settled.contains(neighbour)) {
                     pending.update(neighbour, current.pathLength + edge.weight)
                 }
