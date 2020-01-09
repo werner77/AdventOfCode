@@ -79,11 +79,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
      * Comparison, ordering from top-left to bottom-right
      */
     override fun compareTo(other: Coordinate): Int {
-        var result = this.y.compareTo(other.y)
-        if (result == 0) {
-            result = this.x.compareTo(other.x)
-        }
-        return result
+        return compare(
+            { this.y.compareTo(other.y) },
+            { this.x.compareTo(other.x) }
+        )
     }
 
     fun offset(xOffset: Int, yOffset: Int): Coordinate {
@@ -207,12 +206,26 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
     inline fun <T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
-        return reachableNodes(this,
-            neighbours = {
-                it.directNeighbours
-            },
-            process = process, reachable = reachable
-        )
+        val list = ArrayDeque<CoordinatePath>()
+        val visited = mutableSetOf<Coordinate>()
+        list.add(CoordinatePath(this, 0))
+        var start = true
+        while(true) {
+            val current = list.pollFirst() ?: return null
+            if (start) {
+                start = false
+            } else {
+                process(current)?.let {
+                    return it
+                }
+            }
+            visited.add(current.coordinate)
+            current.coordinate.forDirectNeighbours { neighbour ->
+                if (!visited.contains(neighbour) && reachable(neighbour)) {
+                    list.add(CoordinatePath(neighbour, current.pathLength + 1))
+                }
+            }
+        }
     }
 
     operator fun get(index: Int): Int {
@@ -370,35 +383,73 @@ fun <E>Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
-data class NodePath<N>(val node: N, val pathLength: Int)
-
-typealias CoordinatePath = NodePath<Coordinate>
-
-inline fun <N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (NodePath<N>) -> T?): T? {
-    val list = ArrayDeque<NodePath<N>>()
-    val visited = mutableSetOf<N>()
-    visited.add(from)
-    list.add(NodePath(from, 0))
-
-    while(true) {
-        val current = try {
-            list.pop()
-        } catch (e: NoSuchElementException) {
-            return null
-        }
-        if (current.node != from) {
-            val result = process(current)
-            if (result != null) {
-                return result
-            }
-        }
-        for (neighbour in neighbours(current.node)) {
-            if (!visited.contains(neighbour) && reachable(neighbour)) {
-                list.add(NodePath(neighbour, current.pathLength + 1))
-            }
-        }
-        visited.add(current.node)
+class Path<N>(val destination: N, val pathLength: Int): Comparable<Path<N>> {
+    override fun compareTo(other: Path<N>): Int {
+        return this.pathLength.compareTo(other.pathLength)
     }
+}
+
+class CoordinatePath(val coordinate: Coordinate, val pathLength: Int): Comparable<CoordinatePath> {
+    override fun compareTo(other: CoordinatePath): Int {
+        return this.pathLength.compareTo(other.pathLength)
+    }
+}
+
+/**
+ * Breadth first search algorithm to find the shortest paths between unweighted nodes.
+ */
+inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (Path<N>) -> T?): T? {
+    val list = ArrayDeque<Path<N>>()
+    val visited = mutableSetOf<N>()
+    list.add(Path(from, 0))
+    var start = true
+    while(true) {
+        val current = list.pollFirst() ?: return null
+
+        if (start) {
+            start = false
+        } else {
+            process(current)?.let {
+                return it
+            }
+        }
+        visited.add(current.destination)
+        for (neighbour in neighbours(current.destination)) {
+            if (!visited.contains(neighbour) && reachable(neighbour)) {
+                list.add(Path(neighbour, current.pathLength + 1))
+            }
+        }
+    }
+}
+
+/**
+ * Dijkstra's algorithm to find the shortest path between weighted nodes.
+ */
+inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pair<N, Int>>, process: (Path<N>) -> T?): T? {
+    val pending = PriorityQueue<Path<N>>()
+    pending.add(Path(from, 0))
+    val settled = mutableSetOf<N>()
+    var start = true
+    while (true) {
+        val current = pending.poll() ?: break
+        if (settled.contains(current.destination)) continue
+        if (start) {
+            start = false
+        } else {
+            process(current)?.let {
+                return it
+            }
+        }
+        val currentNode = current.destination
+        settled.add(currentNode)
+        for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
+            if (!settled.contains(neighbour)) {
+                val newDistance = current.pathLength + neighbourWeight
+                pending.add(Path(neighbour, newDistance))
+            }
+        }
+    }
+    return null
 }
 
 inline fun binarySearch(lowerBound: Long, upperBound: Long, targetValue: Long, inverted: Boolean = false, evaluation: (Long) -> Long): Long? {

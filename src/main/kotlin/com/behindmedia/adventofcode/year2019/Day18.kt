@@ -1,235 +1,371 @@
+
 package com.behindmedia.adventofcode.year2019
 
-import com.behindmedia.adventofcode.common.Coordinate
-import com.behindmedia.adventofcode.common.CoordinatePath
-import com.behindmedia.adventofcode.common.range
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
+import com.behindmedia.adventofcode.common.*
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 import kotlin.math.min
+
+private typealias Node = Char
+
+// private utility method to determine the type of identifier (key, door, wall, current position or empty)
+private val Node.isKey: Boolean
+    inline get() = (this - 'a') in 0..25
+
+private val Node.isDoor: Boolean
+    inline get() = (this - 'A') in 0..25
+
+private val Node.isWall: Boolean
+    inline get() = (this == '#')
+
+private val Node.isCurrentPosition: Boolean
+    inline get() = (this == '@' || (this - '0') in 0..9)
+
+private val Node.isEmpty: Boolean
+    inline get() = (this == '.')
+
+// Gets the key corresponding with the door, does not make any sense for none door nodes.
+private val Node.correspondingKey: Char
+    inline get() {
+        assert(this.isDoor)
+        return this.toLowerCase()
+    }
 
 class Day18 {
 
     /**
-     * Class describing the items on the map
+     * Optimized data structure based on bit masks to store which keys have been collected
      */
-    data class Node(val coordinate: Coordinate, val identifier: Char) {
+    private data class KeyCollection(private val state: Int): Comparable<KeyCollection> {
 
-        val isKey: Boolean
-            get() = (identifier - 'a') in 0..25
+        companion object {
+            private const val completeState: Int = (1 shl 26) - 1
 
-        val isDoor: Boolean
-            get() = (identifier - 'A') in 0..25
+            private val Char.shift: Int
+                inline get() = this - 'a'
 
-        val isWall: Boolean
-            get() = (identifier == '#')
+            fun from(keys: List<Char>): KeyCollection {
+                var state = 0
+                for (key in keys) {
+                    assert(key.isKey)
+                    state = state or (1 shl key.shift)
+                }
+                return KeyCollection(state)
+            }
 
-        val isCurrentPosition: Boolean
-            get() = (identifier == '@')
+            /**
+             * All keys
+             */
+            val all = KeyCollection(completeState)
 
-        val isEmpty: Boolean
-            get() = (identifier == '.')
+            /**
+             * No keys
+             */
+            val none = KeyCollection(0)
+        }
+
+        val size: Int
+            get() {
+                var count = 0
+                for (i in 0..25) {
+                    val mask = 1 shl i
+                    if (state.and(mask) == mask) count++
+                }
+                return count
+            }
+
+        override fun compareTo(other: KeyCollection): Int {
+            return this.size.compareTo(other.size)
+        }
 
         /**
-         * Whether the node is accessible given the supplied keys collection (representing the keys in possession)
+         * Whether the specified key is in the collection
          */
-        fun isAccessible(keys: KeyCollection): Boolean {
-            return isEmpty || isKey || isCurrentPosition || keys.contains(identifier.toLowerCase())
+        fun contains(key: Char): Boolean {
+            assert(key.isKey)
+            val mask = 1 shl key.shift
+            return state.and(mask) == mask
+        }
+
+        /**
+         * Whether this collection contains all keys in the specified collection (i.e. is a super set of)
+         */
+        fun containsAll(other: KeyCollection): Boolean {
+            return (state and other.state) == other.state
+        }
+
+        /**
+         * Adds the supplied key
+         */
+        operator fun plus(key: Char): KeyCollection {
+            assert(key.isKey)
+            return KeyCollection(this.state or (1 shl key.shift))
+        }
+
+        /**
+         * Adds all keys in the supplied key collection
+         */
+        operator fun plus(other: KeyCollection): KeyCollection {
+            return KeyCollection(state or other.state)
         }
 
         override fun toString(): String {
-            return "$identifier(${coordinate.x},${coordinate.y})"
+            return (0..25).mapNotNull {
+                val c = 'a' + it
+                if (contains(c)) c else null
+            }.toString()
         }
     }
 
     /**
-     * Optimized data structure based on a bitmask to store which keys have been collected
+     * Combination of node and collected (or required) keys.
      */
-    class KeyCollection {
+    private data class KeyedNode(val node: Node, val keys: KeyCollection) {
+        fun isAvailable(keysInPossession: KeyCollection): Boolean {
+            return keysInPossession.containsAll(keys)
+        }
+    }
 
-        private var internalState = 0
+    /**
+     * Optimized data structure to represent up to 4 nodes (current positions) with a single integer.
+     */
+    private data class NodeCollection(private val state: Int) {
 
-        fun addKey(key: Char) {
-            val shift = key - 'a'
-            internalState = internalState.or( 1.shl(shift) )
+        companion object {
+            fun from(nodes: List<Node>): NodeCollection {
+                var state = 0
+                nodes.forEachIndexed { index, node ->
+                    val shift = shiftFor(index)
+                    state = state or (node.toInt() shl shift)
+                }
+                return NodeCollection(state)
+            }
+
+            fun shiftFor(index: Int): Int {
+                return 8 * index
+            }
         }
 
-        fun contains(key: Char): Boolean {
-            val shift = key - 'a'
-            val mask = 1.shl(shift)
-            return internalState.and(mask) == mask
+        inline fun forEachIndexed(perform: (Int, Node) -> Unit) {
+            for (i in 0..3) {
+                val shift = shiftFor(i)
+                val node = (state shr shift) and 0xFF
+                if (node == 0) break
+                perform(i, node.toChar())
+            }
         }
 
-        override fun hashCode(): Int {
-            return internalState.hashCode()
+        fun replacingNode(index: Int, node: Node): NodeCollection {
+            val shift = shiftFor(index)
+            var newState = state and (0xFF shl shift).inv()
+            newState = newState or (node.toInt() shl shift)
+            return NodeCollection(newState)
+        }
+    }
+
+    /**
+     * Combination of multiple nodes (representing the different robot positions) and combination of keys in possession.
+      */
+    private data class KeyedNodeCollection(val nodes: NodeCollection, val keys: KeyCollection)
+
+    /**
+     * Data structure holding the map information (all the nodes that exist on the map, without any key collection info)
+     */
+    private class NodeMap(private val matrix: Array<Array<Node>>, private val keyNodeCoordinates: Array<Coordinate?>) {
+
+        companion object {
+            fun from(input: String): NodeMap {
+                val lines = input.reader().readLines()
+                val sizeY = lines.size
+                val sizeX = lines.maxBy { it.length }?.length ?: 0
+                val matrix = Array(sizeX) {
+                    Array(sizeY) {
+                        '#'
+                    }
+                }
+                val keyNodeCoordinates = Array<Coordinate?>(128) { null }
+                var currentPositionIndex = 1
+                for ((y, line) in lines.withIndex()) {
+                    for ((x, c) in line.withIndex()) {
+                        val node = if (c.isCurrentPosition) {
+                            // Give each current position a unique index (1, 2, 3, 4)
+                            '0' + currentPositionIndex++
+                        } else {
+                            c
+                        }
+                        if (node.isCurrentPosition || node.isKey) {
+                            keyNodeCoordinates[node.toInt()] = Coordinate(x, y)
+                        }
+                        matrix[x][y] = node
+                    }
+                }
+                return NodeMap(matrix, keyNodeCoordinates)
+            }
         }
 
-        override fun equals(other: Any?): Boolean {
-            if (other is KeyCollection) {
-                return this.internalState == other.internalState
+        fun nodeAt(coordinate: Coordinate): Node {
+            return matrix[coordinate.x][coordinate.y]
+        }
+
+        fun coordinateFor(node: Node): Coordinate {
+            return keyNodeCoordinates[node.toInt()] ?: throw IllegalArgumentException("Coordinate requested for none key node: $node")
+        }
+
+        fun isAccessible(coordinate: Coordinate, keysInPossession: KeyCollection): Boolean {
+            val x = coordinate.x
+            val y = coordinate.y
+
+            if (x in matrix.indices) {
+                val s = matrix[x]
+                if (y in s.indices) {
+                    val node = s[y]
+                    val door = node.isDoor
+                    return (!door && !node.isWall) || (door && keysInPossession.contains(node.toLowerCase()))
+                }
             }
             return false
         }
 
-        fun plus(key: Char): KeyCollection {
-            val result = KeyCollection()
-            result.internalState = this.internalState
-            result.addKey(key)
+        inline fun getNodes(predicate: (Node) -> Boolean): List<Node> {
+            val result = mutableListOf<Node>()
+            for (x in matrix.indices) {
+                for (y in matrix[x].indices) {
+                    val node = matrix[x][y]
+                    if (predicate(node)) {
+                        result.add(node)
+                    }
+                }
+            }
             return result
         }
 
         /**
-         * Optimized cache key which stores the current node and internalState of this instance in a single Long
+         * Method to find the paths to all keys (not necessarily the shortest) from a designated source node.
+         *
+         * For every unique path found the `onFound` lambda is called.
+         *
+         * This method uses a depth first search to traverse all possible unique paths.
          */
-        fun cacheKey(currentNode: Node): Long {
-            var result = internalState.toLong()
-            result = result or currentNode.identifier.toLong().shl(32)
-            return result
+        private fun findAllKeyPaths(from: Node, onFound: (Path<KeyedNode>) -> Unit) {
+            fun recurse(currentCoordinate: Coordinate, currentNode: Node, visited: MutableSet<Coordinate>,
+                        pathLength: Int, requiredKeys: KeyCollection) {
+                if (currentNode.isKey && pathLength != 0) {
+                    // Found
+                    onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength))
+                }
+                visited.add(currentCoordinate)
+                currentCoordinate.forDirectNeighbours {
+                    if (this.isAccessible(it, KeyCollection.all) && !visited.contains(it)) {
+                        val neighbourNode = this.nodeAt(it)
+                        val nextRequiredKeys = if (neighbourNode.isDoor) {
+                            requiredKeys + neighbourNode.correspondingKey
+                        } else {
+                            requiredKeys
+                        }
+                        recurse(it, neighbourNode, visited, pathLength + 1, nextRequiredKeys)
+                    }
+                }
+                visited.remove(currentCoordinate)
+            }
+            recurse(coordinateFor(from), from, HashSet(), 0, KeyCollection.none)
         }
 
-        fun cacheKey(currentNodes: List<Node>): Long {
-            var result = internalState.toLong()
+        private val edgeCache = HashMap<Node, Collection<Path<KeyedNode>>>(32)
 
-            assert(currentNodes.size <= 4)
-            var bitCount = 64
-
-            for (node in currentNodes) {
-                bitCount -= 8
-                result = result or node.identifier.toLong().shl(bitCount)
-            }
-            return result
-        }
-    }
-
-    fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
-        val map = getMap(input, includeWalls = false)
-        val currentPositions = map.getCurrentPositions().mapIndexed { index, node ->
-            // Create a unique identifier for each position to be able to cache independently
-            Node(node.coordinate, '1' + index)
-        }
-
-        return minimumPathToCollectKeys(currentPositions, KeyCollection(), map,
-            Collections.synchronizedMap(mutableMapOf()),
-            Collections.synchronizedMap(mutableMapOf()), true)
-    }
-
-    private fun Map<Coordinate, Node>.getCurrentPositions(): List<Node> {
-        return values.filter { it.isCurrentPosition }
-    }
-
-    /**
-     * Recursive function to determine the minimumPathLength given the list of currentPositions of all robots
-     * and the supplied keys in possession.
-     */
-    private fun minimumPathToCollectKeys(currentPositions: List<Node>,
-                                         keysInPossession: KeyCollection,
-                                         map: Map<Coordinate, Node>,
-                                         pathLengthCache: MutableMap<Long, Int>,
-                                         reachableCache: MutableMap<Long, List<CoordinatePath>>,
-                                         multiThreaded: Boolean = false): Int {
-
-        val reachableKeys = mutableListOf<Pair<Int, CoordinatePath>>()
-
-        for(i in currentPositions.indices) {
-            val individualReachableKeys = getReachableKeys(currentPositions[i], keysInPossession, map, reachableCache)
-            reachableKeys.addAll(individualReachableKeys.map { Pair(i, it) })
-        }
-
-        if (reachableKeys.isEmpty()) {
-            return 0
-        }
-
-        val minPath = AtomicInteger(Int.MAX_VALUE)
-
-        fun processKey(index: Int, key: CoordinatePath) {
-            // Move to this key
-            val nextPosition = key.node
-
-            val node = map[nextPosition] ?: throw IllegalStateException("No node found at coordinate")
-            assert(node.isKey)
-
-            // This is the lower bound on path needed, every additional key would take at least the
-            // manhattenDistance to collect
-            var minimumPathLengthForThisKey = key.pathLength
-            for (otherKey in reachableKeys) {
-                minimumPathLengthForThisKey += otherKey.second.node.manhattenDistance(nextPosition)
-            }
-
-            if (minimumPathLengthForThisKey >= minPath.toInt()) {
-                return
-            }
-
-            val nextKeys = keysInPossession.plus(node.identifier)
-
-            val nextPositions = List(currentPositions.size) {
-                if (it == index) node else currentPositions[it]
-            }
-
-            val cacheKey = nextKeys.cacheKey(nextPositions)
-
-            val nextPathLength = pathLengthCache.getOrPut(cacheKey) {
-                minimumPathToCollectKeys(nextPositions, nextKeys,
-                    map, pathLengthCache, reachableCache)
-            }
-
-            minPath.getAndUpdate { current ->
-                min(current, nextPathLength + key.pathLength)
-            }
-        }
-
-        if (multiThreaded) {
-            runBlocking {
-                withContext(Dispatchers.Default) {
-                    for (reachableKey in reachableKeys) {
-                        launch {
-                            processKey(reachableKey.first, reachableKey.second)
+        private fun edgesFrom(node: Node, currentKeys: KeyCollection): Collection<Path<KeyedNode>> {
+            return edgeCache.getOrPut(node) {
+                val foundPaths = HashMap<KeyedNode, Path<KeyedNode>>(32)
+                findAllKeyPaths(node) { nodePath ->
+                    // As an optimization we only need to find nodes which are not yet collected, because at the time this
+                    // method is called the optimal path to those nodes will already be found using Dijkstra
+                    if (!currentKeys.contains(nodePath.destination.node)) {
+                        val existingEdge = foundPaths[nodePath.destination]
+                        if (existingEdge == null || existingEdge.pathLength > nodePath.pathLength) {
+                            foundPaths[nodePath.destination] = nodePath
                         }
                     }
                 }
-            }
-        } else {
-            for (reachableKey in reachableKeys) {
-                processKey(reachableKey.first, reachableKey.second)
+                foundPaths.values
             }
         }
-        return minPath.toInt()
-    }
 
-    fun getMap(input: String, includeWalls: Boolean = false): Map<Coordinate, Node> {
-        val lines = input.split('\n')
-        val map = mutableMapOf<Coordinate, Node>()
-        for ((y, line) in lines.withIndex()) {
-            for ((x, c) in line.withIndex()) {
-                val coordinate = Coordinate(x, y)
-                val node = Node(coordinate, c)
-
-                if (!node.isWall || includeWalls) {
-                    map[coordinate] = node
+        /**
+         * Performs the specified lambda for each relevant edge of the specified node collection
+         *
+         * Relevant means that the key the edge points to has not been collected yet and that it is reachable given the keys
+         * in possession.
+         */
+        private inline fun forEachRelevantEdge(nodeCollection: KeyedNodeCollection, perform: (Int, Path<KeyedNode>) -> Unit) {
+            nodeCollection.nodes.forEachIndexed { index, subNode ->
+                edgesFrom(subNode, nodeCollection.keys).forEach { edge ->
+                    // Only add keys that have not yet been collected and from paths that are actually available
+                    if (edge.destination.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.destination.node)) {
+                        perform(index, edge)
+                    }
                 }
             }
         }
-        return map
+
+        /**
+         * Finds the minimum path given the initial positions and keys in the graph to collect all keys.
+         *
+         * This uses the Dijkstra algorithm with a Fibonacci Heap as a priority queue for faster performance.
+         *
+         * The graph contains all info about the maze (weight of edges are lengths of paths between key nodes)
+         */
+        fun minimumPathToCollectAllKeys(): Int? {
+
+            // Use a FibonacciHeap to optimize performance. A FibonacciHeap allows reordering of the priority queue without a
+            // remove and subsequent add.
+            // The heap is automatically ordered by NodePath ascending (increasing path length, so shortest paths are first)
+            val pending = FibonacciHeap<KeyedNodeCollection>()
+
+            // The initial positions
+            val initialNodes = this.getNodes { it.isCurrentPosition }
+
+            // This is the collection of keys to check against for completeness
+            val completeKeyCollection = KeyCollection.from(this.getNodes { it.isKey })
+
+            // The initial nodes (starting positions of the robots) in combination with an empty key collection
+            val initialNodeCollection = KeyedNodeCollection(NodeCollection.from(initialNodes), KeyCollection.none)
+
+            // Add the initial nodes to the pending queue
+            pending.update(initialNodeCollection, 0)
+            val settled = HashSet<KeyedNodeCollection>()
+
+            while (true) {
+                // If the queue is empty: break out of the loop
+                val current = pending.poll() ?: break
+
+                // Process the node collection with the lowest path length
+                val currentNodeCollection = current.destination
+
+                // If this collection contains all the keys we were looking for: we're done!
+                if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {
+                    return current.pathLength
+                }
+
+                // Add to the settled set to avoid revisiting the same node
+                settled.add(currentNodeCollection)
+
+                forEachRelevantEdge(currentNodeCollection) { nodeIndex, edge ->
+                    val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.destination.node),
+                        currentNodeCollection.keys + edge.destination.node)
+                    if (!settled.contains(neighbour)) {
+                        pending.update(neighbour, current.pathLength + edge.pathLength)
+                    }
+                }
+            }
+            return null
+        }
     }
 
     /**
      * Finds the reachable nodes of the map, given the current set of keys in possession
+     * Main method which gives the answer to both part 1 and part 2
      */
-    fun getReachableKeys(currentPosition: Node, keysInPossession: KeyCollection, map: Map<Coordinate, Node>, cache: MutableMap<Long, List<CoordinatePath>>): List<CoordinatePath> {
-        val cacheKey = keysInPossession.cacheKey(currentPosition)
-        return cache.getOrPut(cacheKey) {
-            val result = mutableListOf<CoordinatePath>()
-            currentPosition.coordinate.reachableCoordinates(reachable = { map[it]?.isAccessible(keysInPossession) ?: false }) { coordinatePath ->
-                map[coordinatePath.node]?.let { node ->
-                    if (node.isKey && !keysInPossession.contains(node.identifier)) {
-                        result.add(coordinatePath)
-                    }
-                }
-                null
-            }
-            result
-        }
+    fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
+        val map = NodeMap.from(input)
+        return map.minimumPathToCollectAllKeys() ?: throw IllegalStateException("Could not find minimum path")
     }
 }

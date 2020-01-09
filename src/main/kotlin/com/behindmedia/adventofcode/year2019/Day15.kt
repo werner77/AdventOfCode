@@ -136,7 +136,7 @@ class Day15 {
     private fun Map<Coordinate, State>.shortestPath(start: Coordinate, destination: Coordinate): Int? {
         return start.reachableCoordinates(
             reachable = { coordinate -> this[coordinate]?.isFree ?: false },
-            process = { coordinatePath -> if (coordinatePath.node == destination) coordinatePath.pathLength else null }
+            process = { coordinatePath -> if (coordinatePath.coordinate == destination) coordinatePath.pathLength else null }
         )
     }
 
