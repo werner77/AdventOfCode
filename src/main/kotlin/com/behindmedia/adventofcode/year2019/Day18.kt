@@ -246,12 +246,14 @@ class Day18 {
          *
          * This method uses a depth first search to traverse all possible unique paths.
          */
-        private fun findAllKeyPaths(from: Node, onFound: (Path<KeyedNode>) -> Unit) {
+        private fun findAllKeyPaths(from: Node, onFound: (Path<KeyedNode>) -> Boolean) {
             fun recurse(currentCoordinate: Coordinate, currentNode: Node, visited: MutableSet<Coordinate>,
                         pathLength: Int, requiredKeys: KeyCollection) {
                 if (currentNode.isKey && pathLength != 0) {
                     // Found
-                    onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength))
+                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength))) {
+                        return
+                    }
                 }
                 visited.add(currentCoordinate)
                 currentCoordinate.forDirectNeighbours {
@@ -276,13 +278,21 @@ class Day18 {
             return edgeCache.getOrPut(node) {
                 val foundPaths = HashMap<KeyedNode, Path<KeyedNode>>(32)
                 findAllKeyPaths(node) { nodePath ->
-                    // As an optimization we only need to find nodes which are not yet collected, because at the time this
+                    // As an optimization we only need to find keys which are not yet collected, because at the time this
                     // method is called the optimal path to those nodes will already be found using Dijkstra
                     if (!currentKeys.contains(nodePath.destination.node)) {
+
+                        // Stop when a key is found that is not in the current collection.
+                        // It does not make sense to traverse the same path beyond that,
+                        // because we arrive at a different key calling this method again
+
                         val existingEdge = foundPaths[nodePath.destination]
                         if (existingEdge == null || existingEdge.pathLength > nodePath.pathLength) {
                             foundPaths[nodePath.destination] = nodePath
                         }
+                        true
+                    } else {
+                        false
                     }
                 }
                 foundPaths.values
@@ -333,6 +343,8 @@ class Day18 {
             pending.update(initialNodeCollection, 0)
             val settled = HashSet<KeyedNodeCollection>()
 
+            var count = 0
+
             while (true) {
                 // If the queue is empty: break out of the loop
                 val current = pending.poll() ?: break
@@ -342,8 +354,11 @@ class Day18 {
 
                 // If this collection contains all the keys we were looking for: we're done!
                 if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {
+                    println("Processed $count nodes")
                     return current.pathLength
                 }
+
+                count++
 
                 // Add to the settled set to avoid revisiting the same node
                 settled.add(currentNodeCollection)
