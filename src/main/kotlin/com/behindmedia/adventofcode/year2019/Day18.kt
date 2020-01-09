@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.*
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.math.min
@@ -166,7 +165,7 @@ class Day18 {
      * The weight is the path length and the requiredKeys is the collection of keys in possession required to be able
      * to traverse this path.
      */
-    private data class Edge(val from: Node, val to: Node, val weight: Int, val requiredKeys: KeyCollection) {
+    private class Edge(val to: Node, val weight: Int, val requiredKeys: KeyCollection) {
         fun isAvailable(keysInPossession: KeyCollection): Boolean {
             return keysInPossession.containsAll(requiredKeys)
         }
@@ -179,13 +178,11 @@ class Day18 {
 
         companion object {
             fun from(input: String): NodeMap {
-                val lines = input.split('\n')
-
+                val lines = input.reader().readLines()
                 val sizeY = lines.size
-                val sizeX = lines.map { it.length }.max() ?: 0
-
-                val matrix = Array(sizeX) { x ->
-                    Array(sizeY) { y ->
+                val sizeX = lines.maxBy { it.length }?.length ?: 0
+                val matrix = Array(sizeX) {
+                    Array(sizeY) {
                         Node('#')
                     }
                 }
@@ -282,17 +279,16 @@ class Day18 {
          * Returned is a map with the Node as key and all reachable edges (paths) from this node as value.
          */
         fun toWeightedGraph(): Map<Node, List<Edge>> {
-            val result = HashMap<Node, MutableList<Edge>>()
+            val baseNodes = this.getNodes { it.identifier.isKey || it.identifier.isCurrentPosition }
 
-            for (baseNode in this.getNodes { it.identifier.isKey || it.identifier.isCurrentPosition }) {
+            return baseNodes.fold(HashMap()) { map, baseNode ->
                 val foundPaths = HashMap<KeyedNode, Int>()
                 findAllKeyPaths(baseNode) { nodePath ->
                     foundPaths[nodePath.destination] = min(nodePath.pathLength, foundPaths[nodePath.destination] ?: Int.MAX_VALUE)
                 }
-                val edges = result.getOrPut(baseNode) { ArrayList(26) }
-                edges.addAll(foundPaths.map { Edge(baseNode, it.key.node, it.value, it.key.keys) })
+                map[baseNode] = foundPaths.map { Edge(it.key.node, it.value, it.key.keys) }
+                map
             }
-            return result
         }
     }
 
