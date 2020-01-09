@@ -35,7 +35,7 @@ class Day18 {
     /**
      * Optimized data structure based on bit masks to store which keys have been collected
      */
-    private data class KeyCollection(private val state: Int) {
+    private data class KeyCollection(private val state: Int): Comparable<KeyCollection> {
 
         companion object {
             private const val completeState: Int = (1 shl 26) - 1
@@ -61,6 +61,20 @@ class Day18 {
              * No keys
              */
             val none = KeyCollection(0)
+        }
+
+        val size: Int
+            get() {
+                var count = 0
+                for (i in 0..25) {
+                    val mask = 1 shl i
+                    if (state.and(mask) == mask) count++
+                }
+                return count
+            }
+
+        override fun compareTo(other: KeyCollection): Int {
+            return this.size.compareTo(other.size)
         }
 
         /**
@@ -105,7 +119,11 @@ class Day18 {
     /**
      * Combination of node and collected (or required) keys.
      */
-    private data class KeyedNode(val node: Node, val keys: KeyCollection)
+    private data class KeyedNode(val node: Node, val keys: KeyCollection) {
+        fun isAvailable(keysInPossession: KeyCollection): Boolean {
+            return keysInPossession.containsAll(keys)
+        }
+    }
 
     /**
      * Optimized data structure to represent up to 4 nodes (current positions) with a single integer.
@@ -148,18 +166,6 @@ class Day18 {
      * Combination of multiple nodes (representing the different robot positions) and combination of keys in possession.
       */
     private data class KeyedNodeCollection(val nodes: NodeCollection, val keys: KeyCollection)
-
-    /**
-     * Path from a node to a target node (not necessarily the shortest).
-     *
-     * The weight is the path length and the requiredKeys is the collection of keys in possession required to be able
-     * to traverse this path.
-     */
-    private class Edge(val to: Node, val weight: Int, val requiredKeys: KeyCollection) {
-        fun isAvailable(keysInPossession: KeyCollection): Boolean {
-            return keysInPossession.containsAll(requiredKeys)
-        }
-    }
 
     /**
      * Data structure holding the map information (all the nodes that exist on the map, without any key collection info)
@@ -263,103 +269,101 @@ class Day18 {
             recurse(coordinateFor(from), from, HashSet(), 0, KeyCollection.none)
         }
 
+        private val edgeCache = HashMap<Node, Collection<Path<KeyedNode>>>(32)
+
+        private fun edgesFrom(node: Node, currentKeys: KeyCollection): Collection<Path<KeyedNode>> {
+            return edgeCache.getOrPut(node) {
+                val foundPaths = HashMap<KeyedNode, Path<KeyedNode>>(32)
+                findAllKeyPaths(node) { nodePath ->
+                    // As an optimization we only need to find nodes which are not yet collected, because at the time this
+                    // method is called the optimal path to those nodes will already be found using Dijkstra
+                    if (!currentKeys.contains(nodePath.destination.node)) {
+                        val existingEdge = foundPaths[nodePath.destination]
+                        if (existingEdge == null || existingEdge.pathLength > nodePath.pathLength) {
+                            foundPaths[nodePath.destination] = nodePath
+                        }
+                    }
+                }
+                foundPaths.values
+            }
+        }
+
         /**
-         * Creates a weighted graph of all paths that exist between key nodes on the map. The nodes include all keys and the
-         * initial position(s).
+         * Performs the specified lambda for each relevant edge of the specified node collection
          *
-         * Returned is a map with the Node as key and all reachable edges (paths) from this node as value.
+         * Relevant means that the key the edge points to has not been collected yet and that it is reachable given the keys
+         * in possession.
          */
-        fun toWeightedGraph(): Map<Node, List<Edge>> {
-            val baseNodes = this.getNodes { it.isKey || it.isCurrentPosition }
-
-            return baseNodes.fold(HashMap()) { map, baseNode ->
-                val foundPaths = HashMap<KeyedNode, Int>()
-                findAllKeyPaths(baseNode) { nodePath ->
-                    foundPaths[nodePath.destination] = min(nodePath.pathLength, foundPaths[nodePath.destination] ?: Int.MAX_VALUE)
-                }
-                map[baseNode] = foundPaths.map { Edge(it.key.node, it.value, it.key.keys) }
-                map
-            }
-        }
-    }
-
-    /**
-     * Performs the specified lambda for each relevant edge of the specified node collection
-     *
-     * Relevant means that the key the edge points to has not been collected yet and that it is reachable given the keys
-     * in possession.
-     */
-    private inline fun Map<Node, List<Edge>>.forEachRelevantEdge(nodeCollection: KeyedNodeCollection, perform: (Int, Edge) -> Unit) {
-        nodeCollection.nodes.forEachIndexed { index, subNode ->
-            val subEdges = this[subNode] ?: throw IllegalStateException("Could not find specified subNode ${subNode} in graph")
-            subEdges.forEach { edge ->
-                // Only add keys that have not yet been collected and from paths that are actually available
-                if (edge.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.to)) {
-                    perform(index, edge)
+        private inline fun forEachRelevantEdge(nodeCollection: KeyedNodeCollection, perform: (Int, Path<KeyedNode>) -> Unit) {
+            nodeCollection.nodes.forEachIndexed { index, subNode ->
+                edgesFrom(subNode, nodeCollection.keys).forEach { edge ->
+                    // Only add keys that have not yet been collected and from paths that are actually available
+                    if (edge.destination.isAvailable(nodeCollection.keys) && !nodeCollection.keys.contains(edge.destination.node)) {
+                        perform(index, edge)
+                    }
                 }
             }
         }
-    }
 
-    /**
-     * Finds the minimum path given the initial positions and keys in the graph to collect all keys.
-     *
-     * This uses the Dijkstra algorithm with a Fibonacci Heap as a priority queue for faster performance.
-     *
-     * The graph contains all info about the maze (weight of edges are lengths of paths between key nodes)
-     */
-    private fun Map<Node, List<Edge>>.minimumPathToCollectAllKeys(): Int? {
-        // Use a FibonacciHeap to optimize performance. A FibonacciHeap allows reordering of the priority queue without a
-        // remove and subsequent add.
-        // The heap is automatically ordered by NodePath ascending (increasing path length, so shortest paths are first)
-        val pending = FibonacciHeap<KeyedNodeCollection>()
+        /**
+         * Finds the minimum path given the initial positions and keys in the graph to collect all keys.
+         *
+         * This uses the Dijkstra algorithm with a Fibonacci Heap as a priority queue for faster performance.
+         *
+         * The graph contains all info about the maze (weight of edges are lengths of paths between key nodes)
+         */
+        fun minimumPathToCollectAllKeys(): Int? {
 
-        // The initial positions
-        val initialNodes = this.keys.filter {
-            it.isCurrentPosition
-        }
+            // Use a FibonacciHeap to optimize performance. A FibonacciHeap allows reordering of the priority queue without a
+            // remove and subsequent add.
+            // The heap is automatically ordered by NodePath ascending (increasing path length, so shortest paths are first)
+            val pending = FibonacciHeap<KeyedNodeCollection>()
 
-        // This is the collection of keys to check against for completeness
-        val completeKeyCollection = KeyCollection.from(this.keys.filter { it.isKey })
+            // The initial positions
+            val initialNodes = this.getNodes { it.isCurrentPosition }
 
-        // The initial nodes (starting positions of the robots) in combination with an empty key collection
-        val initialNodeCollection = KeyedNodeCollection(NodeCollection.from(initialNodes), KeyCollection.none)
+            // This is the collection of keys to check against for completeness
+            val completeKeyCollection = KeyCollection.from(this.getNodes { it.isKey })
 
-        // Add the initial nodes to the pending queue
-        pending.update(initialNodeCollection, 0)
-        val settled = HashSet<KeyedNodeCollection>()
+            // The initial nodes (starting positions of the robots) in combination with an empty key collection
+            val initialNodeCollection = KeyedNodeCollection(NodeCollection.from(initialNodes), KeyCollection.none)
 
-        while (true) {
-            // If the queue is empty: break out of the loop
-            val current = pending.poll() ?: break
+            // Add the initial nodes to the pending queue
+            pending.update(initialNodeCollection, 0)
+            val settled = HashSet<KeyedNodeCollection>()
 
-            // Process the node collection with the lowest path length
-            val currentNodeCollection = current.destination
+            while (true) {
+                // If the queue is empty: break out of the loop
+                val current = pending.poll() ?: break
 
-            // If this collection contains all the keys we were looking for: we're done!
-            if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {
-                return current.pathLength
-            }
+                // Process the node collection with the lowest path length
+                val currentNodeCollection = current.destination
 
-            // Add to the settled set to avoid revisiting the same node
-            settled.add(currentNodeCollection)
+                // If this collection contains all the keys we were looking for: we're done!
+                if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {
+                    return current.pathLength
+                }
 
-            forEachRelevantEdge(currentNodeCollection) { nodeIndex, edge ->
-                val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.to),
-                    currentNodeCollection.keys + edge.to)
-                if (!settled.contains(neighbour)) {
-                    pending.update(neighbour, current.pathLength + edge.weight)
+                // Add to the settled set to avoid revisiting the same node
+                settled.add(currentNodeCollection)
+
+                forEachRelevantEdge(currentNodeCollection) { nodeIndex, edge ->
+                    val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.destination.node),
+                        currentNodeCollection.keys + edge.destination.node)
+                    if (!settled.contains(neighbour)) {
+                        pending.update(neighbour, current.pathLength + edge.pathLength)
+                    }
                 }
             }
+            return null
         }
-        return null
     }
 
     /**
      * Main method which gives the answer to both part 1 and part 2
      */
     fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
-        val graph = NodeMap.from(input).toWeightedGraph()
-        return graph.minimumPathToCollectAllKeys() ?: throw IllegalStateException("Could not find minimum path")
+        val map = NodeMap.from(input)
+        return map.minimumPathToCollectAllKeys() ?: throw IllegalStateException("Could not find minimum path")
     }
 }
