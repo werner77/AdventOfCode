@@ -4,7 +4,6 @@ package com.behindmedia.adventofcode.year2019
 import com.behindmedia.adventofcode.common.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
-import kotlin.math.min
 
 private typealias Node = Char
 
