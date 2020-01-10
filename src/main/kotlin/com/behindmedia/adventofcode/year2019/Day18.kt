@@ -35,7 +35,7 @@ class Day18 {
     /**
      * Optimized data structure based on bit masks to store which keys have been collected
      */
-    private data class KeyCollection(private val state: Int): Comparable<KeyCollection> {
+    private data class KeyCollection(private val state: Int) {
 
         companion object {
             private const val completeState: Int = (1 shl 26) - 1
@@ -63,24 +63,17 @@ class Day18 {
             val none = KeyCollection(0)
         }
 
-        val size: Int
-            get() {
-                var count = 0
-                for (i in 0..25) {
-                    val mask = 1 shl i
-                    if (state.and(mask) == mask) count++
-                }
-                return count
-            }
-
-        override fun compareTo(other: KeyCollection): Int {
-            return this.size.compareTo(other.size)
+        /**
+         * Whether this collection is a subset and contains less keys than the supplied instance.
+         */
+        fun isProperSubsetOf(other: KeyCollection): Boolean {
+            return this in other && other.state != this.state
         }
 
         /**
          * Whether the specified key is in the collection
          */
-        fun contains(key: Char): Boolean {
+        operator fun contains(key: Char): Boolean {
             assert(key.isKey)
             val mask = 1 shl key.shift
             return state.and(mask) == mask
@@ -89,7 +82,7 @@ class Day18 {
         /**
          * Whether this collection contains all keys in the specified collection (i.e. is a super set of)
          */
-        fun containsAll(other: KeyCollection): Boolean {
+        operator fun contains(other: KeyCollection): Boolean {
             return (state and other.state) == other.state
         }
 
@@ -121,7 +114,7 @@ class Day18 {
      */
     private data class KeyedNode(val node: Node, val keys: KeyCollection) {
         fun isAvailable(keysInPossession: KeyCollection): Boolean {
-            return keysInPossession.containsAll(keys)
+            return keys in keysInPossession
         }
     }
 
@@ -275,7 +268,7 @@ class Day18 {
 
         private fun edgesFrom(node: Node, currentKeys: KeyCollection): Collection<Path<KeyedNode>> {
             return edgeCache.getOrPut(node) {
-                val foundPaths = HashMap<KeyedNode, Path<KeyedNode>>(32)
+                val foundPaths = HashMap<Node, Path<KeyedNode>>(32)
                 findAllKeyPaths(node) { nodePath ->
                     // As an optimization we only need to find keys which are not yet collected, because at the time this
                     // method is called the optimal path to those nodes will already be found using Dijkstra
@@ -285,9 +278,13 @@ class Day18 {
                         // It does not make sense to traverse the same path beyond that,
                         // because we arrive at a different key calling this method again
 
-                        val existingEdge = foundPaths[nodePath.destination]
-                        if (existingEdge == null || existingEdge.pathLength > nodePath.pathLength) {
-                            foundPaths[nodePath.destination] = nodePath
+                        val existingEdge = foundPaths[nodePath.destination.node]
+                        if (
+                            existingEdge == null || // add non-existent paths
+                            nodePath.pathLength < existingEdge.pathLength  || // add shorter paths
+                            nodePath.destination.keys.isProperSubsetOf(existingEdge.destination.keys) // less keys needed
+                        ) {
+                            foundPaths[nodePath.destination.node] = nodePath
                         }
                         true
                     } else {
@@ -352,7 +349,7 @@ class Day18 {
                 val currentNodeCollection = current.destination
 
                 // If this collection contains all the keys we were looking for: we're done!
-                if (currentNodeCollection.keys.containsAll(completeKeyCollection)) {
+                if (completeKeyCollection in currentNodeCollection.keys) {
                     println("Processed $count nodes")
                     return current.pathLength
                 }
