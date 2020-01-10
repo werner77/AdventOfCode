@@ -231,6 +231,9 @@ class Day18 {
             return result
         }
 
+        var pathEvaluationCount = 0
+        var nodeEvaluationCount = 0
+
         /**
          * Method to find the paths to all keys (not necessarily the shortest) from a designated source node.
          *
@@ -247,6 +250,7 @@ class Day18 {
                         return
                     }
                 }
+                pathEvaluationCount++
                 visited.add(currentCoordinate)
                 currentCoordinate.forDirectNeighbours {
                     if (this.isAccessible(it, KeyCollection.all) && !visited.contains(it)) {
@@ -339,8 +343,6 @@ class Day18 {
             pending.update(initialNodeCollection, 0)
             val settled = HashSet<KeyedNodeCollection>()
 
-            var count = 0
-
             while (true) {
                 // If the queue is empty: break out of the loop
                 val current = pending.poll() ?: break
@@ -350,11 +352,10 @@ class Day18 {
 
                 // If this collection contains all the keys we were looking for: we're done!
                 if (completeKeyCollection in currentNodeCollection.keys) {
-                    println("Processed $count nodes")
                     return current.pathLength
                 }
 
-                count++
+                nodeEvaluationCount++
 
                 // Add to the settled set to avoid revisiting the same node
                 settled.add(currentNodeCollection)
@@ -377,6 +378,10 @@ class Day18 {
      */
     fun getMinimumNumberOfMovesToCollectAllKeys(input: String): Int {
         val map = NodeMap.from(input)
-        return map.minimumPathToCollectAllKeys() ?: throw IllegalStateException("Could not find minimum path")
+        val result = map.minimumPathToCollectAllKeys() ?: throw IllegalStateException("Could not find minimum path")
+
+        println("Processed ${map.pathEvaluationCount} coordinates and ${map.nodeEvaluationCount} nodes")
+
+        return result
     }
 }
