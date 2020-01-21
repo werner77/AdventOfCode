@@ -79,6 +79,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <args>
+                        <arg>-Xinline-classes</arg>
+                    </args>
+                </configuration>
             </plugin>
         </plugins>
     </build>

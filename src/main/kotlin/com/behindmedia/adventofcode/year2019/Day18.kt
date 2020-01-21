@@ -30,84 +30,121 @@ private val Node.correspondingKey: Char
         return this.toLowerCase()
     }
 
-class Day18 {
+/**
+ * Optimized data structure based on bit masks to store which keys have been collected
+ */
+private inline class KeyCollection(private val state: Int) {
+
+    companion object {
+        private const val completeState: Int = (1 shl 26) - 1
+
+        private val Char.shift: Int
+            inline get() = this - 'a'
+
+        fun from(keys: List<Char>): KeyCollection {
+            var state = 0
+            for (key in keys) {
+                assert(key.isKey)
+                state = state or (1 shl key.shift)
+            }
+            return KeyCollection(state)
+        }
+
+        /**
+         * All keys
+         */
+        val all = KeyCollection(completeState)
+
+        /**
+         * No keys
+         */
+        val none = KeyCollection(0)
+    }
 
     /**
-     * Optimized data structure based on bit masks to store which keys have been collected
+     * Whether this collection is a subset and contains less keys than the supplied instance.
      */
-    private data class KeyCollection(private val state: Int) {
+    fun isProperSubsetOf(other: KeyCollection): Boolean {
+        return this in other && other.state != this.state
+    }
 
-        companion object {
-            private const val completeState: Int = (1 shl 26) - 1
+    /**
+     * Whether the specified key is in the collection
+     */
+    operator fun contains(key: Char): Boolean {
+        assert(key.isKey)
+        val mask = 1 shl key.shift
+        return state.and(mask) == mask
+    }
 
-            private val Char.shift: Int
-                inline get() = this - 'a'
+    /**
+     * Whether this collection contains all keys in the specified collection (i.e. is a super set of)
+     */
+    operator fun contains(other: KeyCollection): Boolean {
+        return (state and other.state) == other.state
+    }
 
-            fun from(keys: List<Char>): KeyCollection {
-                var state = 0
-                for (key in keys) {
-                    assert(key.isKey)
-                    state = state or (1 shl key.shift)
-                }
-                return KeyCollection(state)
+    /**
+     * Adds the supplied key
+     */
+    operator fun plus(key: Char): KeyCollection {
+        assert(key.isKey)
+        return KeyCollection(this.state or (1 shl key.shift))
+    }
+
+    /**
+     * Adds all keys in the supplied key collection
+     */
+    operator fun plus(other: KeyCollection): KeyCollection {
+        return KeyCollection(state or other.state)
+    }
+
+    override fun toString(): String {
+        return (0..25).mapNotNull {
+            val c = 'a' + it
+            if (contains(c)) c else null
+        }.toString()
+    }
+}
+
+/**
+ * Optimized data structure to represent up to 4 nodes (current positions) with a single integer.
+ */
+private inline class NodeCollection(private val state: Int) {
+
+    companion object {
+        fun from(nodes: List<Node>): NodeCollection {
+            var state = 0
+            nodes.forEachIndexed { index, node ->
+                val shift = shiftFor(index)
+                state = state or (node.toInt() shl shift)
             }
-
-            /**
-             * All keys
-             */
-            val all = KeyCollection(completeState)
-
-            /**
-             * No keys
-             */
-            val none = KeyCollection(0)
+            return NodeCollection(state)
         }
 
-        /**
-         * Whether this collection is a subset and contains less keys than the supplied instance.
-         */
-        fun isProperSubsetOf(other: KeyCollection): Boolean {
-            return this in other && other.state != this.state
-        }
-
-        /**
-         * Whether the specified key is in the collection
-         */
-        operator fun contains(key: Char): Boolean {
-            assert(key.isKey)
-            val mask = 1 shl key.shift
-            return state.and(mask) == mask
-        }
-
-        /**
-         * Whether this collection contains all keys in the specified collection (i.e. is a super set of)
-         */
-        operator fun contains(other: KeyCollection): Boolean {
-            return (state and other.state) == other.state
-        }
-
-        /**
-         * Adds the supplied key
-         */
-        operator fun plus(key: Char): KeyCollection {
-            assert(key.isKey)
-            return KeyCollection(this.state or (1 shl key.shift))
-        }
-
-        /**
-         * Adds all keys in the supplied key collection
-         */
-        operator fun plus(other: KeyCollection): KeyCollection {
-            return KeyCollection(state or other.state)
-        }
-
-        override fun toString(): String {
-            return (0..25).mapNotNull {
-                val c = 'a' + it
-                if (contains(c)) c else null
-            }.toString()
+        fun shiftFor(index: Int): Int {
+            return 8 * index
         }
     }
+
+    inline fun forEachIndexed(perform: (Int, Node) -> Unit) {
+        for (i in 0..3) {
+            val shift = shiftFor(i)
+            val node = (state shr shift) and 0xFF
+            if (node == 0) break
+            perform(i, node.toChar())
+        }
+    }
+
+    fun replacingNode(index: Int, node: Node): NodeCollection {
+        val shift = shiftFor(index)
+        var newState = state and (0xFF shl shift).inv()
+        newState = newState or (node.toInt() shl shift)
+        return NodeCollection(newState)
+    }
+}
+
+class Day18 {
 
     /**
      * Combination of node and collected (or required) keys.
@@ -115,43 +152,6 @@ class Day18 {
     private data class KeyedNode(val node: Node, val keys: KeyCollection) {
         fun isAvailable(keysInPossession: KeyCollection): Boolean {
             return keys in keysInPossession
-        }
-    }
-
-    /**
-     * Optimized data structure to represent up to 4 nodes (current positions) with a single integer.
-     */
-    private data class NodeCollection(private val state: Int) {
-
-        companion object {
-            fun from(nodes: List<Node>): NodeCollection {
-                var state = 0
-                nodes.forEachIndexed { index, node ->
-                    val shift = shiftFor(index)
-                    state = state or (node.toInt() shl shift)
-                }
-                return NodeCollection(state)
-            }
-
-            fun shiftFor(index: Int): Int {
-                return 8 * index
-            }
-        }
-
-        inline fun forEachIndexed(perform: (Int, Node) -> Unit) {
-            for (i in 0..3) {
-                val shift = shiftFor(i)
-                val node = (state shr shift) and 0xFF
-                if (node == 0) break
-                perform(i, node.toChar())
-            }
-        }
-
-        fun replacingNode(index: Int, node: Node): NodeCollection {
-            val shift = shiftFor(index)
-            var newState = state and (0xFF shl shift).inv()
-            newState = newState or (node.toInt() shl shift)
-            return NodeCollection(newState)
         }
     }
 
