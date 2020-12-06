@@ -87,8 +87,8 @@ class Day23 {
         var length = 0
         val originComponents = mutableListOf(0, 0, 0)
         for (component in 0..2) {
-            val minValue = this.keys.map { it[component] }.min() ?: throw IllegalStateException("No entry present")
-            val maxValue = this.keys.map { it[component] }.max() ?: throw IllegalStateException("No entry present")
+            val minValue = this.keys.map { it[component] }.minOrNull() ?: throw IllegalStateException("No entry present")
+            val maxValue = this.keys.map { it[component] }.maxOrNull() ?: throw IllegalStateException("No entry present")
 
             val range = maxValue - minValue
             var power2Range = 1
@@ -149,7 +149,7 @@ class Day23 {
     // Part 1
     fun strongestCount(input: String): Int {
         val map = parseInput(input)
-        val strongest = map.maxBy { it.value } ?: throw IllegalStateException("Not found")
+        val strongest = map.maxByOrNull { it.value } ?: throw IllegalStateException("Not found")
         return map.count {
             strongest.key.manhattenDistace(it.key) <= strongest.value
         }

@@ -19,7 +19,7 @@ class Day5 {
     }
 
     fun part2(input: String): Int {
-        var ids = mutableSetOf<Int>()
+        val ids = mutableSetOf<Int>()
         var highestSeatId = 0
         var lowestSeatId = Int.MAX_VALUE
         parseLines(input) {

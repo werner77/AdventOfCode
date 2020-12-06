@@ -152,7 +152,7 @@ class Day15 {
             val visitState = this[coordinate] ?: VisitState(State.Unknown, 0)
             if (visitState.state == State.Wall) null else Pair(currentPosition.vector(coordinate), visitState)
         }
-        return candidates.minBy { it.second.visitCount }?.first
+        return candidates.minByOrNull { it.second.visitCount }?.first
     }
 
     fun descriptionFor(map: Map<Coordinate, State>): String {

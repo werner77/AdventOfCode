@@ -96,7 +96,7 @@ class Day7 {
             val nextNode = ready.popFirst() ?: break
 
             //pickup by first free worker if any
-            val firstWorker = workers.entries.minBy { it.value } ?:
+            val firstWorker = workers.entries.minByOrNull { it.value } ?:
                 throw IllegalStateException("No worker")
 
             time = max(time, max(nextNode.time, firstWorker.value))
@@ -117,7 +117,7 @@ class Day7 {
                 shouldRemove
             }
         }
-        time =  workers.values.max() ?: time
+        time =  workers.values.maxOrNull() ?: time
         return Pair(result, time)
     }
 }

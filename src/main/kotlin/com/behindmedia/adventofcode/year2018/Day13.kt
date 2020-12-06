@@ -166,7 +166,7 @@ class Day13 {
         companion object {
             fun fromString(string: String): Track {
                 val lines = string.split("\n")
-                val maxX = lines.map { it.length }.max() ?: throw IllegalArgumentException("No input found")
+                val maxX = lines.map { it.length }.maxOrNull() ?: throw IllegalArgumentException("No input found")
                 val maxY = lines.size
                 val initialCartPositions = mutableMapOf<Coordinate, Cart>()
 

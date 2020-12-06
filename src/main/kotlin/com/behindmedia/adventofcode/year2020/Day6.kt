@@ -12,7 +12,7 @@ class Day6 {
                 sum += answers.size
                 answers.clear()
             } else {
-                answers.addAll(it.toCharArray().toList())
+                answers.addAll(it.toList())
             }
         }
         sum += answers.size
@@ -22,19 +22,19 @@ class Day6 {
     fun part2(input: String): Int {
         val answers = mutableSetOf<Char>()
         var sum = 0
-        var lineCount = 0
+        var first = true
         parseLines(input) {
             if (it.isBlank()) {
                 sum += answers.size
-                lineCount = 0
+                first = true
                 answers.clear()
             } else {
-                if (lineCount == 0) {
-                    answers.addAll(it.toCharArray().toList())
+                if (first) {
+                    answers.addAll(it.toList())
+                    first = false
                 } else {
-                    answers.retainAll(it.toCharArray().toList())
+                    answers.retainAll(it.toList())
                 }
-                lineCount++
             }
         }
         sum += answers.size

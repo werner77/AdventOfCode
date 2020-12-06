@@ -17,7 +17,7 @@ class Day8 {
             layerMap[value] = (layerMap[value] ?: 0) + 1
         }
 
-        val minimumLayer = layers.minBy {
+        val minimumLayer = layers.minByOrNull {
             it[0] ?: 0
         } ?: throw IllegalStateException("Found no minimum layer")
 

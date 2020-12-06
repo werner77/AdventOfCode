@@ -169,7 +169,7 @@ class Day18 {
             fun from(input: String): NodeMap {
                 val lines = input.reader().readLines()
                 val sizeY = lines.size
-                val sizeX = lines.maxBy { it.length }?.length ?: 0
+                val sizeX = lines.maxByOrNull { it.length }?.length ?: 0
                 val matrix = Array(sizeX) {
                     Array(sizeY) {
                         '#'
