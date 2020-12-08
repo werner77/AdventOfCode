@@ -57,24 +57,22 @@ class Day7 {
     }
 
     private fun traverse1(map: Map<String, List<Pair<String, Int>>>, bag: String, found: MutableSet<String>) {
-        val list = map[bag] ?: return
-        for (containingBag in list) {
-            if (!found.contains(containingBag.first)) {
-                found.add(containingBag.first)
-                traverse1(map, containingBag.first, found)
+        val list = map[bag] ?: emptyList()
+        list.forEach {
+            if (!found.contains(it.first)) {
+                found.add(it.first)
+                traverse1(map, it.first, found)
             }
         }
     }
 
-    private fun traverse2(map: Map<String, List<Pair<String, Int>>>, bag: String, cache: MutableMap<String, Int>): Int {
+    private fun traverse2(map: Map<String, List<Pair<String, Int>>>, bag: String, found: MutableMap<String, Int>): Int {
         val list = map[bag] ?: emptyList()
         var count = 1
         list.forEach {
-            val bagCount = cache.getOrPut(it.first) { traverse2(map, it.first, cache) }
+            val bagCount = found.getOrPut(it.first) { traverse2(map, it.first, found) }
             count += it.second * bagCount
         }
         return count
     }
 }
-
-//shiny gold bags contain 5 bright maroon bags, 5 shiny aqua bags, 2 clear lime bags, 2 muted white bags.
