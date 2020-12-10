@@ -30,18 +30,18 @@ class Day8 {
             .toMutableSet()
 
         while (swappableIndexes.isNotEmpty()) {
-            val nextIndex = swappableIndexes.popFirst() ?: error("No index found")
-            swap(instructions, nextIndex)
+            val index = swappableIndexes.popFirst() ?: error("No index found")
+            val originalInstruction = swap(instructions, index)
             val result = runProgram(instructions)
             if (result.second) {
                 return result.first
             }
-            swap(instructions, nextIndex)
+            instructions[index] = originalInstruction
         }
-        error("Nothing found")
+        error("No swappable indexes found")
     }
 
-    private fun swap(instructions: MutableList<Pair<String, Int>>, index: Int) {
+    private fun swap(instructions: MutableList<Pair<String, Int>>, index: Int): Pair<String, Int> {
         val instr = instructions[index]
         val swappedInstr = instr.copy(
             first = when (instr.first) {
@@ -51,6 +51,7 @@ class Day8 {
             }
         )
         instructions[index] = swappedInstr
+        return instr
     }
 
     private fun runProgram(instructions: List<Pair<String, Int>>): Pair<Int, Boolean> {
