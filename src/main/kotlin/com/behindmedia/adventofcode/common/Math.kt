@@ -73,6 +73,13 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
         val down = Coordinate(0, 1)
         val left = Coordinate(-1, 0)
         val right = Coordinate(1, 0)
+        val upLeft = up + left
+        val downLeft = down + left
+        val upRight = up + right
+        val downRight = down + right
+        val directNeighbourDirections = listOf(up, left, right, down)
+        val indirectNeighbourDirections = listOf(upLeft, downLeft, upRight, downRight)
+        val allNeighbourDirections = directNeighbourDirections + indirectNeighbourDirections
     }
 
     /**
@@ -185,6 +192,9 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
             }
         }
 
+    val allNeighbours: List<Coordinate>
+        get() = directNeighbours + indirectNeighbours
+
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
      */
@@ -250,6 +260,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
     operator fun times(other: Coordinate): Coordinate {
         return Coordinate(this.x * other.x, this.y * other.y)
+    }
+
+    operator fun times(scalar: Int): Coordinate {
+        return Coordinate(this.x * scalar, this.y * scalar)
     }
 
     operator fun rangeTo(other: Coordinate): CoordinateRange {
