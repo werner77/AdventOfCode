@@ -5,14 +5,21 @@ import com.behindmedia.adventofcode.common.popFirst
 
 class Day16 {
 
-    private class TicketRulePossibility(val ticketRule: TicketRule, val possibleIndexes: MutableSet<Int>) : Comparable<TicketRulePossibility> {
+    private class TicketRulePossibility(val ticketRule: TicketRule, val possibleIndexes: MutableSet<Int>) :
+        Comparable<TicketRulePossibility> {
         override fun compareTo(other: TicketRulePossibility): Int {
             return this.possibleIndexes.size.compareTo(other.possibleIndexes.size)
         }
     }
 
     private data class TicketRule(val name: String, val min1: Int, val max1: Int, val min2: Int, val max2: Int) {
-        constructor(name: String, range1: Pair<Int, Int>, range2: Pair<Int, Int>) : this(name, range1.first, range1.second, range2.first, range2.second)
+        constructor(name: String, range1: Pair<Int, Int>, range2: Pair<Int, Int>) : this(
+            name,
+            range1.first,
+            range1.second,
+            range2.first,
+            range2.second
+        )
 
         companion object {
             operator fun invoke(name: String, values: String): TicketRule {
@@ -21,7 +28,7 @@ class Day16 {
                 return TicketRule(name, parseMinMax(components[0]), parseMinMax(components[1]))
             }
 
-            private fun parseMinMax(string: String) : Pair<Int, Int> {
+            private fun parseMinMax(string: String): Pair<Int, Int> {
                 val values = string.split("-")
                 assert(values.size == 2)
                 val min = values[0].toInt()
@@ -39,11 +46,9 @@ class Day16 {
 
     fun part1(input: String): Long {
         val state = parseInput(input)
-        var count = 0L
-        for (ticket in state.nearbyTickets) {
-            ticket.findInvalidTicketNumber(state.ticketRules)?.let { count += it }
-        }
-        return count
+        return state.nearbyTickets.mapNotNull { ticket ->
+            ticket.findInvalidTicketNumber(state.ticketRules)
+        }.reduce { acc, i -> acc + i }.toLong()
     }
 
     fun part2(input: String): Long {
@@ -55,27 +60,19 @@ class Day16 {
         val ticketPositionCount = state.ticketRules.size
 
         val ticketRulePossibilities: List<TicketRulePossibility> = state.ticketRules.map { ticketRule ->
-            val possibleIndexes = (0 until ticketPositionCount).mapNotNull { i ->
-                val invalid = validTickets.any { !ticketRule.isValid(it[i]) }
-                if (invalid) null else i
-            }
+            val possibleIndexes = (0 until ticketPositionCount)
+                .filter { i -> !validTickets.any { !ticketRule.isValid(it[i]) } }
             TicketRulePossibility(ticketRule, possibleIndexes.toMutableSet())
         }
 
         val permutation = findPermutation(ticketRulePossibilities)
 
-        return permutation.fold(1L) { value, ticketRulePossibility ->
-            if (ticketRulePossibility.ticketRule.name.startsWith("departure")) {
-                val index = ticketRulePossibility.possibleIndexes.first()
-                val ticketNumber = state.ownTicket[index]
-                value * ticketNumber.toLong()
-            } else {
-                value
-            }
-        }
+        return permutation.filter { it.ticketRule.name.startsWith("departure") }
+            .map { state.ownTicket[it.possibleIndexes.first()].toLong() }
+            .reduce { acc, i -> acc * i }
     }
 
-    private fun findPermutation(ticketRulePossibilities: List<TicketRulePossibility>) : List<TicketRulePossibility> {
+    private fun findPermutation(ticketRulePossibilities: List<TicketRulePossibility>): List<TicketRulePossibility> {
         val pinned = mutableListOf<TicketRulePossibility>()
         val currentPossibilities = ticketRulePossibilities.toMutableList()
         while (currentPossibilities.isNotEmpty()) {
@@ -112,7 +109,7 @@ class Day16 {
                     //ignore
                 }
                 section == 0 -> {
-                    val components = it.split(":")
+                    val components = line.split(":")
                     assert(components.size == 2)
                     ticketRules.add(TicketRule(name = components[0].trim(), values = components[1].trim()))
                 }
@@ -134,7 +131,7 @@ class Day16 {
 
     private fun List<Int>.findInvalidTicketNumber(ticketRules: List<TicketRule>): Int? {
         return find { ticket ->
-            ticketRules.find { range -> range.isValid(ticket) } == null
+            !ticketRules.any { range -> range.isValid(ticket) }
         }
     }
 }
