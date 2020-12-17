@@ -70,6 +70,30 @@ fun <T>permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
     return permutate(list, 0, range, perform)
 }
 
+fun <T>permutate(
+    ranges: List<IntRange>,
+    perform: (IntArray) -> T?
+): T? {
+    fun permutate(
+        ranges: List<IntRange>,
+        dimension: Int,
+        values: IntArray,
+        perform: (IntArray) -> T?
+    ): T? {
+        if (dimension == values.size) {
+            return perform(values)
+        }
+        for (i in ranges[dimension].first..ranges[dimension].last) {
+            values[dimension] = i
+            permutate(ranges, dimension + 1, values, perform)?.let {
+                if (it != Unit) return it
+            }
+        }
+        return null
+    }
+    return permutate(ranges, 0, IntArray(ranges.size), perform)
+}
+
 /**
  * Converts an Int list to a Long list
  */
