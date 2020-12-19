@@ -11,7 +11,7 @@ class Day19 {
         return solve(input, true)
     }
 
-    data class Rule(val id: Int, val possibilities: List<List<Int>>, val value: String?)
+    data class Rule(val id: Int, val dependencies: List<List<Int>>, val value: String?)
 
     private fun solve(input: String, replaceRules: Boolean): Int {
         var section = 0
@@ -26,17 +26,17 @@ class Day19 {
                     val ruleId = components[0].trim().toInt()
                     val rules = components[1].split("|").map { it.trim() }
                     assert(rules.size <= 2)
-                    val possibilities = mutableListOf<List<Int>>()
+                    val dependencies = mutableListOf<List<Int>>()
                     var value: String? = null
                     for (rule in rules) {
                         if (rule.contains('"')) {
                             assert(rules.size == 1)
-                            value = rule.trim(predicate = { c -> c in setOf('"') })
+                            value = rule.trim('"')
                         } else {
-                            possibilities.add(rule.split(" ").map { it.trim().toInt() })
+                            dependencies.add(rule.split(" ").map { it.trim().toInt() })
                         }
                     }
-                    ruleMap[ruleId] = Rule(ruleId, possibilities, value)
+                    ruleMap[ruleId] = Rule(ruleId, dependencies, value)
                 }
                 section == 1 -> words.add(line.trim())
                 else -> error("Expected no more than 2 sections to be present")
@@ -59,27 +59,27 @@ class Day19 {
      */
     private fun match(string: String, position: Int, ruleId: Int, map: Map<Int, Rule>): Set<Int> {
         val rule = map[ruleId] ?: error("Rule with id $ruleId does not exist")
-        rule.value?.let { value ->
+        return rule.value?.let { value ->
             if (string.regionMatches(position, value, 0, value.length)) {
-                return setOf(position + value.length)
+                setOf(position + value.length)
+            } else {
+                emptySet()
             }
         } ?: run {
-            val result = mutableSetOf<Int>()
-            for (ruleSequence in rule.possibilities) {
-                var positions = setOf(position)
-                for (nextRuleId in ruleSequence) {
-                    val newPositions = mutableSetOf<Int>()
-                    for (pos in positions) {
-                        newPositions.addAll(match(string, pos, nextRuleId, map))
+            rule.dependencies.fold(mutableSetOf()) { result, ruleSequence ->
+                result.apply {
+                    var positions = setOf(position)
+                    for (nextRuleId in ruleSequence) {
+                        val newPositions = mutableSetOf<Int>()
+                        for (pos in positions) {
+                            newPositions.addAll(match(string, pos, nextRuleId, map))
+                        }
+                        positions = newPositions
+                        if (positions.isEmpty()) break
                     }
-                    positions = newPositions
-                    if (positions.isEmpty()) break
+                    addAll(positions)
                 }
-                result.addAll(positions)
             }
-            return result
         }
-        // No match
-        return emptySet()
     }
 }
