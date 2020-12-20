@@ -13,7 +13,6 @@ class Day20 {
         Left(3)
     }
 
-    // Flip will always happen first, then rotation
     data class TileState(val tile: Tile, val flipped: Boolean, val rotation: Int) {
         fun effectiveSideValue(side: TileSide, mirrored: Boolean): Int {
             return tile.sideValue(side, flipped, rotation, mirrored)
@@ -35,9 +34,9 @@ class Day20 {
 
     class Tile(val id: Long, val map: Map<Coordinate, Char>) {
         val size = map.maxOf { it.key.x } + 1
-        val sides: List<Int>
-        val flipSides: List<Int>
-        val allSides: List<Int>
+        private val sides: List<Int>
+        private val flipSides: List<Int>
+        val sideValues: List<Int>
             get() = sides + flipSides
 
         init {
@@ -56,14 +55,12 @@ class Day20 {
         }
 
         fun removingBorders() : Tile {
-            val newMap = map.filter { it.key.x != 0 && it.key.x != size - 1 && it.key.y != 0 && it.key.y != size - 1 }.mapKeys {
-                it.key.offset(-1, -1)
-            }
-            val t = Tile(id, newMap)
-            return t
+            val newMap = map.filter { it.key.x != 0 && it.key.x != size - 1 && it.key.y != 0 && it.key.y != size - 1 }
+                .mapKeys { it.key.offset(-1, -1) }
+            return Tile(id, newMap)
         }
 
-        fun findFirstState(predicate: (TileState) -> Boolean): TileState? {
+        fun firstState(predicate: (TileState) -> Boolean): TileState? {
             for (flipped in listOf(false, true)) {
                 for (rotation in 0 until 4) {
                     val state = TileState(this, flipped, rotation)
@@ -76,16 +73,9 @@ class Day20 {
         }
 
         fun sideValue(side: TileSide, flipped: Boolean, rotation: Int, mirrored: Boolean): Int {
-            val sides = if (flipped) {
-                flipSides
-            } else {
-                sides
-            }
-            var s = sides[(rotation + side.index) % 4]
-            if (mirrored) {
-                s = invert(s)
-            }
-            return s
+            val sides = if (flipped) flipSides else sides
+            val s = sides[(rotation + side.index) % 4]
+            return if (mirrored) invert(s) else s
         }
 
         private fun invert(side: Int): Int {
@@ -141,8 +131,6 @@ class Day20 {
         val tileMap = parseTileMap(input)
         val seaMonsterMap = parseMap(seaMonster) { if (it == '#') it else null }
 
-        seaMonsterMap.printMap(" ")
-
         val seaMonsterWidth = seaMonsterMap.maxOf { it.key.x } + 1
         val seaMonsterHeight = seaMonsterMap.maxOf { it.key.y } + 1
 
@@ -155,10 +143,7 @@ class Day20 {
             entry.value.removingBorders()
         }.merge()
 
-        mapWithoutBorders.printMap(".")
-
         val totalMapSize = puzzleSize * tileSize
-
         val totalCount = mapWithoutBorders.count { it.value == '#' }
 
         for (flipped in listOf(false, true)) {
@@ -167,15 +152,10 @@ class Day20 {
                 var matchCount = 0L
                 for (x in 0 until totalMapSize - seaMonsterWidth + 1) {
                     for (y in 0 until totalMapSize - seaMonsterHeight + 1) {
-                        var found = true
-                        for (seaMonsterCoordinate in seaMonsterMap.keys) {
-                            val c = seaMonsterCoordinate.offset(x, y)
-                            if (flippedRotatedMap[c] != '#') {
-                                found = false
-                                break
-                            }
+                        val seaMonsterFound = !seaMonsterMap.keys.any {
+                            flippedRotatedMap[it.offset(x, y)] != '#'
                         }
-                        if (found) {
+                        if (seaMonsterFound) {
                             matchCount++
                         }
                     }
@@ -220,7 +200,7 @@ class Day20 {
         // A map where the key is the side and the value is a set of tiles containing that side
         val tileLookupMap = tileMap.values.fold(mutableMapOf<Int, MutableSet<Tile>>()) { map, tile ->
             map.apply {
-                tile.allSides.forEach { side ->
+                tile.sideValues.forEach { side ->
                     getOrPut(side) { mutableSetOf() }.add(tile)
                 }
             }
@@ -228,7 +208,7 @@ class Day20 {
 
         // Find the top left corner tile
         val cornerTile = tileMap.values.mapNotNull { tile ->
-            tile.findFirstState { state ->
+            tile.firstState { state ->
                 tileLookupMap[state.effectiveSideValue(TileSide.Top, true)]?.size == 1 &&
                         tileLookupMap[state.effectiveSideValue(TileSide.Left, true)]?.size == 1
             }
@@ -248,7 +228,7 @@ class Day20 {
                 val leftSideTile = positionedTiles[coordinate + Coordinate.left]
                 val topSideTile = positionedTiles[coordinate + Coordinate.up]
                 val candidates = unpositionedTiles.mapNotNull { tile ->
-                    tile.findFirstState { state ->
+                    tile.firstState { state ->
                         val topSide = state.effectiveSideValue(TileSide.Top, true)
                         val leftSide = state.effectiveSideValue(TileSide.Left, true)
 
@@ -264,7 +244,7 @@ class Day20 {
                     }
                 }
                 if (candidates.size != 1) error("Found not exactly one candidate")
-                val state = candidates[0]
+                val state = candidates.first()
                 positionedTiles[coordinate] = state
                 unpositionedTiles.remove(state.tile)
             }
@@ -274,13 +254,13 @@ class Day20 {
 
     private fun Map<Coordinate, TileState>.merge() : Map<Coordinate, Char> {
         val result = mutableMapOf<Coordinate, Char>()
-        val tileSize = this.values.first().tile.size
+        val tileSize = this.values.first().tile.size // All sizes should be equal
         for (coordinate in CoordinateRange(this.keys)) {
-            val tileMap = this[coordinate]!!.effectiveMap
+            val tileMap = this[coordinate]?.effectiveMap ?: error("Expected coordinate to exist in map")
             val origin = Coordinate(coordinate.x * tileSize, coordinate.y * tileSize)
             for (c in CoordinateRange(tileMap.keys)) {
-                val c1 = origin + c
-                result[c1] = tileMap[c]!!
+                val offsetCoordinate = origin + c
+                result[offsetCoordinate] = tileMap[c] ?: error("Expected coordinate to be present in tileMap")
             }
         }
         return result
