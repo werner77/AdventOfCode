@@ -340,6 +340,7 @@ fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
  */
 class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>) : Iterable<Coordinate>, ClosedRange<Coordinate> {
 
+    constructor(minCoordinate: Coordinate, width: Int, height: Int): this(Pair(minCoordinate, minCoordinate + Coordinate(width - 1, height - 1)))
     constructor(minCoordinate: Coordinate, maxCoordinate: Coordinate): this(Pair(minCoordinate, maxCoordinate))
     constructor(collection: Collection<Coordinate>): this(collection.minMaxCoordinate())
 

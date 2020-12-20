@@ -68,13 +68,11 @@ class Day19 {
         } ?: run {
             rule.dependencies.fold(mutableSetOf()) { result, ruleSequence ->
                 result.apply {
-                    var positions = setOf(position)
+                    var positions = listOf(position)
                     for (nextRuleId in ruleSequence) {
-                        val newPositions = mutableSetOf<Int>()
-                        for (pos in positions) {
-                            newPositions.addAll(match(string, pos, nextRuleId, map))
+                        positions = positions.flatMap {
+                            match(string, it, nextRuleId, map)
                         }
-                        positions = newPositions
                         if (positions.isEmpty()) break
                     }
                     addAll(positions)
