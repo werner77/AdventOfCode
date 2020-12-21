@@ -6,6 +6,9 @@ import kotlin.math.sqrt
 
 class Day20 {
 
+    /**
+     * The 4 sides of a tile
+     */
     enum class TileSide(val index: Int) {
         Top(0),
         Right(1),
@@ -13,8 +16,19 @@ class Day20 {
         Left(3)
     }
 
+    /**
+     * State of a tile containing the tile itself, its rotation (0-3) and whether its flipped or not.
+     *
+     * Definitions:
+     *
+     * - Flip happens over the vertical axis.
+     * - Rotation is counter clockwise.
+     * - Flip happens first, then rotation.
+     *
+     * This yields 8 states per tile.
+     */
     data class TileState(val tile: Tile, val flipped: Boolean, val rotation: Int) {
-        fun effectiveSideValue(side: TileSide, mirrored: Boolean): Int {
+        fun effectiveSideValue(side: TileSide, mirrored: Boolean = false): Int {
             return tile.sideValue(side, flipped, rotation, mirrored)
         }
 
@@ -32,34 +46,71 @@ class Day20 {
             }
     }
 
+    /**
+     * Tile containing its ID and the map of characters it represents.
+     *
+     * The sides of the tile are encoded as Ints where a bit of 1 designates '#' and a bit of 0 designates '.'
+     */
     class Tile(val id: Long, val map: Map<Coordinate, Char>) {
-        val size = map.maxOf { it.key.x } + 1
-        private val sides: List<Int>
-        private val flipSides: List<Int>
-        val sideValues: List<Int>
-            get() = sides + flipSides
+        val max = map.maxOf { it.key.x }
+        val size
+            get() = max + 1
+        private val sides: IntArray
+        private val flipSides: IntArray
 
-        init {
-            sides = mutableListOf<Int>().also {
-                var start = calculateSide(Coordinate.origin, it) { Coordinate.right } // Top
-                start = calculateSide(start, it) { Coordinate.down } // Right
-                start = calculateSide(start, it) { Coordinate.left } // Bottom
-                calculateSide(start, it) { Coordinate.up } // Left
-            }
-            flipSides = mutableListOf<Int>().apply {
-                add(invert(sides[TileSide.Top.index])) // Top
-                add(invert(sides[TileSide.Left.index])) // Left becomes right
-                add(invert(sides[TileSide.Bottom.index])) // Bottom
-                add(invert(sides[TileSide.Right.index])) // Right becomes left
+        /**
+         * All the possible side values (for both flipped and normal orientation)
+         */
+        val sideValues: List<Int>
+            get() = sides.toList() + flipSides.toList()
+
+        companion object {
+            /**
+             * Translation between the side indexes of the normal side vs the flip side.
+             *
+             * Flip happens along the vertical axis so top remains top and bottom remains bottom.
+             * Left and right are interchanged
+             */
+            val flipSideIndexes = IntArray(4) {
+                when (it) {
+                    TileSide.Top.index -> TileSide.Top.index
+                    TileSide.Right.index -> TileSide.Left.index
+                    TileSide.Bottom.index -> TileSide.Bottom.index
+                    TileSide.Left.index -> TileSide.Right.index
+                    else -> error("Unexpected index")
+                }
             }
         }
 
+        init {
+            // Calculate the sides in clockwise direction
+            sides = IntArray(4) {
+                when (it) {
+                    TileSide.Top.index -> calculateSide(Coordinate.origin) { Coordinate.right }
+                    TileSide.Right.index -> calculateSide(Coordinate.right * max) { Coordinate.down }
+                    TileSide.Bottom.index -> calculateSide((Coordinate.right + Coordinate.down) * max) { Coordinate.left }
+                    TileSide.Left.index -> calculateSide(Coordinate.down * max) { Coordinate.up }
+                    else -> error("Unexpected index: $it")
+                }
+            }
+            // Flip sides are the mirror of the forward sides
+            flipSides = IntArray(4) {
+                mirror(sides[flipSideIndexes[it]])
+            }
+        }
+
+        /**
+         * Returns a new tile by removing the outermost border of 1
+         */
         fun removingBorders() : Tile {
-            val newMap = map.filter { it.key.x != 0 && it.key.x != size - 1 && it.key.y != 0 && it.key.y != size - 1 }
+            val newMap = map.filter { it.key.x != 0 && it.key.x != max && it.key.y != 0 && it.key.y != max }
                 .mapKeys { it.key.offset(-1, -1) }
             return Tile(id, newMap)
         }
 
+        /**
+         * Returns the first state for which the specified predicate returns true
+         */
         fun firstState(predicate: (TileState) -> Boolean): TileState? {
             for (flipped in listOf(false, true)) {
                 for (rotation in 0 until 4) {
@@ -72,13 +123,21 @@ class Day20 {
             return null
         }
 
+        /**
+         * The side value corresponding with the specified state.
+         *
+         * Mirrored is used to match a tile next to it (its side value needs to be the mirror of this tile's value)
+         */
         fun sideValue(side: TileSide, flipped: Boolean, rotation: Int, mirrored: Boolean): Int {
-            val sides = if (flipped) flipSides else sides
-            val s = sides[(rotation + side.index) % 4]
-            return if (mirrored) invert(s) else s
+            val sides = if (flipped xor mirrored) flipSides else sides
+            val index = (rotation + side.index) % 4
+            return if (mirrored) sides[flipSideIndexes[index]] else sides[index]
         }
 
-        private fun invert(side: Int): Int {
+        /**
+         * Mirrors a side value (bits of Integer are in the reverse order)
+         */
+        private fun mirror(side: Int): Int {
             var s = 0
             for (i in 0 until size) {
                 val mask = 1 shl i
@@ -90,7 +149,10 @@ class Day20 {
             return s
         }
 
-        private fun calculateSide(start: Coordinate, sides: MutableList<Int>, increment: () -> Coordinate): Coordinate {
+        /**
+         * Calculate the integer describing this side where each '#' is a binary 1 and each '.' is a binary 0
+         */
+        private fun calculateSide(start: Coordinate, increment: () -> Coordinate): Int {
             var n = 0
             var current = start
             for (i in 0 until size) {
@@ -99,8 +161,7 @@ class Day20 {
                     n = n or (1 shl i)
                 }
             }
-            sides.add(n)
-            return current
+            return n
         }
 
         override fun equals(other: Any?): Boolean {
@@ -118,10 +179,17 @@ class Day20 {
 
     fun part1(input: String): Long {
         val tileMap = parseTileMap(input)
+
+        // The width/height of the entire puzzle width==height since it is a square
         val puzzleSize = round(sqrt(tileMap.size.toDouble())).toInt()
+
+        assert(puzzleSize * puzzleSize == tileMap.size)
+
+        // Position all the tiles (solve the puzzle)
+        // This returns a map where the key is the coordinate of the tile within the puzzle and the value is the TileState
         val positionedTiles = positionTiles(puzzleSize, tileMap)
 
-        // Check the four corners
+        // Check the four corners of the puzzle
         return positionedTiles.entries.filter {
             (it.key.x == 0 || it.key.x == puzzleSize - 1) && (it.key.y == 0 || it.key.y == puzzleSize - 1)
         }.map { it.value.tile.id }.reduce { acc, l -> acc * l }
@@ -197,7 +265,7 @@ class Day20 {
     // Output should be which tile is at each position in the grid and its state
     private fun positionTiles(puzzleSize: Int, tileMap: Map<Long, Tile>): Map<Coordinate, TileState> {
 
-        // A map where the key is the side and the value is a set of tiles containing that side
+        // A map where the key is the side (Integer) and the value is a set of tiles containing that side
         val tileLookupMap = tileMap.values.fold(mutableMapOf<Int, MutableSet<Tile>>()) { map, tile ->
             map.apply {
                 tile.sideValues.forEach { side ->
@@ -207,51 +275,56 @@ class Day20 {
         }
 
         // Find the top left corner tile
-        val cornerTile = tileMap.values.mapNotNull { tile ->
+        val topLeftCornerTile = tileMap.values.mapNotNull { tile ->
             tile.firstState { state ->
                 tileLookupMap[state.effectiveSideValue(TileSide.Top, true)]?.size == 1 &&
                         tileLookupMap[state.effectiveSideValue(TileSide.Left, true)]?.size == 1
             }
-        }.firstOrNull() ?: error("Could not find top left corner tile")
+        }.firstOrNull() ?: error("Could not find a top left corner tile")
 
         val positionedTiles = mutableMapOf<Coordinate, TileState>()
         val unpositionedTiles = tileMap.values.toMutableSet()
 
-        // The rotation should be such that sides 0 and 3 are the ones having no neighbours
-        positionedTiles[Coordinate.origin] = cornerTile
-        unpositionedTiles.remove(cornerTile.tile)
-
         for (coordinate in CoordinateRange(Coordinate.origin, puzzleSize, puzzleSize)) {
-            // Try to match every subsequent tile
-            if (coordinate != Coordinate.origin) {
+            // Try to match every subsequent tile, skip the first
+            val positionedTile = if (positionedTiles.isEmpty()) {
+                topLeftCornerTile
+            } else {
                 // Should match the tile to the left and above
-                val leftSideTile = positionedTiles[coordinate + Coordinate.left]
-                val topSideTile = positionedTiles[coordinate + Coordinate.up]
-                val candidates = unpositionedTiles.mapNotNull { tile ->
-                    tile.firstState { state ->
-                        val topSide = state.effectiveSideValue(TileSide.Top, true)
-                        val leftSide = state.effectiveSideValue(TileSide.Left, true)
+                val leftSideTileValue = positionedTiles[coordinate + Coordinate.left]?.effectiveSideValue(TileSide.Right, true)
+                val topSideTileValue = positionedTiles[coordinate + Coordinate.up]?.effectiveSideValue(TileSide.Bottom, true)
+                val candidateLeftTiles = leftSideTileValue?.let { tileLookupMap[it] } ?: emptySet()
+                val candidateTopTiles = topSideTileValue?.let { tileLookupMap[it] } ?: emptySet()
 
-                        val topMatches =
-                            (topSideTile == null && tileLookupMap[topSide]?.size == 1) ||
-                                    (topSideTile != null && topSideTile.effectiveSideValue(TileSide.Bottom, false) == topSide)
+                // Only take the tiles into account which have a matching side value
+                val candidates = (candidateLeftTiles + candidateTopTiles)
 
-                        val leftMatches =
-                            (leftSideTile == null && tileLookupMap[leftSide]?.size == 1) ||
-                                    (leftSideTile != null && leftSideTile.effectiveSideValue(TileSide.Right, false) == leftSide)
+                candidates.mapNotNull { tile ->
+                    // Only consider unpositioned tiles
+                    if (unpositionedTiles.contains(tile)) {
+                        tile.firstState { state ->
+                            val topSide = state.effectiveSideValue(TileSide.Top)
+                            val leftSide = state.effectiveSideValue(TileSide.Left)
 
-                        topMatches && leftMatches
+                            val topMatches = (topSideTileValue == null && tileLookupMap[topSide]?.size == 1) || topSide == topSideTileValue
+                            val leftMatches = (leftSideTileValue == null && tileLookupMap[leftSide]?.size == 1) || leftSide == leftSideTileValue
+
+                            topMatches && leftMatches
+                        }
+                    } else {
+                        null
                     }
-                }
-                if (candidates.size != 1) error("Found not exactly one candidate")
-                val state = candidates.first()
-                positionedTiles[coordinate] = state
-                unpositionedTiles.remove(state.tile)
+                }.only() // There is only one match for every tile as deducted from the counts which makes the solution easier.
             }
+            positionedTiles[coordinate] = positionedTile
+            unpositionedTiles.remove(positionedTile.tile)
         }
         return positionedTiles
     }
 
+    /**
+     * Merges a map of puzzle pieces into an entire puzzle
+     */
     private fun Map<Coordinate, TileState>.merge() : Map<Coordinate, Char> {
         val result = mutableMapOf<Coordinate, Char>()
         val tileSize = this.values.first().tile.size // All sizes should be equal
@@ -276,9 +349,13 @@ private fun Coordinate.transformed(flipped: Boolean, rotation: Int, squareSize: 
     val max = squareSize - 1
     var x = this.x
     var y = this.y
+
+    // Flip along the vertical axis
     if (flipped) {
         x = max - x
     }
+
+    // Rotate counter clockwise
     repeat(rotation % 4) {
         val a = x
         x = y
