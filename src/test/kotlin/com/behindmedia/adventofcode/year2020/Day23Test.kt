@@ -8,11 +8,16 @@ class Day23Test {
 
     @Test
     fun part1() {
-        println(Day23().part1("/2020/day23.txt"))
+        println(Day23().part1("327465189"))
+    }
+
+    @Test
+    fun part1_1() {
+        println(Day23().part1("389125467"))
     }
 
     @Test
     fun part2() {
-        println(Day23().part2("/2020/day23.txt"))
+        println(Day23().part2("327465189"))
     }
 }
