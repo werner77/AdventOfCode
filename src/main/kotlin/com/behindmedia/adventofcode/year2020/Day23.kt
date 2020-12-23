@@ -2,76 +2,46 @@ package com.behindmedia.adventofcode.year2020
 
 class Day23 {
 
-    class Cup(values: List<Int>) {
-
-        /**
-         * Single linked list
-         */
-        class Node(val value: Int, var next: Node?) {
-            override fun toString(): String {
-                return "Node(value=$value)"
-            }
-
-            fun requireNext(): Node {
-                return next ?: error("No next node present")
-            }
-        }
-
-        /**
-         * Map to quickly find nodes by value
-         */
-        private val lookupMap: Map<Int, Node>
-        private var currentNode: Node
-        private val size: Int = values.size
-        private val minValue = values.minOrNull() ?: error("Expected at least one value to be present")
-        private val maxValue = values.maxOrNull() ?: error("Expected at least one value to be present")
+    class Cup(values: List<Int>, private val size: Int = values.size) {
+        private var currentValue: Int = values.first()
+        private val storage: IntArray = IntArray(size + 1)
+        private val minValue: Int = 1
+        private val maxValue: Int = size
         private val pickedUpNodeValues = IntArray(3)
 
-        private fun node(value: Int): Node {
-            return lookupMap[value] ?: error("Could find no node with the specified value")
-        }
-
         init {
-            lookupMap = HashMap<Int, Node>(size, 1.0f).also { map ->
-                var firstNode: Node? = null
-                var lastNode: Node? = null
-                for (value in values) {
-                    val node = Node(value, null)
-                    if (firstNode == null) {
-                        firstNode = node
-                    }
-                    map[value] = node
-                    lastNode?.next = node
-                    lastNode = node
-                }
-                lastNode?.next = firstNode
-                currentNode = firstNode ?: error("Expected at least one node to be present")
+            var lastValue = currentValue
+            for (i in 1 until size) {
+                val value = values.getOrNull(i) ?: i + 1
+                storage[lastValue] = value
+                lastValue = value
             }
+            storage[lastValue] = currentValue
         }
 
-        fun toList(fromValue: Int? = null, inclusive: Boolean = true, count: Int = size - 1): List<Int> {
+        fun toList(fromValue: Int? = null, inclusive: Boolean = true, additionalCount: Int = size - 1): List<Int> {
             return ArrayList<Int>(size).apply {
-                var node = fromValue?.let { node(it) } ?: currentNode
-                repeat(count + 1) {
+                var value = fromValue ?: currentValue
+                repeat(additionalCount + 1) {
                     if (it > 0 || inclusive) {
-                        add(node.value)
+                        add(value)
                     }
-                    node = node.requireNext()
+                    value = storage[value]
                 }
             }
         }
 
         fun play() {
-            var nextNode = currentNode.requireNext()
-            val firstPickedUpNode = nextNode
-            var lastPickedUpNode = firstPickedUpNode
-            var targetValue = currentNode.value - 1
+            var nextValue = storage[currentValue]
+            val firstValue = nextValue
+            var lastValue = firstValue
+            var targetValue = currentValue - 1
             repeat(3) { index ->
-                pickedUpNodeValues[index] = nextNode.value
-                lastPickedUpNode = nextNode
-                nextNode = nextNode.requireNext()
+                pickedUpNodeValues[index] = nextValue
+                lastValue = nextValue
+                nextValue = storage[nextValue]
             }
-            currentNode.next = nextNode
+            storage[currentValue] = nextValue
             while (targetValue < minValue || pickedUpNodeValues.contains(targetValue)) {
                 if (targetValue < minValue) {
                     targetValue = maxValue
@@ -79,11 +49,10 @@ class Day23 {
                     targetValue--
                 }
             }
-            val targetNode = node(targetValue)
-            val next = targetNode.next
-            targetNode.next = firstPickedUpNode
-            lastPickedUpNode.next = next
-            currentNode = currentNode.requireNext()
+            val targetNext = storage[targetValue]
+            storage[targetValue] = firstValue
+            storage[lastValue] = targetNext
+            currentValue = storage[currentValue]
         }
     }
 
@@ -97,15 +66,11 @@ class Day23 {
     }
 
     fun part2(input: String): Long {
-        val values = input.map { it.toString().toInt() }.toMutableList()
-        var currentValue = values.maxOrNull()!!
-        while (values.size < 1_000_000) {
-            values.add(++currentValue)
-        }
-        val cup = Cup(values)
+        val values = input.map { it.toString().toInt() }
+        val cup = Cup(values, 1_000_000)
         repeat(10_000_000) {
             cup.play()
         }
-        return cup.toList(fromValue = 1, inclusive = false, count = 2).map { it.toLong() }.reduce { acc, i -> acc * i }
+        return cup.toList(fromValue = 1, inclusive = false, additionalCount = 2).map { it.toLong() }.reduce { acc, i -> acc * i }
     }
 }
