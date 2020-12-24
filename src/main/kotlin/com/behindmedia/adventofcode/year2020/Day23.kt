@@ -20,7 +20,7 @@ class Day23 {
         }
 
         fun toList(fromValue: Int? = null, inclusive: Boolean = true, additionalCount: Int = size - 1): List<Int> {
-            return ArrayList<Int>(size).apply {
+            return ArrayList<Int>(additionalCount + 1).apply {
                 var value = fromValue ?: currentValue
                 repeat(additionalCount + 1) {
                     if (it > 0 || inclusive) {
