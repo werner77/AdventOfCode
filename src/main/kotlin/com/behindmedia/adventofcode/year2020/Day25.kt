@@ -10,10 +10,8 @@ class Day25 {
 
     private fun findKey(subjectNumber: Long, loopSize: Long) : Long {
         var value = 1L
-        var i = 0L
-        while(i < loopSize) {
+        for (i in 0L until loopSize) {
             value = transform(value, subjectNumber)
-            i++
         }
         return value
     }
@@ -29,9 +27,6 @@ class Day25 {
     }
 
     private fun transform(value: Long, subjectNumber: Long): Long {
-        var value1 = value
-        value1 *= subjectNumber
-        value1 %= 20201227
-        return value1
+        return (value * subjectNumber) % 20201227
     }
 }
