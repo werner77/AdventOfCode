@@ -36,7 +36,7 @@ class Day20 {
             return coordinate.transformed(flipped, rotation, tile.size)
         }
 
-        fun removingBorders() : TileState {
+        fun removingBorders(): TileState {
             return TileState(tile.removingBorders(), flipped, rotation)
         }
 
@@ -102,7 +102,7 @@ class Day20 {
         /**
          * Returns a new tile by removing the outermost border of 1
          */
-        fun removingBorders() : Tile {
+        fun removingBorders(): Tile {
             val newMap = map.filter { it.key.x != 0 && it.key.x != max && it.key.y != 0 && it.key.y != max }
                 .mapKeys { it.key.offset(-1, -1) }
             return Tile(id, newMap)
@@ -112,15 +112,20 @@ class Day20 {
          * Returns the first state for which the specified predicate returns true
          */
         fun firstState(predicate: (TileState) -> Boolean): TileState? {
-            for (flipped in listOf(false, true)) {
-                for (rotation in 0 until 4) {
-                    val state = TileState(this, flipped, rotation)
-                    if (predicate(state)) {
-                        return state
-                    }
+            forEachState {
+                if (predicate(it)) {
+                    return it
                 }
             }
             return null
+        }
+
+        inline fun forEachState(perform: (TileState) -> Unit) {
+            for (flipped in listOf(false, true)) {
+                for (rotation in 0 until 4) {
+                    perform(TileState(this, flipped, rotation))
+                }
+            }
         }
 
         /**
@@ -187,10 +192,10 @@ class Day20 {
 
         // Position all the tiles (solve the puzzle)
         // This returns a map where the key is the coordinate of the tile within the puzzle and the value is the TileState
-        val positionedTiles = positionTiles(puzzleSize, tileMap)
+        val positionedTiles = solve(puzzleSize, tileMap)
 
         // Check the four corners of the puzzle
-        return positionedTiles.entries.filter {
+        return positionedTiles.entries.asSequence().filter {
             (it.key.x == 0 || it.key.x == puzzleSize - 1) && (it.key.y == 0 || it.key.y == puzzleSize - 1)
         }.map { it.value.tile.id }.reduce { acc, l -> acc * l }
     }
@@ -204,7 +209,7 @@ class Day20 {
 
         val tileSize = tileMap.values.first().size
         val puzzleSize = round(sqrt(tileMap.size.toDouble())).toInt()
-        val map = positionTiles(puzzleSize, tileMap)
+        val map = solve(puzzleSize, tileMap)
 
         // For each tile remove the border
         val mapWithoutBorders = map.mapValues { entry ->
@@ -262,11 +267,121 @@ class Day20 {
         return tileMap
     }
 
-    // Output should be which tile is at each position in the grid and its state
-    private fun positionTiles(puzzleSize: Int, tileMap: Map<Long, Tile>): Map<Coordinate, TileState> {
+    private fun backtrack(
+        puzzleSize: Int,
+        tileMap: MutableMap<Coordinate, TileState>,
+        placedTiles: MutableSet<Tile>,
+        tileLookupMap: Map<Int, Set<Tile>>,
+        expectedLeftSideTileValue: Int?,
+        expectedTopSideTileValue: Int?,
+        coordinate: Coordinate,
+        candidate: TileState
+    ): Map<Coordinate, TileState>? {
 
+        // Check whether the candidate can be placed at the specified coordinate, if not return null
+        if (!isValidCandidate(
+                tileMap,
+                tileLookupMap,
+                puzzleSize,
+                expectedLeftSideTileValue,
+                expectedTopSideTileValue,
+                coordinate,
+                candidate
+            )
+        ) return null
+
+        // Place the candidate tile at the specified coordinate
+        tileMap[coordinate] = candidate
+        placedTiles.add(candidate.tile)
+
+        // Go to the next coordinate, if there is none left than we are done
+        val nextCoordinate = coordinate.next(puzzleSize) ?: return tileMap
+
+        // Get the left and top sides we need to match for the next tile
+        val leftSideTileValue = tileMap[nextCoordinate + Coordinate.left]?.effectiveSideValue(TileSide.Right, true)
+        val topSideTileValue = tileMap[nextCoordinate + Coordinate.up]?.effectiveSideValue(TileSide.Bottom, true)
+
+        // Lookup the candidates that contain this side
+        val candidateLeftTiles = leftSideTileValue?.let { tileLookupMap[it] }
+        val candidateTopTiles = topSideTileValue?.let { tileLookupMap[it] }
+
+        // Take the intersection of left and top candidates
+        val candidateTiles = when {
+            candidateLeftTiles != null && candidateTopTiles != null -> candidateLeftTiles.intersect(candidateTopTiles)
+            candidateLeftTiles != null -> candidateLeftTiles
+            candidateTopTiles != null -> candidateTopTiles
+            else -> emptySet()
+        }
+
+        // Try all the candidate tiles for this position
+        for (tile in candidateTiles) {
+            // Discard this candidate if it was already processed
+            if (placedTiles.contains(tile)) continue
+
+            // Try this candidate in every state
+            tile.forEachState { tileState ->
+                val result = backtrack(
+                    puzzleSize,
+                    tileMap,
+                    placedTiles,
+                    tileLookupMap,
+                    leftSideTileValue,
+                    topSideTileValue,
+                    nextCoordinate,
+                    tileState
+                )
+
+                // If we found a valid result, finish the processing
+                if (result != null) return result
+
+                // If not, remove the invalid candidates we may have placed
+                // For all coordinates >= nextCoordinate, remove the item from the currentMap and placedTiles
+                var c: Coordinate? = nextCoordinate
+                while (c != null) {
+                    val ts = tileMap.remove(c) ?: break
+                    placedTiles.remove(ts.tile)
+                    c = c.next(puzzleSize)
+                }
+            }
+        }
+        // No valid permutation found
+        return null
+    }
+
+    private fun isValidCandidate(
+        currentMap: Map<Coordinate, TileState>,
+        sideMap: Map<Int, Set<Tile>>,
+        puzzleSize: Int,
+        leftSideTileValue: Int?,
+        topSideTileValue: Int?,
+        coordinate: Coordinate,
+        candidate: TileState,
+    ): Boolean {
+        // The first tile is only valid if the map is empty
+        if (coordinate == Coordinate.origin) {
+            return currentMap.isEmpty()
+        }
+
+        // For other tiles the sides need to match
+        val topSide = candidate.effectiveSideValue(TileSide.Top)
+        val leftSide = candidate.effectiveSideValue(TileSide.Left)
+        val rightSide = candidate.effectiveSideValue(TileSide.Right)
+        val bottomSide = candidate.effectiveSideValue(TileSide.Bottom)
+
+        // If the top/left values are null we are at the top/left edge
+        val topMatches = (topSideTileValue == null && sideMap[topSide]?.size == 1) || topSide == topSideTileValue
+        val leftMatches = (leftSideTileValue == null && sideMap[leftSide]?.size == 1) || leftSide == leftSideTileValue
+
+        // Only check right/bottom side if we are at the edge
+        val rightMatches = coordinate.x != puzzleSize - 1 || sideMap[rightSide]?.size == 1
+        val bottomMatches = coordinate.y != puzzleSize - 1 || sideMap[bottomSide]?.size == 1
+
+        return topMatches && leftMatches && rightMatches && bottomMatches
+    }
+
+    private fun solve(puzzleSize: Int, tileMap: Map<Long, Tile>): Map<Coordinate, TileState> {
         // A map where the key is the side (Integer) and the value is a set of tiles containing that side
-        val tileLookupMap = tileMap.values.fold(mutableMapOf<Int, MutableSet<Tile>>()) { map, tile ->
+        val sideMap: Map<Int, Set<Tile>> = tileMap.values.fold(mutableMapOf<Int, MutableSet<Tile>>()) { map, tile ->
             map.apply {
                 tile.sideValues.forEach { side ->
                     getOrPut(side) { mutableSetOf() }.add(tile)
@@ -274,58 +389,30 @@ class Day20 {
             }
         }
 
-        // Find the top left corner tile
+        // Find a top left corner tile, this is a tile where the count for the top and left sides == 1
         val topLeftCornerTile = tileMap.values.mapNotNull { tile ->
             tile.firstState { state ->
-                tileLookupMap[state.effectiveSideValue(TileSide.Top, true)]?.size == 1 &&
-                        tileLookupMap[state.effectiveSideValue(TileSide.Left, true)]?.size == 1
+                sideMap[state.effectiveSideValue(TileSide.Top)]?.size == 1 &&
+                        sideMap[state.effectiveSideValue(TileSide.Left)]?.size == 1
             }
         }.firstOrNull() ?: error("Could not find a top left corner tile")
 
-        val positionedTiles = mutableMapOf<Coordinate, TileState>()
-        val unpositionedTiles = tileMap.values.toMutableSet()
-
-        for (coordinate in CoordinateRange(Coordinate.origin, puzzleSize, puzzleSize)) {
-            // Try to match every subsequent tile, skip the first
-            val positionedTile = if (positionedTiles.isEmpty()) {
-                topLeftCornerTile
-            } else {
-                // Should match the tile to the left and above
-                val leftSideTileValue = positionedTiles[coordinate + Coordinate.left]?.effectiveSideValue(TileSide.Right, true)
-                val topSideTileValue = positionedTiles[coordinate + Coordinate.up]?.effectiveSideValue(TileSide.Bottom, true)
-                val candidateLeftTiles = leftSideTileValue?.let { tileLookupMap[it] } ?: emptySet()
-                val candidateTopTiles = topSideTileValue?.let { tileLookupMap[it] } ?: emptySet()
-
-                // Only take the tiles into account which have a matching side value
-                val candidates = (candidateLeftTiles + candidateTopTiles)
-
-                candidates.mapNotNull { tile ->
-                    // Only consider unpositioned tiles
-                    if (unpositionedTiles.contains(tile)) {
-                        tile.firstState { state ->
-                            val topSide = state.effectiveSideValue(TileSide.Top)
-                            val leftSide = state.effectiveSideValue(TileSide.Left)
-
-                            val topMatches = (topSideTileValue == null && tileLookupMap[topSide]?.size == 1) || topSide == topSideTileValue
-                            val leftMatches = (leftSideTileValue == null && tileLookupMap[leftSide]?.size == 1) || leftSide == leftSideTileValue
-
-                            topMatches && leftMatches
-                        }
-                    } else {
-                        null
-                    }
-                }.only() // There is only one match for every tile as deducted from the counts which makes the solution easier.
-            }
-            positionedTiles[coordinate] = positionedTile
-            unpositionedTiles.remove(positionedTile.tile)
-        }
-        return positionedTiles
+        return backtrack(
+            puzzleSize,
+            mutableMapOf(),
+            mutableSetOf(),
+            sideMap,
+            null,
+            null,
+            Coordinate.origin,
+            topLeftCornerTile
+        ) ?: error("Could not find solution")
     }
 
     /**
      * Merges a map of puzzle pieces into an entire puzzle
      */
-    private fun Map<Coordinate, TileState>.merge() : Map<Coordinate, Char> {
+    private fun Map<Coordinate, TileState>.merge(): Map<Coordinate, Char> {
         val result = mutableMapOf<Coordinate, Char>()
         val tileSize = this.values.first().tile.size // All sizes should be equal
         for (coordinate in CoordinateRange(this.keys)) {
@@ -338,10 +425,17 @@ class Day20 {
         }
         return result
     }
+}
 
-    private fun Map<Coordinate, Char>.transformed(flipped: Boolean, rotation: Int): Map<Coordinate, Char> {
-        val mapSize = this.maxOf { it.key.x } + 1
-        return mapKeys { it.key.transformed(flipped, rotation, mapSize) }
+private fun Coordinate.next(squareSize: Int): Coordinate? {
+    return if (this.x == squareSize - 1) {
+        if (this.y == squareSize - 1) {
+            null
+        } else {
+            Coordinate(0, this.y + 1)
+        }
+    } else {
+        Coordinate(this.x + 1, this.y)
     }
 }
 
@@ -362,4 +456,9 @@ private fun Coordinate.transformed(flipped: Boolean, rotation: Int, squareSize: 
         y = max - a
     }
     return Coordinate(x, y)
+}
+
+private fun Map<Coordinate, Char>.transformed(flipped: Boolean, rotation: Int): Map<Coordinate, Char> {
+    val mapSize = this.maxOf { it.key.x } + 1
+    return mapKeys { it.key.transformed(flipped, rotation, mapSize) }
 }
