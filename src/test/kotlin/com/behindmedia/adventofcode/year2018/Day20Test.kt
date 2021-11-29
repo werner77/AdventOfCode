@@ -33,7 +33,7 @@ class Day20Test {
         val day20 = Day20()
         val map = day20.parse(read("/2018/day20.txt"))
         val shortestPaths = day20.shortestPaths(map=map)
-        val maxPathLength = shortestPaths.maxBy { it.pathLength }!!.pathLength
+        val maxPathLength = shortestPaths.maxByOrNull { it.pathLength }!!.pathLength
 
         // Only count doors
         println(maxPathLength/2)
