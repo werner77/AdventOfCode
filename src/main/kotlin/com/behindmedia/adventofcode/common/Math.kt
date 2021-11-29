@@ -10,15 +10,15 @@ import kotlin.math.*
 enum class RotationDirection {
     Left, Right;
 
-    companion object { }
+    companion object {}
 }
 
 /**
  * Describes a three-dimensional coordinate or vector
  */
-data class Coordinate3D(val x: Int, val y: Int, val z: Int): Comparable<Coordinate3D> {
+data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordinate3D> {
 
-    constructor(components: List<Int>): this(components[0], components[1], components[2])
+    constructor(components: List<Int>) : this(components[0], components[1], components[2])
 
     companion object {
         val origin = Coordinate3D(0, 0, 0)
@@ -58,16 +58,30 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int): Comparable<Coordina
     }
 
     override fun compareTo(other: Coordinate3D): Int {
-        return compare({ this[0].compareTo(other[0]) }, { this[1].compareTo(other[1]) }, { this[2].compareTo(other[2]) })
+        return compare(
+            { this[0].compareTo(other[0]) },
+            { this[1].compareTo(other[1]) },
+            { this[2].compareTo(other[2]) })
     }
 }
 
 /**
  * Describes a two-dimensional coordinate or vector.
  */
-data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
+@JvmInline
+value class Coordinate private constructor(private val value: Long) : Comparable<Coordinate> {
+
+    constructor(x: Int, y: Int) : this((y.toLong() shl 32) or (x.toLong() and MASK))
+
+    val x: Int
+        get() = (value and MASK).toInt()
+
+    val y: Int
+        get() = (value shr 32).toInt()
 
     companion object {
+        private const val MASK = 0xFFFFFFFFL
+
         val origin = Coordinate(0, 0)
         val up = Coordinate(0, -1)
         val down = Coordinate(0, 1)
@@ -120,7 +134,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     fun distance(to: Coordinate): Double {
         val deltaX = (x - to.x).toDouble()
         val deltaY = (y - to.y).toDouble()
-        return sqrt( deltaX * deltaX + deltaY * deltaY)
+        return sqrt(deltaX * deltaX + deltaY * deltaY)
     }
 
     /**
@@ -142,7 +156,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
      * Rotates this coordinate (representing a vector) using the specified rotation direction
      */
     fun rotate(direction: RotationDirection): Coordinate {
-        return when(direction) {
+        return when (direction) {
             RotationDirection.Left -> Coordinate(this.y, -this.x)
             RotationDirection.Right -> Coordinate(-this.y, this.x)
         }
@@ -152,7 +166,7 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
      * Optionally rotates this coordinate (representing a vector). Does nothing if the supplied direction is null.
      */
     fun optionalRotate(direction: RotationDirection?): Coordinate {
-        return when(direction) {
+        return when (direction) {
             null -> this
             else -> rotate(direction)
         }
@@ -215,12 +229,12 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
     /**
      * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
      */
-    inline fun <T>reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+    inline fun <T> reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
         val list = ArrayDeque<CoordinatePath>()
         val visited = mutableSetOf<Coordinate>()
         list.add(CoordinatePath(this, 0))
         var start = true
-        while(true) {
+        while (true) {
             val current = list.pollFirst() ?: return null
             if (start) {
                 start = false
@@ -268,6 +282,10 @@ data class Coordinate(val x: Int, val y: Int): Comparable<Coordinate> {
 
     operator fun rangeTo(other: Coordinate): CoordinateRange {
         return CoordinateRange(this, other)
+    }
+
+    fun copy(x: Int = this.x, y: Int = this.y): Coordinate {
+        return Coordinate(x, y)
     }
 }
 
@@ -338,14 +356,21 @@ fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
 /**
  * Range to enumerate coordinates between the (minx, miny) and (maxx, maxy) found in a list of coordinates.
  */
-class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>) : Iterable<Coordinate>, ClosedRange<Coordinate> {
+class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>) : Iterable<Coordinate>,
+    ClosedRange<Coordinate> {
 
-    constructor(minCoordinate: Coordinate, width: Int, height: Int): this(Pair(minCoordinate, minCoordinate + Coordinate(width - 1, height - 1)))
-    constructor(minCoordinate: Coordinate, maxCoordinate: Coordinate): this(Pair(minCoordinate, maxCoordinate))
-    constructor(collection: Collection<Coordinate>): this(collection.minMaxCoordinate())
+    constructor(minCoordinate: Coordinate, width: Int, height: Int) : this(
+        Pair(
+            minCoordinate,
+            minCoordinate + Coordinate(width - 1, height - 1)
+        )
+    )
+
+    constructor(minCoordinate: Coordinate, maxCoordinate: Coordinate) : this(Pair(minCoordinate, maxCoordinate))
+    constructor(collection: Collection<Coordinate>) : this(collection.minMaxCoordinate())
 
     companion object {
-        private fun Collection<Coordinate>.minMaxCoordinate(): Pair<Coordinate, Coordinate>  {
+        private fun Collection<Coordinate>.minMaxCoordinate(): Pair<Coordinate, Coordinate> {
             var minX = Integer.MAX_VALUE
             var minY = Integer.MAX_VALUE
             var maxX = Integer.MIN_VALUE
@@ -360,7 +385,8 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
         }
     }
 
-    private class CoordinateIterator(val minCoordinate: Coordinate, val maxCoordinate: Coordinate): Iterator<Coordinate> {
+    private class CoordinateIterator(val minCoordinate: Coordinate, val maxCoordinate: Coordinate) :
+        Iterator<Coordinate> {
         private var nextCoordinate: Coordinate? = if (minCoordinate <= maxCoordinate) minCoordinate else null
 
         override fun hasNext(): Boolean {
@@ -368,7 +394,8 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
         }
 
         override fun next(): Coordinate {
-            val next = nextCoordinate ?: throw IllegalStateException("Next called on iterator while there are no more elements to iterate over")
+            val next = nextCoordinate
+                ?: throw IllegalStateException("Next called on iterator while there are no more elements to iterate over")
             nextCoordinate = when {
                 next.x < maxCoordinate.x -> next.offset(1, 0)
                 next.y < maxCoordinate.y -> Coordinate(minCoordinate.x, next.y + 1)
@@ -388,7 +415,7 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)
 
-fun <E>Map<Coordinate, E>.printMap(default: E) {
+fun <E> Map<Coordinate, E>.printMap(default: E) {
     val range = this.keys.range()
     for (c in range) {
         print(this[c] ?: default)
@@ -398,13 +425,13 @@ fun <E>Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
-class Path<N>(val destination: N, val pathLength: Int): Comparable<Path<N>> {
+class Path<N>(val destination: N, val pathLength: Int) : Comparable<Path<N>> {
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
 }
 
-class CoordinatePath(val coordinate: Coordinate, val pathLength: Int): Comparable<CoordinatePath> {
+class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparable<CoordinatePath> {
     override fun compareTo(other: CoordinatePath): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
@@ -413,12 +440,17 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int): Comparabl
 /**
  * Breadth first search algorithm to find the shortest paths between unweighted nodes.
  */
-inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>, reachable: (N) -> Boolean, process: (Path<N>) -> T?): T? {
+inline fun <reified N, T> reachableNodes(
+    from: N,
+    neighbours: (N) -> Iterable<N>,
+    reachable: (N) -> Boolean,
+    process: (Path<N>) -> T?
+): T? {
     val list = ArrayDeque<Path<N>>()
     val visited = mutableSetOf<N>()
     list.add(Path(from, 0))
     var start = true
-    while(true) {
+    while (true) {
         val current = list.pollFirst() ?: return null
 
         if (start) {
@@ -440,7 +472,11 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<N>,
 /**
  * Dijkstra's algorithm to find the shortest path between weighted nodes.
  */
-inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pair<N, Int>>, process: (Path<N>) -> T?): T? {
+inline fun <reified N, T> reachableNodes(
+    from: N,
+    neighbours: (N) -> Iterable<Pair<N, Int>>,
+    process: (Path<N>) -> T?
+): T? {
     val pending = PriorityQueue<Path<N>>()
     pending.add(Path(from, 0))
     val settled = mutableSetOf<N>()
@@ -467,7 +503,13 @@ inline fun <reified N, T>reachableNodes(from: N, neighbours: (N) -> Iterable<Pai
     return null
 }
 
-inline fun binarySearch(lowerBound: Long, upperBound: Long, targetValue: Long, inverted: Boolean = false, evaluation: (Long) -> Long): Long? {
+inline fun binarySearch(
+    lowerBound: Long,
+    upperBound: Long,
+    targetValue: Long,
+    inverted: Boolean = false,
+    evaluation: (Long) -> Long
+): Long? {
     var begin = lowerBound
     var end = upperBound
     var result: Long? = null
@@ -487,11 +529,12 @@ fun optimumSearch(startValue: Long, inverted: Boolean = false, process: (Long) -
     fun compareEval(first: Long, second: Long): Int {
         return if (inverted) second.compareTo(first) else first.compareTo(second)
     }
+
     var exceededOptimum = false
     var delta = 1
     var currentValue = startValue
     var bestEvaluation = process(currentValue)
-    while(true) {
+    while (true) {
         if (exceededOptimum) {
             val leftEvaluation = process(currentValue - delta)
             val rightEvaluation = process(currentValue + delta)
