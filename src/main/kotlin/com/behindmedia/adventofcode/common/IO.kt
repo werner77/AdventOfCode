@@ -63,6 +63,16 @@ fun <T> String.splitSequence(delimiters: String, conversion: (String) -> T): Seq
         .map { conversion.invoke(it) }
 }
 
+fun <T>timing(block: () -> T) {
+    val start = System.currentTimeMillis()
+    try {
+        block.invoke()
+    } finally {
+        val end = System.currentTimeMillis()
+        println("Took ${end - start} ms.")
+    }
+}
+
 private fun readerForResource(resource: String): BufferedReader {
     val url = object {}.javaClass.getResource(resource)
         ?: throw FileNotFoundException("Resource with name $resource could not be found")

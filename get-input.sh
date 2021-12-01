@@ -39,7 +39,7 @@ function usage {
 }
 
 YEAR="$(date +"%Y")"
-DAY="$(date +"%d")"
+DAY="$(date +"%-d")"
 TOKEN="$AOC_SESSION_TOKEN"
 
 while [[ $# -gt 0 ]]
