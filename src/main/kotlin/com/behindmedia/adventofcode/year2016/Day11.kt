@@ -124,6 +124,24 @@ private value class State(private val representation: Long) {
             return true
         }
 
+    val checksum: Long
+        get() {
+            var result = 0L
+            for (level in 0 until 4) {
+                // Calculate the xor between the generators and chips and add the number of pairs
+                val chipMask = representation ushr (level * 16)
+                val machineMask = representation ushr (level * 16 + 8)
+
+                // Singles at this level
+                val singles = (chipMask xor machineMask) and 0xFF
+
+                // Pairs at this level
+                val pairs = (chipMask and machineMask) and 0xFF
+
+            }
+            return result
+        }
+
     private fun countElements(fromBit: Int, toBit: Int): Int {
         var count = 0
         for (i in fromBit until toBit) {
