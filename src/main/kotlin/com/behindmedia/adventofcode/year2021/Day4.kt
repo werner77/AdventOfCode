@@ -60,13 +60,12 @@ fun main() {
         } else {
             if (first) {
                 // parse random numbers
-                randomNumbers.addAll(line.split(" ", ",").filter { it.isNotBlank() }.map { it.toInt() })
+                randomNumbers.addAll(line.splitNonEmptySequence(" ", ",") { it.toInt() })
                 first = false
             } else {
                 // parse boards
                 val board = boards.last()
-                val numbers = line.split(" ").filter { it.isNotBlank() }.map { it.toInt() }
-                numbers.forEach { board.addNumber(it) }
+                line.splitNonEmptySequence(" ") { it.toInt() }.forEach { board.addNumber(it) }
             }
         }
     }

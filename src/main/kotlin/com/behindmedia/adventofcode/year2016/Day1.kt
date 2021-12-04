@@ -3,12 +3,12 @@ package com.behindmedia.adventofcode.year2016
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.RotationDirection
 import com.behindmedia.adventofcode.common.parse
-import com.behindmedia.adventofcode.common.splitSequence
+import com.behindmedia.adventofcode.common.splitNonEmptySequence
 import kotlin.math.abs
 
 fun main() {
     val instructions = parse("/2016/day1.txt") { input ->
-        input.splitSequence(", ")
+        input.splitNonEmptySequence(",", " ")
     }
 
     val visited = mutableSetOf<Coordinate>()

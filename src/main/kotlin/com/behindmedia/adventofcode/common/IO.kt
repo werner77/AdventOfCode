@@ -52,13 +52,12 @@ fun read(resource: String): String {
     }
 }
 
-fun String.splitSequence(delimiters: String): Sequence<String> {
-    return this.splitSequence(delimiters) { it }
+fun String.splitNonEmptySequence(vararg delimiters: String): Sequence<String> {
+    return splitNonEmptySequence(delimiters = delimiters) { it }
 }
 
-fun <T> String.splitSequence(delimiters: String, conversion: (String) -> T): Sequence<T> {
-    return this.split(delimiters = delimiters.toCharArray())
-        .asSequence()
+fun <T> String.splitNonEmptySequence(vararg delimiters: String, conversion: (String) -> T): Sequence<T> {
+    return splitToSequence(delimiters = delimiters)
         .filter { it.isNotEmpty() }
         .map { conversion.invoke(it) }
 }

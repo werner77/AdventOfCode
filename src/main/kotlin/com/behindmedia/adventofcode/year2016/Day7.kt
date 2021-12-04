@@ -28,7 +28,7 @@ private fun String.findBabs(): Set<String> {
 }
 
 private fun isTls(ip: String): Boolean {
-    val components = ip.splitSequence("[]").toList()
+    val components = ip.splitNonEmptySequence("[","]").toList()
     var foundAbba = false
     for (i in components.indices) {
         if (i % 2 == 1) {
@@ -45,7 +45,7 @@ private fun String.inverted() : String {
 }
 
 private fun isSsl(ip: String): Boolean {
-    val components = ip.splitSequence("[]").toList()
+    val components = ip.splitNonEmptySequence("[","]").toList()
     val allBabs = mutableSetOf<String>()
     for (i in components.indices) {
         if (i % 2 == 0) {

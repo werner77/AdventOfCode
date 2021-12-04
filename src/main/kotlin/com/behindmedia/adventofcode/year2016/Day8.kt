@@ -21,13 +21,13 @@ private sealed class Instruction {
     companion object {
         operator fun invoke(input: String): Instruction {
             return if (input.startsWith("rect")) {
-                val components = input.splitSequence(" x").toList()
+                val components = input.splitNonEmptySequence(" ", "x").toList()
                 PlaceRect(components[1].toInt(), components[2].toInt())
             } else if (input.startsWith("rotate row")) {
-                val components = input.splitSequence(" =").toList()
+                val components = input.splitNonEmptySequence(" ", "=").toList()
                 RotateRow(components[3].toInt(), components[5].toInt())
             } else if (input.startsWith("rotate column")) {
-                val components = input.splitSequence(" =").toList()
+                val components = input.splitNonEmptySequence(" ", "=").toList()
                 RotateColumn(components[3].toInt(), components[5].toInt())
             } else {
                 error("Invalid input: $input")

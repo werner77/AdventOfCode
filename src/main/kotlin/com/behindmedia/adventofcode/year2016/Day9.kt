@@ -9,7 +9,7 @@ private fun <T> parseLines(lineParser: (String) -> T): List<T> {
 }
 
 private fun deconstruct(code: String, pos: Int, line: String, builder: StringBuilder): Int {
-    val (x, y) = code.splitSequence("x").map { it.toInt() }.toList()
+    val (x, y) = code.splitNonEmptySequence("x") { it.toInt() }.toList()
     val toRepeat = line.substring(pos, pos + x)
     for (j in 0 until y) {
         builder.append(toRepeat)
@@ -64,7 +64,7 @@ private fun decompressedLength(line: String, start: Int, end: Int): Long {
                 inQuotes = true
             }
             ')' -> {
-                val (a, b) = codeBuffer.toString().splitSequence("x").map { it.toInt() }.toList()
+                val (a, b) = codeBuffer.toString().splitNonEmptySequence("x") { it.toInt() }.toList()
                 val d = decompressedLength(line, index, index + a)
                 totalSize += b * d
                 index += a
