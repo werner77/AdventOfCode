@@ -284,8 +284,10 @@ value class Coordinate private constructor(private val value: Long) : Comparable
         return CoordinateRange(this, other)
     }
 
-    fun copy(x: Int = this.x, y: Int = this.y): Coordinate {
-        return Coordinate(x, y)
+    fun copy(x: Int = this.x, y: Int = this.y): Coordinate = Coordinate(x, y)
+
+    override fun toString(): String {
+        return "($x,$y)"
     }
 }
 
