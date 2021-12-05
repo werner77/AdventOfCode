@@ -284,6 +284,9 @@ value class Coordinate private constructor(private val value: Long) : Comparable
         return CoordinateRange(this, other)
     }
 
+    operator fun component1(): Int = x
+    operator fun component2(): Int = y
+
     fun copy(x: Int = this.x, y: Int = this.y): Coordinate = Coordinate(x, y)
 
     override fun toString(): String {
@@ -326,6 +329,14 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
     return if (a == 0L || b == 0L) 0 else {
         val gcd = greatestCommonDivisor(a, b)
         abs(a * b) / gcd
+    }
+}
+
+inline fun Long.forBits(range: IntRange, perform: (Boolean) -> Unit) {
+    for (i in range) {
+        val mask = 1L shl i
+        val bit = (this and mask) == mask
+        perform.invoke(bit)
     }
 }
 
@@ -451,20 +462,15 @@ inline fun <reified N, T> reachableNodes(
     val list = ArrayDeque<Path<N>>()
     val visited = mutableSetOf<N>()
     list.add(Path(from, 0))
-    var start = true
+    visited.add(from)
     while (true) {
         val current = list.pollFirst() ?: return null
-
-        if (start) {
-            start = false
-        } else {
-            process(current)?.let {
-                return it
-            }
+        process(current)?.let {
+            return it
         }
-        visited.add(current.destination)
         for (neighbour in neighbours(current.destination)) {
-            if (!visited.contains(neighbour) && reachable(neighbour)) {
+            if (reachable(neighbour) && !visited.contains(neighbour)) {
+                visited.add(neighbour)
                 list.add(Path(neighbour, current.pathLength + 1))
             }
         }
@@ -482,16 +488,11 @@ inline fun <reified N, T> reachableNodes(
     val pending = PriorityQueue<Path<N>>()
     pending.add(Path(from, 0))
     val settled = mutableSetOf<N>()
-    var start = true
     while (true) {
         val current = pending.poll() ?: break
         if (settled.contains(current.destination)) continue
-        if (start) {
-            start = false
-        } else {
-            process(current)?.let {
-                return it
-            }
+        process(current)?.let {
+            return it
         }
         val currentNode = current.destination
         settled.add(currentNode)
