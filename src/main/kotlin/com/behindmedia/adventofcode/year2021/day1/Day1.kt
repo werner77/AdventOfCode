@@ -1,4 +1,4 @@
-package com.behindmedia.adventofcode.year2021
+package com.behindmedia.adventofcode.year2021.day1
 
 import com.behindmedia.adventofcode.common.*
 

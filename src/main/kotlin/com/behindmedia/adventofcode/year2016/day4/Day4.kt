@@ -1,4 +1,4 @@
-package com.behindmedia.adventofcode.year2016
+package com.behindmedia.adventofcode.year2016.day4
 
 import com.behindmedia.adventofcode.common.parseLines
 import com.behindmedia.adventofcode.common.popFirst

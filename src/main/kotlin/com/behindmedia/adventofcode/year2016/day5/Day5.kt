@@ -1,4 +1,4 @@
-package com.behindmedia.adventofcode.year2016
+package com.behindmedia.adventofcode.year2016.day5
 
 import com.behindmedia.adventofcode.common.read
 import java.math.BigInteger

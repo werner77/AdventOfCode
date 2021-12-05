@@ -1,4 +1,4 @@
-package com.behindmedia.adventofcode.year2016
+package com.behindmedia.adventofcode.year2016.day10
 
 import com.behindmedia.adventofcode.common.*
 import java.util.*
