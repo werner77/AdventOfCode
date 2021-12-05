@@ -153,7 +153,7 @@ class Day20 {
         val leveledEnd = LeveledCoordinate(end, 0)
 
         return reachableNodes(leveledStart, neighbours = { leveledCoordinate ->
-                map[leveledCoordinate.coordinate]?.neighbours(leveledCoordinate.level, recursiveMode) ?: emptyList()
+                map[leveledCoordinate.destination.coordinate]?.neighbours(leveledCoordinate.destination.level, recursiveMode) ?: emptyList()
             },
             reachable = {
                 map[it.coordinate]?.isReachable(it.level, recursiveMode) ?: false

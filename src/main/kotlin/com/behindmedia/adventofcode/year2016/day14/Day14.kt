@@ -1,16 +1,9 @@
 package com.behindmedia.adventofcode.year2016.day14
 
+import com.behindmedia.adventofcode.common.md5
 import com.behindmedia.adventofcode.common.popFirst
-import java.math.BigInteger
-import java.security.MessageDigest
 import java.util.*
 import kotlin.collections.ArrayDeque
-
-private val md = MessageDigest.getInstance("MD5")
-
-private fun md5(input: String) : String {
-    return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
-}
 
 //private val SALT = "abc"
 private val SALT = "cuanljph"

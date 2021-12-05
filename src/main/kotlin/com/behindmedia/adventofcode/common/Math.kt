@@ -1,5 +1,7 @@
 package com.behindmedia.adventofcode.common
 
+import java.math.BigInteger
+import java.security.MessageDigest
 import java.util.*
 import kotlin.math.*
 
@@ -332,6 +334,12 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
     }
 }
 
+private val md = MessageDigest.getInstance("MD5")
+
+fun md5(input: String): String {
+    return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
+}
+
 inline fun Long.forBits(range: IntRange, perform: (Boolean) -> Unit) {
     for (i in range) {
         val mask = 1L shl i
@@ -438,11 +446,44 @@ fun <E> Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
-class Path<N>(val destination: N, val pathLength: Int) : Comparable<Path<N>> {
+class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : Comparable<Path<N>> {
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
 }
+
+fun <N>Path<N>.any(where: (N) -> Boolean): Boolean {
+    var current: Path<N>? = this
+    while (current != null) {
+        if (where.invoke(current.destination)) return true
+        current = current.parent
+    }
+    return false
+}
+
+val <N>Path<N>.completePath: Collection<N>
+    get() {
+        val result = ArrayDeque<N>()
+        var current: Path<N>? = this
+        while (current?.parent != null) {
+            result.addFirst(current.destination)
+            current = parent
+        }
+        return result
+    }
+
+val Path<Coordinate>.completeDirections: Collection<Coordinate>
+    get() {
+        val result = ArrayDeque<Coordinate>()
+        var current: Path<Coordinate>? = this
+        while (true) {
+            val parent = current?.parent ?: break
+            val direction = current.destination - parent.destination
+            result.addFirst(direction)
+            current = parent
+        }
+        return result
+    }
 
 class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparable<CoordinatePath> {
     override fun compareTo(other: CoordinatePath): Int {
@@ -455,23 +496,23 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparab
  */
 inline fun <reified N, T> reachableNodes(
     from: N,
-    neighbours: (N) -> Iterable<N>,
+    neighbours: (Path<N>) -> Iterable<N>,
     reachable: (N) -> Boolean,
     process: (Path<N>) -> T?
 ): T? {
     val list = ArrayDeque<Path<N>>()
     val visited = mutableSetOf<N>()
-    list.add(Path(from, 0))
+    list.add(Path(from, 0, null))
     visited.add(from)
     while (true) {
         val current = list.pollFirst() ?: return null
         process(current)?.let {
             return it
         }
-        for (neighbour in neighbours(current.destination)) {
+        for (neighbour in neighbours(current)) {
             if (reachable(neighbour) && !visited.contains(neighbour)) {
                 visited.add(neighbour)
-                list.add(Path(neighbour, current.pathLength + 1))
+                list.add(Path(neighbour, current.pathLength + 1, current))
             }
         }
     }
@@ -486,7 +527,7 @@ inline fun <reified N, T> reachableNodes(
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()
-    pending.add(Path(from, 0))
+    pending.add(Path(from, 0, null))
     val settled = mutableSetOf<N>()
     while (true) {
         val current = pending.poll() ?: break
@@ -499,7 +540,7 @@ inline fun <reified N, T> reachableNodes(
         for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
             if (!settled.contains(neighbour)) {
                 val newDistance = current.pathLength + neighbourWeight
-                pending.add(Path(neighbour, newDistance))
+                pending.add(Path(neighbour, newDistance, current))
             }
         }
     }

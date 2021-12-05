@@ -28,7 +28,7 @@ private fun isAccessible(coordinate: Coordinate): Boolean {
 
 private fun shortestPath(start: Coordinate, dest: Coordinate): Int {
     return reachableNodes(from = start,
-        neighbours = { it.directNeighbours },
+        neighbours = { it.destination.directNeighbours },
         reachable = { isAccessible(it) },
         process = {
             if (it.destination == dest) it.pathLength else null
@@ -38,7 +38,7 @@ private fun shortestPath(start: Coordinate, dest: Coordinate): Int {
 private fun countLocations(start: Coordinate, maxLength: Int): Int {
     var count = 0
     return reachableNodes(from = start,
-        neighbours = { it.directNeighbours },
+        neighbours = { it.destination.directNeighbours },
         reachable = { isAccessible(it) },
         process = {
             if (it.pathLength > maxLength) {

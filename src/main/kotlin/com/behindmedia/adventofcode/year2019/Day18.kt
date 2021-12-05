@@ -246,7 +246,7 @@ class Day18 {
                         pathLength: Int, requiredKeys: KeyCollection) {
                 if (currentNode.isKey && pathLength != 0) {
                     // Found
-                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength))) {
+                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength, null))) {
                         return
                     }
                 }

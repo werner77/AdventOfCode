@@ -160,7 +160,7 @@ public class FibonacciHeap<T> {
         FibonacciHeapNode<T> minNode = removeMin();
         if (minNode != null) {
             existingNodes.remove(minNode.data);
-            return new Path<T>(minNode.data, minNode.key);
+            return new Path<T>(minNode.data, minNode.key, null);
         }
         return null;
     }
@@ -187,7 +187,7 @@ public class FibonacciHeap<T> {
     @Nullable
     public Path<T> first() {
         if (minNode != null) {
-            return new Path<T>(minNode.data, minNode.key);
+            return new Path<T>(minNode.data, minNode.key, null);
         }
         return null;
     }
