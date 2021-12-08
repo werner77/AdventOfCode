@@ -47,6 +47,30 @@ fun <E>List<E>.slice(count: Int): List<List<E>> {
 }
 
 /**
+ * Permutates all possible combinations in values without duplicates and calls the perform closure for each such permutation
+ * until a non-null result is returned
+ */
+fun <T, R> permutateUnique(values: Set<T>, perform: (List<T>) -> R?): R? {
+    // Use an ArrayDeque to avoid having to reallocate a new collection each time
+    // We cycle through the values remaining with removeFirst and addLast.
+    fun <T> permutate(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
+        if (valuesLeft.isEmpty()) return perform(list)
+        for (i in valuesLeft.indices) {
+            val value = valuesLeft.removeFirst()
+            try {
+                list.add(value)
+                return permutate(list, valuesLeft, perform) ?: continue
+            } finally {
+                list.removeLast()
+                valuesLeft.addLast(value)
+            }
+        }
+        return null
+    }
+    return permutate(ArrayList(values.size), ArrayDeque(values), perform)
+}
+
+/**
  * Permutates all possible combinations in a square matrix of the specified count, using values in the specified range.
  *
  * It performs the specified closure for each permutation. If the closure returns a non-null value, the function immediately returns.

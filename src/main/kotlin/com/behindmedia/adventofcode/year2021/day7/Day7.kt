@@ -21,5 +21,5 @@ private fun part1(data: List<Int>): Long = findMinSum(data) { a, b ->
 
 private fun part2(data: List<Int>): Long = findMinSum(data) { a, b ->
     val n = abs(a - b).toLong()
-    ((n * (n + 1)) / 2)
+    (n * (n + 1)) / 2
 }
