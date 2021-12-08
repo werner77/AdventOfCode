@@ -26,7 +26,8 @@ fun main() {
         else {
             val components = it.splitNonEmptySequence(" ", "\t").toList()
             val nodeNameSplit = components[0].splitNonEmptySequence("-").toList()
-            val nodeCoordinate = Coordinate(nodeNameSplit[1].substring(1).toInt(), nodeNameSplit[2].substring(1).toInt())
+            val nodeCoordinate =
+                Coordinate(nodeNameSplit[1].substring(1).toInt(), nodeNameSplit[2].substring(1).toInt())
             Disk(nodeCoordinate, parseSize(components[1]), parseSize(components[2]), parseSize(components[3]))
         }
     }
@@ -35,27 +36,48 @@ fun main() {
 }
 
 private fun part2(data: List<Disk>) {
-    val map = mutableMapOf<Coordinate, Disk>()
-    var maxX = 0
+
+    val maxX = data.maxOf { it.location.x }
+    val maxY = data.maxOf { it.location.y }
+    val sourceDisk = data.find { it.location.y == 0 && it.location.x == maxX } ?: error("Could not find source disk")
+    val freeNode = data.filter { it.available >= sourceDisk.used }.only()
+
+    // Create a map
+    val map = mutableMapOf<Coordinate, Char>()
     for (disk in data) {
-        if (disk.location.y == 0) maxX = max(maxX, disk.location.x)
-        map[disk.location] = disk
+        val diskType = if (disk.available > sourceDisk.used) {
+            'F'
+        } else if (disk.used > freeNode.available) {
+            '#'
+        } else if (disk.location.y == 0 && disk.location.x == maxX) {
+            'S'
+        } else if (disk.location.y == 0 && disk.location.x == 0) {
+            'T'
+        } else {
+            '.'
+        }
+        map[disk.location] = diskType
     }
 
-    val startDisk = map[Coordinate(maxX, 0)]!!
-    val endDisk = map[Coordinate.origin]
+    // Step 1: move F to S
 
-    println("Start: $startDisk")
-    println("End: $endDisk")
+    var steps = 0
 
-//    reachableNodes(
-//        from = startDisk,
-//        neighbours = {
-//            it.destination.location.directNeighbours.mapNotNull { d -> map[d] }
-//        },
-//        reachable = { },
-//        process = { null }
-//    )
+    // First bring free node to S
+
+    steps += reachableNodes(from = freeNode.location,
+        neighbours = { it.destination.directNeighbours },
+        reachable = { map[it] != '#' && it.x in 0..maxX && it.y in 0..maxY },
+        process = { if (map[it.destination] == 'S') it.pathLength else null }) ?: error("Could not find path")
+
+    // S is now at x=0, maxY-1
+
+    // Step 2: move S to T, each step takes 5 moves
+
+    steps += (maxX - 1) * 5
+
+    println(steps)
+
 }
 
 private fun part1(data: List<Disk>) {
@@ -68,17 +90,4 @@ private fun part1(data: List<Disk>) {
         }
     }
     println(count)
-}
-
-private fun backtrack(start: Coordinate, end: Coordinate, map: Map<Coordinate, Disk>) {
-    // Get possible coordinates from end
-
-    val neighbours = end.directNeighbours
-
-    for (neighbour in neighbours) {
-        // Take the minimum from all the neighbours
-        val neighbourDisk = map[neighbour] ?: continue
-
-
-    }
 }

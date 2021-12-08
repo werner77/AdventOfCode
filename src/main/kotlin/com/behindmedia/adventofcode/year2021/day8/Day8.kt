@@ -25,11 +25,11 @@ private val Char.wireIndex: Int
 // Mapping of scrambled wires (a -> b) for each wire
 typealias WireMapping = List<Char>
 
-private fun WireMapping.validate(entries: List<String>): Boolean {
+private fun WireMapping.validate(input: List<String>): Boolean {
     val allDigits = digitMap.values.toMutableSet()
-    for (entry in entries) {
+    for (entry in input) {
         // Try to represent this digit with the mapping
-        val s = entry.asSequence().map { this[it.wireIndex] }.toSet()
+        val s = entry.mapTo(HashSet(entry.length, 1.0f)) { this[it.wireIndex] }
         val d = digitMap[s] ?: return false
         allDigits.remove(d)
     }
@@ -38,10 +38,10 @@ private fun WireMapping.validate(entries: List<String>): Boolean {
 
 private fun WireMapping.decode(output: List<String>): Int {
     var total = 0
-    for (d in output) {
-        val s = d.asSequence().map { this[it.wireIndex] }.toSet()
-        val digit = digitMap[s] ?: error("Could not decode digit: $s")
-        total = total * 10 + digit
+    for (entry in output) {
+        val s = entry.mapTo(HashSet(entry.length, 1.0f)) { this[it.wireIndex] }
+        val d = digitMap[s] ?: error("Could not decode digit: $s")
+        total = total * 10 + d
     }
     return total
 }
