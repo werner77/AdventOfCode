@@ -38,12 +38,14 @@ fun main() {
         }
     }
 
-    // Part 1
-    println(lowPoints.fold(0) { count, entry -> count + entry.value + 1 })
+    timing {
+        // Part 1
+        println(lowPoints.fold(0) { count, entry -> count + entry.value + 1 })
 
-    // Part 2
-    val basinSums = lowPoints.fold(mutableListOf<Int>()) { list, entry ->
-        list.apply { this += expandBasin(entry.key, map) }
-    }.sortedDescending()
-    println(basinSums.subList(0, 3).fold(1) { product, sum -> product * sum })
+        // Part 2
+        val basinSums = lowPoints.fold(mutableListOf<Int>()) { list, entry ->
+            list.apply { this += expandBasin(entry.key, map) }
+        }.sortedDescending()
+        println(basinSums.subList(0, 3).fold(1) { product, sum -> product * sum })
+    }
 }
