@@ -3,7 +3,7 @@ package com.behindmedia.adventofcode.common
 /**
  * Removes the first element if present and returns it.
  */
-fun <T>MutableCollection<T>.popFirst(): T? {
+fun <T> MutableCollection<T>.popFirst(): T? {
     val iterator = this.iterator()
     if (iterator.hasNext()) {
         val value = iterator.next()
@@ -16,7 +16,7 @@ fun <T>MutableCollection<T>.popFirst(): T? {
 /**
  * Convenience function to assert 0 or 1 elements in the collection
  */
-fun <T>Collection<T>.onlyOrNull(): T? {
+fun <T> Collection<T>.onlyOrNull(): T? {
     if (this.size > 1) {
         throw IllegalStateException("More than one element found")
     } else {
@@ -24,7 +24,7 @@ fun <T>Collection<T>.onlyOrNull(): T? {
     }
 }
 
-fun <T>Collection<T>.only(): T {
+fun <T> Collection<T>.only(): T {
     if (this.size != 1) {
         throw IllegalStateException("Expected exactly one element to be present")
     }
@@ -35,7 +35,7 @@ fun <T>Collection<T>.only(): T {
  * Slices a list in sub lists of the specified count. The last list can be smaller if the total list size is not fully
  * divisible by the count.
  */
-fun <E>List<E>.slice(count: Int): List<List<E>> {
+fun <E> List<E>.slice(count: Int): List<List<E>> {
     val sliceCount = this.size / count + (if (this.size % count == 0) 0 else 1)
     val result = List(sliceCount) {
         mutableListOf<E>()
@@ -75,8 +75,8 @@ fun <T, R> permutateUnique(values: Set<T>, perform: (List<T>) -> R?): R? {
  *
  * It performs the specified closure for each permutation. If the closure returns a non-null value, the function immediately returns.
  */
-fun <T>permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
-    fun <T>permutate(list: MutableList<Int>, index: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
+fun <T> permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
+    fun <T> permutate(list: MutableList<Int>, index: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
         if (index >= list.size) {
             return perform(list)
         }
@@ -90,11 +90,12 @@ fun <T>permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
         }
         return null
     }
+
     val list = MutableList(count) { 0 }
     return permutate(list, 0, range, perform)
 }
 
-fun <T>permutate(
+fun <T> permutate(
     ranges: List<IntRange>,
     perform: (IntArray) -> T?
 ): T? {
@@ -128,9 +129,9 @@ fun List<Int>.toLongList(): List<Long> {
 /**
  * Retains com.behindmedia.adventofcode.year2018.only the entries for which the supplied closure returns true
  */
-fun <K, V>MutableMap<K, V>.retainAll(where: (Map.Entry<K, V>) -> Boolean) {
+fun <K, V> MutableMap<K, V>.retainAll(where: (Map.Entry<K, V>) -> Boolean) {
     val iterator = this.iterator()
-    while(iterator.hasNext()) {
+    while (iterator.hasNext()) {
         val entry = iterator.next()
         if (!where(entry)) {
             iterator.remove()
@@ -141,7 +142,7 @@ fun <K, V>MutableMap<K, V>.retainAll(where: (Map.Entry<K, V>) -> Boolean) {
 /**
  * Returns a new com.behindmedia.adventofcode.year2018.read-com.behindmedia.adventofcode.year2018.only map which contains com.behindmedia.adventofcode.year2018.only the entries for which the supplied closure returns true
  */
-fun <K, V>Map<K, V>.retainingAll(where: (Map.Entry<K, V>) -> Boolean): Map<K, V> {
+fun <K, V> Map<K, V>.retainingAll(where: (Map.Entry<K, V>) -> Boolean): Map<K, V> {
     val result = this.toMutableMap()
     for (entry in this) {
         if (!where(entry)) {
@@ -180,19 +181,19 @@ fun List<Int>.firstDigits(numberOfDigits: Int, offset: Int = 0): Int {
     return result
 }
 
-fun <E>List<E>.repeated(count: Int): List<E> {
+fun <E> List<E>.repeated(count: Int): List<E> {
     val list = mutableListOf<E>()
-    for(i in 0 until count) {
+    for (i in 0 until count) {
         list.addAll(this)
     }
     return list
 }
 
-fun <E>List<E>.removingAllOccurences(sublist: List<E>): List<E> {
+fun <E> List<E>.removingAllOccurences(sublist: List<E>): List<E> {
     val first = sublist.firstOrNull() ?: return this
     val result = mutableListOf<E>()
     var i = 0
-    while(i < this.size) {
+    while (i < this.size) {
         val e = this[i]
         if (e == first) {
             // Check whether there is a complete match
@@ -219,9 +220,10 @@ fun <E>List<E>.removingAllOccurences(sublist: List<E>): List<E> {
  */
 class Reference<T>(var value: T)
 
-class FilteredIterable<E>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean): Iterable<E> {
+class FilteredIterable<E>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean) : Iterable<E> {
 
-    private class FilteredIterator<E>(private val iterator: Iterator<E>, private val predicate: (E) -> Boolean): Iterator<E> {
+    private class FilteredIterator<E>(private val iterator: Iterator<E>, private val predicate: (E) -> Boolean) :
+        Iterator<E> {
 
         private var nextElement: E? = null
 
@@ -277,4 +279,33 @@ fun compare(vararg comparators: () -> Int): Int {
         if (lastResult != 0) break
     }
     return lastResult
+}
+
+fun <K, V>defaultMutableMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMutableMap<K, V> {
+    val impl = mutableMapOf(*pairs)
+    return DefaultMutableMap(impl, defaultValue)
+}
+
+class DefaultMutableMap<K, V> constructor(
+    private val impl: MutableMap<K, V>,
+    private val defaultValue: () -> V,
+) : MutableMap<K, V> by impl {
+
+    constructor(defaultValue: () -> V) : this(mutableMapOf(), defaultValue)
+
+    override fun get(key: K): V = impl.getOrElse(key, defaultValue)
+
+    fun getOrPut(key: K) = impl.getOrPut(key, defaultValue)
+
+    fun copy(): DefaultMutableMap<K, V> = DefaultMutableMap(impl.toMutableMap(), defaultValue)
+
+    override fun equals(other: Any?): Boolean {
+        @Suppress("unchecked_cast")
+        val otherMap = other as? Map<K, V> ?: return false
+        return impl == otherMap
+    }
+
+    override fun hashCode(): Int {
+        return impl.hashCode()
+    }
 }

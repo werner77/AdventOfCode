@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.year2016.day22
 
 import com.behindmedia.adventofcode.common.*
-import kotlin.math.*
 
 private data class Disk(val location: Coordinate, val total: Long, val used: Long, val available: Long) {
 }
@@ -65,7 +64,7 @@ private fun part2(data: List<Disk>) {
 
     // First bring free node to S
 
-    steps += reachableNodes(from = freeNode.location,
+    steps += shortestPath(from = freeNode.location,
         neighbours = { it.destination.directNeighbours },
         reachable = { map[it] != '#' && it.x in 0..maxX && it.y in 0..maxY },
         process = { if (map[it.destination] == 'S') it.pathLength else null }) ?: error("Could not find path")

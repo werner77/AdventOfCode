@@ -2,23 +2,13 @@ package com.behindmedia.adventofcode.year2021.day12
 
 import com.behindmedia.adventofcode.common.*
 
-data class Node(val location: String, val visited: List<String>) {
+val String.isUppercase: Boolean
+    get() = all { it.isUpperCase() }
 
-    private val maxLowercaseVisitedCount: Int by lazy {
-        visited.fold(mutableMapOf<String, Int>()) { map, value ->
-            map[value] = (map[value] ?: 0) + 1
-            map
-        }.asSequence().filter { it.key.lowercase() == it.key }.maxOf { it.value }
-    }
+val String.isLowercase: Boolean
+    get() = all { it.isLowerCase() }
 
-    fun canBeVisited(location: String, allowSingleLowercaseLocationTwice: Boolean): Boolean {
-        return location.uppercase() == location ||
-                !visited.contains(location) ||
-                (allowSingleLowercaseLocationTwice && maxLowercaseVisitedCount == 1 && location != "start" && location != "end")
-    }
-
-}
-
+data class Node(val location: String, val visited: List<String>)
 
 fun main() {
     val connections = parseLines("/2021/day12.txt") { line ->
@@ -31,11 +21,13 @@ fun main() {
         }
     }
 
-    // Part 1
-    println(findPaths(connections, false))
+    timing {
+        // Part 1
+        println(findPaths(connections, false))
 
-    // Part 2
-    println(findPaths(connections, true))
+        // Part 2
+        println(findPaths(connections, true))
+    }
 }
 
 private fun findPaths(
@@ -43,26 +35,27 @@ private fun findPaths(
     allowSingleLowercaseLocationTwice: Boolean
 ): Int {
     var pathCount = 0
-    val startNode = Node("start", listOf("start"))
-
-    reachableNodes(
-        from = startNode,
-        neighbours = { path ->
-            val currentNode = path.destination
-            val currentLocation = currentNode.location
-            connections[currentLocation]?.filter { neighbour ->
-                currentNode.canBeVisited(neighbour, allowSingleLowercaseLocationTwice)
-            }?.map {
-                Node(it, currentNode.visited + it)
-            } ?: emptySet()
-        },
-        reachable = { true },
-        process = { path ->
-            if (path.destination.location == "end") {
-                pathCount++
-            }
-            null
+    val pending = ArrayDeque<Path<String>>()
+    pending.add(Path("start", 0, null))
+    while (pending.isNotEmpty()) {
+        val currentPath = pending.removeFirst()
+        if (currentPath.destination == "end") {
+            pathCount++
+            continue
         }
-    )
+        val currentTraversed = currentPath.nodes { it.isLowercase }
+        val currentTraversedSet = currentTraversed.toSet()
+        val neighbours = connections[currentPath.destination] ?: emptySet()
+        for (neighbour in neighbours) {
+            if (neighbour !in currentTraversedSet ||
+                (allowSingleLowercaseLocationTwice && neighbour !in listOf(
+                    "start",
+                    "end"
+                ) && currentTraversed.size == currentTraversedSet.size)
+            ) {
+                pending.addFirst(Path(neighbour, currentPath.pathLength + 1, currentPath))
+            }
+        }
+    }
     return pathCount
 }

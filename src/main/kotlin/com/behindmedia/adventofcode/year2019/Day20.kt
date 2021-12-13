@@ -2,7 +2,7 @@ package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.range
-import com.behindmedia.adventofcode.common.reachableNodes
+import com.behindmedia.adventofcode.common.shortestPath
 
 class Day20 {
 
@@ -152,7 +152,7 @@ class Day20 {
         val leveledStart = LeveledCoordinate(start, 0)
         val leveledEnd = LeveledCoordinate(end, 0)
 
-        return reachableNodes(leveledStart, neighbours = { leveledCoordinate ->
+        return shortestPath(leveledStart, neighbours = { leveledCoordinate ->
                 map[leveledCoordinate.destination.coordinate]?.neighbours(leveledCoordinate.destination.level, recursiveMode) ?: emptyList()
             },
             reachable = {

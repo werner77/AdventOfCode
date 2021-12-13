@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.year2016.day17
 
 import com.behindmedia.adventofcode.common.*
-import kotlin.math.max
 
 private const val INPUT = "njfxhljp"
 private const val GRID_SIZE = 4
@@ -33,7 +32,7 @@ private fun findPossiblePaths(): List<Path<PathCoordinate>> {
     val passcode = INPUT
     val end = Coordinate(GRID_SIZE - 1, GRID_SIZE - 1)
     val possiblePaths = mutableListOf<Path<PathCoordinate>>()
-    reachableNodes(
+    shortestPath(
         from = start,
         neighbours = { path ->
             if (path.destination.coordinate == end) {

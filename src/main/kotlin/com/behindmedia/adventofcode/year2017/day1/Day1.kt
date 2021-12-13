@@ -1,4 +1,4 @@
-package com.behindmedia.adventofcode.year2017
+package com.behindmedia.adventofcode.year2017.day1
 
 class Day1 {
     fun part1(input: String): String {

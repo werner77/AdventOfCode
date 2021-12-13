@@ -39,7 +39,7 @@ private fun findMinimumPath(
     targets: Set<Char>,
     targetCoordinate: Coordinate?
 ): Path<Node> {
-    return reachableNodes(
+    return shortestPath(
         from = startNode,
         neighbours = { path ->
             path.destination.coordinate.directNeighbours.map { Node(it, path.destination.items + map.itemsAt(it)) }

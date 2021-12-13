@@ -450,27 +450,34 @@ class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : C
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
-}
 
-fun <N>Path<N>.any(where: (N) -> Boolean): Boolean {
-    var current: Path<N>? = this
-    while (current != null) {
-        if (where.invoke(current.destination)) return true
-        current = current.parent
+    operator fun contains(node: N): Boolean {
+        return any { it == node }
     }
-    return false
-}
 
-val <N>Path<N>.completePath: Collection<N>
-    get() {
-        val result = ArrayDeque<N>()
+    inline fun any(where: (N) -> Boolean): Boolean {
         var current: Path<N>? = this
-        while (current?.parent != null) {
-            result.addFirst(current.destination)
-            current = parent
+        while (current != null) {
+            if (where.invoke(current.destination)) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    inline fun nodes(where: (N) -> Boolean): Collection<N> {
+        val result = ArrayDeque<N>(this.pathLength + 1)
+        any {
+            if (where(it)) result.addFirst(it)
+            false
         }
         return result
     }
+
+    val allNodes: Collection<N>
+        get() {
+            return nodes { true }
+        }
+}
 
 val Path<Coordinate>.completeDirections: Collection<Coordinate>
     get() {
@@ -494,7 +501,7 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparab
 /**
  * Breadth first search algorithm to find the shortest paths between unweighted nodes.
  */
-inline fun <reified N, T> reachableNodes(
+inline fun <reified N, T> shortestPath(
     from: N,
     neighbours: (Path<N>) -> Iterable<N>,
     reachable: (N) -> Boolean,
@@ -521,7 +528,7 @@ inline fun <reified N, T> reachableNodes(
 /**
  * Dijkstra's algorithm to find the shortest path between weighted nodes.
  */
-inline fun <reified N, T> reachableNodes(
+inline fun <reified N, T> shortestWeightedPath(
     from: N,
     neighbours: (N) -> Iterable<Pair<N, Int>>,
     process: (Path<N>) -> T?
