@@ -272,6 +272,13 @@ fun Array<IntArray>.printMatrix() {
     }
 }
 
+fun <T : Comparable<T>> Sequence<T>.max(): T = maxOf { it }
+fun <T : Comparable<T>> Sequence<T>.min(): T = minOf { it }
+
+fun <T : Comparable<T>> Iterable<T>.max(): T = maxOf { it }
+fun <T : Comparable<T>> Iterable<T>.min(): T = minOf { it }
+
+
 fun compare(vararg comparators: () -> Int): Int {
     var lastResult = 0
     for (comparator in comparators) {

@@ -5,22 +5,21 @@ import com.behindmedia.adventofcode.common.*
 private data class FoldInstruction(val horizontal: Boolean, val line: Int)
 
 private fun fold(map: Map<Coordinate, Char>, instruction: FoldInstruction): Map<Coordinate, Char> {
-    val result = mutableMapOf<Coordinate, Char>()
-    for ((coordinate, value) in map) {
-        val (x, y) = coordinate
-        val newCoordinate = if (instruction.horizontal && coordinate.y > instruction.line) {
-            Coordinate(x, 2 * instruction.line - y)
-        } else if (!instruction.horizontal && coordinate.x > instruction.line) {
-            Coordinate(2 * instruction.line - x, y)
+    val ret = mutableMapOf<Coordinate, Char>()
+    for ((c, v) in map) {
+        val c1 = if (instruction.horizontal && c.y > instruction.line) {
+            c.copy(y = 2 * instruction.line - c.y)
+        } else if (!instruction.horizontal && c.x > instruction.line) {
+            c.copy(x = 2 * instruction.line - c.x)
         } else {
-            coordinate
+            c
         }
-        result[newCoordinate] = value
+        ret[c1] = v
     }
-    return result
+    return ret
 }
 
-private val instructionRegex = """fold along (x|y)=([0-9]+)""".toRegex()
+private val instructionRegex = """fold along ([xy])=(\d+)""".toRegex()
 
 fun main() {
     var parsingInstructions = false
@@ -43,7 +42,7 @@ fun main() {
 }
 
 private fun part1(
-    map: MutableMap<Coordinate, Char>,
+    map: Map<Coordinate, Char>,
     foldInstructions: MutableList<FoldInstruction>
 ) {
     val m = fold(map, foldInstructions.first())
@@ -51,10 +50,10 @@ private fun part1(
 }
 
 private fun part2(
-    map: MutableMap<Coordinate, Char>,
+    map: Map<Coordinate, Char>,
     foldInstructions: MutableList<FoldInstruction>
 ) {
-    var m = map.toMap()
+    var m = map
     for (inst in foldInstructions) {
         m = fold(m, inst)
     }
