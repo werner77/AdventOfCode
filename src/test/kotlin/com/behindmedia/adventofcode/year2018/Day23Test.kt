@@ -3,9 +3,6 @@ package com.behindmedia.adventofcode.year2018
 import com.behindmedia.adventofcode.common.Coordinate3D
 import com.behindmedia.adventofcode.common.read
 import org.junit.Test
-import java.util.*
-import kotlin.math.abs
-import kotlin.math.min
 import kotlin.test.assertEquals
 
 class Day23Test {
@@ -23,8 +20,8 @@ class Day23Test {
         val day23 = Day23()
         val point = day23.bestPoint(read("/2018/day23.txt"))
         println(point)
-        println(Coordinate3D.origin.manhattenDistace(point))
-        assertEquals(124623002, Coordinate3D.origin.manhattenDistace(point))
+        println(Coordinate3D.origin.manhattenDistance(point))
+        assertEquals(124623002, Coordinate3D.origin.manhattenDistance(point))
     }
 
     @Test

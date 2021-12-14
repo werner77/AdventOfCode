@@ -24,6 +24,12 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
 
     companion object {
         val origin = Coordinate3D(0, 0, 0)
+        val north = Coordinate3D(1, 0, -1)
+        val northEast = Coordinate3D(1, -1, 0)
+        val southEast = Coordinate3D(0, -1, 1)
+        val south = Coordinate3D(-1, 0, 1)
+        val southWest = Coordinate3D(-1, 1, 0)
+        val northWest = Coordinate3D(0, 1, -1)
     }
 
     fun offset(vector: Coordinate3D): Coordinate3D {
@@ -34,7 +40,7 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
         return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
-    fun manhattenDistace(other: Coordinate3D): Int {
+    fun manhattenDistance(other: Coordinate3D): Int {
         return abs(this.x - other.x) + abs(this.y - other.y) + abs(this.z - other.z)
     }
 

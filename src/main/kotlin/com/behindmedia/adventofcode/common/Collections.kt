@@ -317,8 +317,7 @@ private class DefaultMutableMapWrapper<K, V>(
 ) : DefaultMutableMap<K, V>, MutableMap<K, V> by impl {
     override fun getOrPutDefault(key: K) = impl.getOrPut(key, defaultValue)
     override fun getOrDefault(key: K): V = impl.getOrElse(key, defaultValue)
-    override fun get(key: K): V = getOrPutDefault(key)
-
+    override operator fun get(key: K): V = getOrPutDefault(key)
     override fun equals(other: Any?): Boolean {
         return impl == (other as? Map<*, *>)
     }
@@ -337,7 +336,7 @@ private class DefaultMapWrapper<K, V>(
     private val defaultValue: () -> V,
 ) : DefaultMap<K, V>, Map<K, V> by impl {
     override fun getOrDefault(key: K): V = impl.getOrElse(key, defaultValue)
-    override fun get(key: K): V = getOrDefault(key)
+    override operator fun get(key: K): V = getOrDefault(key)
 
     override fun equals(other: Any?): Boolean {
         return impl == (other as? Map<*, *>)
@@ -354,7 +353,7 @@ private class DefaultMapWrapper<K, V>(
 
 interface DefaultMap<K, V> : Map<K, V> {
     fun getOrDefault(key: K): V
-    override fun get(key: K): V
+    override operator fun get(key: K): V
 }
 
 interface DefaultMutableMap<K, V> : DefaultMap<K, V>, MutableMap<K, V> {

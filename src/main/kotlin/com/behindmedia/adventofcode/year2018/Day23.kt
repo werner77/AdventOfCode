@@ -80,7 +80,7 @@ class Day23 {
             }
 
         val distanceToOrigin: Int
-            get() = Coordinate3D.origin.manhattenDistace(this.nearestCornerToOrigin)
+            get() = Coordinate3D.origin.manhattenDistance(this.nearestCornerToOrigin)
     }
 
     private fun Map<Coordinate3D, Int>.encompassingBox(): Box {
@@ -151,7 +151,7 @@ class Day23 {
         val map = parseInput(input)
         val strongest = map.maxByOrNull { it.value } ?: throw IllegalStateException("Not found")
         return map.count {
-            strongest.key.manhattenDistace(it.key) <= strongest.value
+            strongest.key.manhattenDistance(it.key) <= strongest.value
         }
     }
 
