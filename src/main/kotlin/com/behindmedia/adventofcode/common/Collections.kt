@@ -288,31 +288,75 @@ fun compare(vararg comparators: () -> Int): Int {
     return lastResult
 }
 
-fun <K, V>defaultMutableMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMutableMap<K, V> {
-    val impl = mutableMapOf(*pairs)
-    return DefaultMutableMap(impl, defaultValue)
+fun <K, V> defaultMapOf(defaultValue: () -> V): DefaultMap<K, V> {
+    val impl = mapOf<K, V>()
+    return DefaultMapWrapper(impl, defaultValue)
 }
 
-class DefaultMutableMap<K, V> constructor(
+fun <K, V> defaultMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMap<K, V> {
+    val impl = mapOf(*pairs)
+    return DefaultMapWrapper(impl, defaultValue)
+}
+
+fun <K, V> defaultMutableMapOf(defaultValue: () -> V): DefaultMutableMap<K, V> {
+    val impl = mutableMapOf<K, V>()
+    return DefaultMutableMapWrapper(impl, defaultValue)
+}
+
+fun <K, V> defaultMutableMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMutableMap<K, V> {
+    val impl = mutableMapOf(*pairs)
+    return DefaultMutableMapWrapper(impl, defaultValue)
+}
+
+fun <K, V>Map<K, V>.toDefaultMap(defaultValue: () -> V): DefaultMap<K, V> = DefaultMapWrapper(this.toMap(), defaultValue)
+fun <K, V>Map<K, V>.toDefaultMutableMap(defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this.toMutableMap(), defaultValue)
+
+private class DefaultMutableMapWrapper<K, V>(
     private val impl: MutableMap<K, V>,
     private val defaultValue: () -> V,
-) : MutableMap<K, V> by impl {
-
-    constructor(defaultValue: () -> V) : this(mutableMapOf(), defaultValue)
-
-    override fun get(key: K): V = impl.getOrElse(key, defaultValue)
-
-    fun getOrPut(key: K) = impl.getOrPut(key, defaultValue)
-
-    fun copy(): DefaultMutableMap<K, V> = DefaultMutableMap(impl.toMutableMap(), defaultValue)
+) : DefaultMutableMap<K, V>, MutableMap<K, V> by impl {
+    override fun getOrPutDefault(key: K) = impl.getOrPut(key, defaultValue)
+    override fun getOrDefault(key: K): V = impl.getOrElse(key, defaultValue)
+    override fun get(key: K): V = getOrPutDefault(key)
 
     override fun equals(other: Any?): Boolean {
-        @Suppress("unchecked_cast")
-        val otherMap = other as? Map<K, V> ?: return false
-        return impl == otherMap
+        return impl == (other as? Map<*, *>)
     }
 
     override fun hashCode(): Int {
         return impl.hashCode()
     }
+
+    override fun toString(): String {
+        return impl.toString()
+    }
+}
+
+private class DefaultMapWrapper<K, V>(
+    private val impl: Map<K, V>,
+    private val defaultValue: () -> V,
+) : DefaultMap<K, V>, Map<K, V> by impl {
+    override fun getOrDefault(key: K): V = impl.getOrElse(key, defaultValue)
+    override fun get(key: K): V = getOrDefault(key)
+
+    override fun equals(other: Any?): Boolean {
+        return impl == (other as? Map<*, *>)
+    }
+
+    override fun hashCode(): Int {
+        return impl.hashCode()
+    }
+
+    override fun toString(): String {
+        return impl.toString()
+    }
+}
+
+interface DefaultMap<K, V> : Map<K, V> {
+    fun getOrDefault(key: K): V
+    override fun get(key: K): V
+}
+
+interface DefaultMutableMap<K, V> : DefaultMap<K, V>, MutableMap<K, V> {
+    fun getOrPutDefault(key: K): V
 }
