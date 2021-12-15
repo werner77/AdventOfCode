@@ -452,6 +452,21 @@ fun <E> Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
+val <E> Map<Coordinate, E>.maxX: Int
+    get() = this.maxOf { it.key.x }
+
+val <E> Map<Coordinate, E>.maxY: Int
+    get() = this.maxOf { it.key.y }
+
+val <E> Map<Coordinate, E>.sizeX: Int
+    get() = maxX + 1
+
+val <E> Map<Coordinate, E>.sizeY: Int
+    get() = maxY + 1
+
+val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
+    get() = Coordinate(maxX, maxY)
+
 class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : Comparable<Path<N>> {
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
