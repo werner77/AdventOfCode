@@ -3,6 +3,17 @@ package com.behindmedia.adventofcode.year2017.day10
 import com.behindmedia.adventofcode.common.*
 import kotlin.math.*
 
+fun knotHash(input: String) : String {
+    val densHash = knotHashBinary(input)
+    return hexString(densHash)
+}
+
+fun knotHashBinary(input: String): List<Int> {
+    val data = input.toIntList()
+    val elements = process(data, 64)
+    return densHash(elements)
+}
+
 fun process(lengths: List<Int>, iterationCount: Int): List<Int> {
     val elements = (0 until 256).toMutableList()
     var currentPosition = 0
@@ -38,14 +49,10 @@ fun part1(input: String) {
 }
 
 fun part2(input: String) {
-    val data = input.toIntList()
-    val elements = process(data, 64)
-    val densHash = densHash(elements)
-    val hexString = hexString(densHash)
-    println(hexString)
+    println(knotHash(input))
 }
 
-private fun hexString(densHash: MutableList<Int>): String {
+private fun hexString(densHash: List<Int>): String {
     return densHash.fold(StringBuilder()) { builder, value ->
         builder.apply {
             append(value.toString(16).padStart(2, '0'))
