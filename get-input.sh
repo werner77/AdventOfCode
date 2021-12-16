@@ -72,3 +72,5 @@ cd "$SCRIPT_DIR"
 
 mkdir -p "./src/main/resources/$YEAR"
 curl --cookie "session=$TOKEN" -s "https://adventofcode.com/$YEAR/day/$DAY/input" > "./src/main/resources/${YEAR}/day${DAY}.txt"
+cat "./src/main/resources/${YEAR}/day${DAY}.txt"
+
