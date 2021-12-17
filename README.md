@@ -1,2 +1,2 @@
 # AdventOfCode
-Solutions to the AdventOfCode puzzles
+Solutions to the AdventOfCode puzzles in Kotlin
