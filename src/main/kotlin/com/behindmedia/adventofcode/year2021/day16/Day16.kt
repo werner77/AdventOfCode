@@ -43,7 +43,7 @@ private fun String.decodeHex(): ByteArray {
 
 private typealias PacketFunction = (List<Long>) -> Long
 
-private data class Packet(val version: Long, val id: Long, val result: Long)
+private data class Packet(val version: Long, val id: Long, val level: Int, val result: Long)
 
 private fun Iterable<Long>.product(): Long {
     return this.fold(1L) { product, value -> product * value }
@@ -105,14 +105,18 @@ private fun readPacket(bitStream: BitStream, level: Int = 0, packetHandler: (Pac
             packetResult = function(results)
         }
     }
-    if (level == 0) bitStream.readUntilNextByte()
-    packetHandler.invoke(Packet(version, id, packetResult))
+    if (level == 0) {
+        bitStream.readUntilNextByte()
+        require(!bitStream.hasMore) {
+            "Expected no more bits to read"
+        }
+    }
+    packetHandler.invoke(Packet(version, id, level, packetResult))
     return Pair(bitStream.pos - startPos, packetResult)
 }
 
 fun main() {
     val data = parse("/2021/day16.txt") { line ->
-        // Take two chars and convert to bytes
         line.trim().decodeHex()
     }
     val bitStream = BitStream(data)
