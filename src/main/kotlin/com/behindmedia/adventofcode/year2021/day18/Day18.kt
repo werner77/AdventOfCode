@@ -20,16 +20,8 @@ private fun parse(
                 i = pos
             }
             ']' -> {
-                if (elements.size != 2) {
-                    println(elements)
-                }
-                require(elements.size == 2) {
-                    "Incorrect number of elements parsed: ${elements.size}"
-                }
-                return Pair(
-                    Element.Pair(elements[0], elements[1]),
-                    i
-                )
+                require(elements.size == 2) { "Incorrect number of elements parsed: ${elements.size}" }
+                return Pair(Element.Pair(elements[0], elements[1]), i)
             }
             ',' -> {
                 // ignore
@@ -52,9 +44,7 @@ private fun parse(
             }
         }
     }
-    require(elements.size == 1) {
-        "Expected exactly one element to be present"
-    }
+    require(elements.size == 1) { "Expected exactly one element to be present" }
     return Pair(elements.single(), i)
 }
 
@@ -149,16 +139,14 @@ sealed class Element {
                 if (level == 4) {
                     return this.explode()
                 } else {
-                    val left = this.left
-                    val right = this.right
                     val reducedLeft = left.reduce(level + 1, allowSplit)
                     if (reducedLeft != null) {
-                        this.left = reducedLeft
+                        left = reducedLeft
                         return this
                     }
                     val reducedRight = right.reduce(level + 1, allowSplit)
                     if (reducedRight != null) {
-                        this.right = reducedRight
+                        right = reducedRight
                         return this
                     }
                     return null
@@ -177,15 +165,12 @@ sealed class Element {
     fun copy(): Element = Element(this.toString())
 
     fun reduce(): Element {
-        var reduced: Boolean
-        do {
-            reduced = false
+        while (true) {
             while (true) {
                 reduce(level = 0, allowSplit = false) ?: break
             }
-            reduce(level = 0, allowSplit = true) ?: continue
-            reduced = true
-        } while (reduced)
+            reduce(level = 0, allowSplit = true) ?: break
+        }
         return this
     }
 
