@@ -50,11 +50,11 @@ fun <E> List<E>.slice(count: Int): List<List<E>> {
  * Permutates all possible combinations in values without duplicates and calls the perform closure for each such permutation
  * until a non-null result is returned
  */
-fun <T, R> permutateUnique(values: Set<T>, perform: (List<T>) -> R?): R? {
+fun <T, R> permutateUnique(values: Set<T>, maxSize: Int = values.size, perform: (List<T>) -> R?): R? {
     // Use an ArrayDeque to avoid having to reallocate a new collection each time
     // We cycle through the values remaining with removeFirst and addLast.
     fun <T> permutate(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
-        if (valuesLeft.isEmpty()) return perform(list)
+        if (valuesLeft.isEmpty() || list.size == maxSize) return perform(list)
         for (i in valuesLeft.indices) {
             val value = valuesLeft.removeFirst()
             try {

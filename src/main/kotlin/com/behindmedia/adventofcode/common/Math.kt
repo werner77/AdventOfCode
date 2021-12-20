@@ -71,6 +71,10 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
             { this[1].compareTo(other[1]) },
             { this[2].compareTo(other[2]) })
     }
+
+    override fun toString(): String {
+        return "($x,$y,$z)"
+    }
 }
 
 /**
@@ -452,6 +456,12 @@ fun <E> Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
+val <E> Map<Coordinate, E>.minX: Int
+    get() = this.minOf { it.key.x }
+
+val <E> Map<Coordinate, E>.minY: Int
+    get() = this.minOf { it.key.y }
+
 val <E> Map<Coordinate, E>.maxX: Int
     get() = this.maxOf { it.key.x }
 
@@ -463,6 +473,9 @@ val <E> Map<Coordinate, E>.sizeX: Int
 
 val <E> Map<Coordinate, E>.sizeY: Int
     get() = maxY + 1
+
+val <E> Map<Coordinate, E>.minCoordinate: Coordinate
+    get() = Coordinate(minX, minY)
 
 val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
     get() = Coordinate(maxX, maxY)
