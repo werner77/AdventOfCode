@@ -5,18 +5,22 @@ import kotlin.math.max
 
 private data class ScannerMatch(val scanner: Scanner, val transform: Transform, val parent: ScannerMatch? = null) {
     fun transformedCoordinates(): List<Coordinate3D> = transformCoordinates(scanner.coordinates)
-    fun transformedOrigin(): Coordinate3D = transformCoordinates(listOf(Coordinate3D.origin))[0]
+    fun transformedOrigin(): Coordinate3D = transformCoordinate(Coordinate3D.origin)
 
     private fun transformCoordinates(coordinates: List<Coordinate3D>): List<Coordinate3D> {
+        return coordinates.map {
+            transformCoordinate(it)
+        }
+    }
+
+    private fun transformCoordinate(it: Coordinate3D): Coordinate3D {
+        var transformedCoordinate = it
         var current: ScannerMatch = this
-        var transformedCoordinates = coordinates
         while (true) {
-            transformedCoordinates = transformedCoordinates.map {
-                current.transform.transform(it)
-            }
+            transformedCoordinate = current.transform.transform(transformedCoordinate)
             current = current.parent ?: break
         }
-        return transformedCoordinates
+        return transformedCoordinate
     }
 }
 
@@ -141,8 +145,8 @@ fun main() {
 
         // Part 2
         var maxDist = Int.MIN_VALUE
-        permutateUnique(allScanners, 2) {
-            maxDist = max(maxDist, it[0].manhattenDistance(it[1]))
+        permutateUnique(allScanners, 2) { (c1, c2) ->
+            maxDist = max(maxDist, c1.manhattenDistance(c2))
             null
         }
         println(maxDist)
