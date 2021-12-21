@@ -75,8 +75,8 @@ fun <T, R> permutateUnique(values: Set<T>, maxSize: Int = values.size, perform: 
  *
  * It performs the specified closure for each permutation. If the closure returns a non-null value, the function immediately returns.
  */
-fun <T> permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
-    fun <T> permutate(list: MutableList<Int>, index: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
+fun <T> permutate(count: Int, range: IntRange, perform: (IntArray) -> T?): T? {
+    fun <T> permutate(list: IntArray, index: Int, range: IntRange, perform: (IntArray) -> T?): T? {
         if (index >= list.size) {
             return perform(list)
         }
@@ -90,8 +90,7 @@ fun <T> permutate(count: Int, range: IntRange, perform: (List<Int>) -> T?): T? {
         }
         return null
     }
-
-    val list = MutableList(count) { 0 }
+    val list = IntArray(count) { 0 }
     return permutate(list, 0, range, perform)
 }
 
@@ -317,7 +316,7 @@ private class DefaultMutableMapWrapper<K, V>(
 ) : DefaultMutableMap<K, V>, MutableMap<K, V> by impl {
     override fun getOrPutDefault(key: K) = impl.getOrPut(key, defaultValue)
     override fun getOrDefault(key: K): V = impl.getOrElse(key, defaultValue)
-    override operator fun get(key: K): V = getOrPutDefault(key)
+    override operator fun get(key: K): V = getOrDefault(key)
     override fun equals(other: Any?): Boolean {
         return impl == (other as? Map<*, *>)
     }

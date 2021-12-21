@@ -51,7 +51,7 @@ class Day7 {
         var maxOutput = Integer.MIN_VALUE
         permutate(5, 0..4) {
             if (it.toSet().size == 5) {
-                val output = execute(state, it)
+                val output = execute(state, it.toList())
                 maxOutput = max(output, maxOutput)
             }
             null
@@ -63,7 +63,7 @@ class Day7 {
         var maxOutput = Integer.MIN_VALUE
         permutate(5, 5..9) {
             if (it.toSet().size == 5) {
-                val output = executeWithFeedback(state, it)
+                val output = executeWithFeedback(state, it.toList())
                 maxOutput = max(output, maxOutput)
             }
             null

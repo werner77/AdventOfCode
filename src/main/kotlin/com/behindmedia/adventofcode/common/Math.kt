@@ -30,13 +30,14 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
         val south = Coordinate3D(-1, 0, 1)
         val southWest = Coordinate3D(-1, 1, 0)
         val northWest = Coordinate3D(0, 1, -1)
+        val components = listOf(0, 1, 2)
     }
 
-    fun offset(vector: Coordinate3D): Coordinate3D {
+    inline fun offset(vector: Coordinate3D): Coordinate3D {
         return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)
     }
 
-    fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
+    inline fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
         return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
@@ -53,7 +54,7 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
     }
 
     operator fun minus(other: Coordinate3D): Coordinate3D {
-        return offset(-other)
+        return offset(-other.x, -other.y, -other.z)
     }
 
     operator fun get(index: Int): Int {
@@ -80,20 +81,9 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
 /**
  * Describes a two-dimensional coordinate or vector.
  */
-@JvmInline
-value class Coordinate private constructor(private val value: Long) : Comparable<Coordinate> {
-
-    constructor(x: Int, y: Int) : this((y.toLong() shl 32) or (x.toLong() and MASK))
-
-    val x: Int
-        get() = (value and MASK).toInt()
-
-    val y: Int
-        get() = (value shr 32).toInt()
+data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
 
     companion object {
-        private const val MASK = 0xFFFFFFFFL
-
         val origin = Coordinate(0, 0)
         val up = Coordinate(0, -1)
         val down = Coordinate(0, 1)
@@ -295,11 +285,6 @@ value class Coordinate private constructor(private val value: Long) : Comparable
     operator fun rangeTo(other: Coordinate): CoordinateRange {
         return CoordinateRange(this, other)
     }
-
-    operator fun component1(): Int = x
-    operator fun component2(): Int = y
-
-    fun copy(x: Int = this.x, y: Int = this.y): Coordinate = Coordinate(x, y)
 
     override fun toString(): String {
         return "($x,$y)"

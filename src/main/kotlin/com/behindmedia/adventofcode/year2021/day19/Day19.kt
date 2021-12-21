@@ -7,7 +7,7 @@ private data class ScannerMatch(val scanner: Scanner, val transform: Transform, 
     fun transformedCoordinates(): List<Coordinate3D> = transformCoordinates(scanner.coordinates)
     fun transformedOrigin(): Coordinate3D = transformCoordinate(Coordinate3D.origin)
 
-    private fun transformCoordinates(coordinates: List<Coordinate3D>): List<Coordinate3D> {
+    private fun transformCoordinates(coordinates: Collection<Coordinate3D>): List<Coordinate3D> {
         return coordinates.map {
             transformCoordinate(it)
         }
@@ -29,10 +29,11 @@ private data class Transform(val translation: Coordinate3D, val orientation: Ori
         val identity = Transform(Coordinate3D.origin, Orientation.identity)
     }
 
-    fun transform(coordinate: Coordinate3D): Coordinate3D = translation + orientation.apply(coordinate)
+    fun transform(coordinate: Coordinate3D): Coordinate3D = translation + orientation.transform(coordinate)
 }
 
-private data class Orientation(private val mapping: List<Int>, private val sign: List<Int>) {
+private class Orientation(private val mapping: IntArray, private val sign: IntArray) {
+    constructor(mapping: List<Int>, sign: List<Int>) : this(mapping.toIntArray(), sign.toIntArray())
     init {
         require(mapping.size == 3) { "Mapping size should be 3" }
         require(sign.size == 3) { "Sign size should be 3" }
@@ -53,51 +54,51 @@ private data class Orientation(private val mapping: List<Int>, private val sign:
         }
     }
 
-    fun apply(coordinate: Coordinate3D): Coordinate3D = Coordinate3D(
+    fun transform(coordinate: Coordinate3D): Coordinate3D = Coordinate3D(
         coordinate[mapping[0]] * sign[0],
         coordinate[mapping[1]] * sign[1],
         coordinate[mapping[2]] * sign[2]
     )
 }
 
-private data class Scanner(val id: Int, val coordinates: List<Coordinate3D>) {
+private data class Scanner(val id: Int, val coordinates: Set<Coordinate3D>) {
     override fun equals(other: Any?): Boolean = (id == (other as? Scanner)?.id)
     override fun hashCode(): Int = id
+
     /**
      * Try to find a match between two scanners. Return the offset and rotation needed.
      */
     fun match(other: Scanner): Transform? {
         for (orientation in Orientation.all) {
             // Calculate the offset by using this orientation
-            val mappedCoordinates = other.coordinates.map { orientation.apply(it) }
-            val m = max(coordinates.size, mappedCoordinates.size)
-            for (i in 0 until m) {
-                for (j in i + 1 until m) {
-                    val c1 = coordinates.getOrNull(i) ?: continue
-                    val c2 = mappedCoordinates.getOrNull(j) ?: continue
-                    val offset = c1 - c2
-                    if (isMatch(offset, coordinates, mappedCoordinates)) return Transform(offset, orientation)
+            val mappedCoordinates = other.coordinates.map { orientation.transform(it) }.toTypedArray()
+            for (c1 in coordinates) {
+                for (c2 in mappedCoordinates) {
+                    if (isMatch(c1 - c2, this.coordinates, mappedCoordinates)) return Transform(c1 - c2, orientation)
                 }
             }
         }
         return null
     }
 
-    private fun isMatch(offset: Coordinate3D, list1: List<Coordinate3D>, list2: List<Coordinate3D>): Boolean {
-        val count = list1.count { i ->
-            list2.any { j -> i == j + offset }
+    private fun isMatch(offset: Coordinate3D, list1: Set<Coordinate3D>, list2: Array<Coordinate3D>): Boolean {
+        var count = 0
+        var remaining = list2.size
+        for (j in list2.indices) {
+            val c2 = list2[j] + offset
+            if (list1.contains(c2)) {
+                if (++count == 12) return true
+            }
+            if (--remaining + count < 12) return false
         }
-        return count >= 12
+        return false
     }
 }
 
-private fun Collection<ScannerMatch>.findMatch(unresolved: Collection<Scanner>): ScannerMatch? {
+private fun MutableCollection<ScannerMatch>.findMatch(unresolved: Collection<Scanner>): ScannerMatch? {
     for (u in unresolved) {
         for (r in this) {
-            val m = r.scanner.match(u)
-            if (m != null) {
-                return ScannerMatch(u, m, r)
-            }
+            return r.scanner.match(u)?.let { ScannerMatch(u, it, r) } ?: continue
         }
     }
     return null
@@ -109,7 +110,7 @@ private fun parseScannerMap(text: String): MutableMap<Int, Scanner> {
     for (part in scannerParts) {
         val lines = part.split("\n").map { it.trim() }.filter { it.isNotBlank() }
         val scannerId = lines[0].split(" ").mapNotNull { it.toIntOrNull() }.single()
-        val coordinates = (1 until lines.size).fold(mutableListOf<Coordinate3D>()) { list, value ->
+        val coordinates = (1 until lines.size).fold(mutableSetOf<Coordinate3D>()) { list, value ->
             val components = lines[value].split(",").map { it.toInt() }
             list += Coordinate3D(components[0], components[1], components[2])
             list
