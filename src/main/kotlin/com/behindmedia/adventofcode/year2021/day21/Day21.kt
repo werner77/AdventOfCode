@@ -3,130 +3,121 @@ package com.behindmedia.adventofcode.year2021.day21
 import com.behindmedia.adventofcode.common.*
 import kotlin.math.*
 
-private data class Player(val id: Int, var pos: Int, var score: Long = 0) {
-    fun increment(inc: Int) {
-        pos = (pos - 1 + inc) % 10 + 1
-        score += pos
-    }
-}
-
-private data class State(var player1: Player, var player2: Player, var dieState: Int = 1) {
-    val losingPlayerScore: Long
-        get() = min(player1.score, player2.score)
-
-    var dieRollCount = 0
-    var currentPlayer = 0
-
-    fun play(): Boolean {
-        var increment = 0
-        for (i in 0 until 3) {
-            increment += (dieState++)
-            if (dieState > 100) dieState = 1
-        }
-        dieRollCount += 3
-        val player = if (currentPlayer == 0) player1 else player2
-        player.increment(increment)
-        currentPlayer = (currentPlayer + 1) % 2
-        return max(player1.score, player2.score) >= 1000
-    }
-}
-
-private data class GameState(val player1: PlayerState, val player2: PlayerState) {
-    fun winningPlayer(winningScore: Int): Int {
-        return if (player1.score >= winningScore) {
-            1
-        } else if (player2.score >= winningScore) {
-            2
-        } else {
-            0
-        }
-    }
-
-    inline fun possibleTurns(crossinline perform: (GameState) -> Unit) {
-        player1.dirac { state1 ->
-            if (state1.score >= 21) {
-                perform(GameState(state1, this.player2))
-            } else {
-                player2.dirac { state2 ->
-                    perform(GameState(state1, state2))
-                }
-            }
-        }
-    }
-}
-
-private data class PlayerState(val pos: Int, val score: Int) {
-
+private data class Player(val pos: Int, val score: Int) {
     companion object {
-        inline fun forEachStateBelow(winningScore: Int, perform: (PlayerState) -> Unit) {
+        inline fun forEachStateBelow(winningScore: Int, perform: (Player) -> Unit) {
             for (score in 0 until winningScore) {
                 for (pos in 1..10) {
-                    perform(PlayerState(pos, score))
+                    perform(Player(pos, score))
                 }
             }
         }
     }
 
-    fun increment(inc: Int): PlayerState {
+    fun increment(inc: Int): Player {
         val newPos = (pos - 1 + inc) % 10 + 1
-        return PlayerState(newPos, score + newPos)
+        return Player(newPos, score + newPos)
     }
 
-    inline fun dirac(crossinline perform: (PlayerState) -> Unit) {
+    inline fun playDirac(crossinline perform: (Player) -> Unit) {
         permutate(3, 1..3) {
-            perform(this.increment(it.sum()))
+            perform(increment(it.sum()))
             null
         }
     }
+
+    fun playDeterministic(dieState: Int): Pair<Player, Int> {
+        var inc = 0
+        var current = dieState
+        for (i in 0 until 3) {
+            inc += (current++)
+            if (current > 100) current = 1
+        }
+        return Pair(increment(inc), current)
+    }
 }
 
-private fun getWins(start1: Int, start2: Int): Pair<Long, Long> {
-    val dp = defaultMutableMapOf<GameState, Long> { 0L }
-    val startState = GameState(PlayerState(start1, 0), PlayerState(start2, 0))
-    dp[startState] = 1L
+private data class Game(val player1: Player, val player2: Player, val currentPlayerIndex: Int) {
+    fun winning(winningScore: Int): Boolean {
+        return otherPlayer.score >= winningScore
+    }
 
-    val winningScore = 21
-    var total = 0L
-    var wins1 = 0L
-    var wins2 = 0L
-    PlayerState.forEachStateBelow(winningScore) { state1 ->
-        PlayerState.forEachStateBelow(winningScore) { state2 ->
-            val gameState = GameState(state1, state2)
-            val currentWays = dp[gameState]
-            if (currentWays > 0L) {
-                gameState.possibleTurns {
-                    dp[it] += currentWays
-                    when (it.winningPlayer(winningScore)) {
-                        1 -> {
-                            wins1 += currentWays
-                            total += currentWays
-                        }
-                        2 -> {
-                            wins2 += currentWays
-                            total += currentWays
+    val otherPlayerIndex: Int
+        get() = (currentPlayerIndex + 1) % 2
+
+    val currentPlayer: Player
+        get() = if (currentPlayerIndex == 0) player1 else player2
+
+    val otherPlayer: Player
+        get() = if (currentPlayerIndex == 0) player2 else player1
+
+    inline fun dirac(crossinline perform: (Game) -> Unit) {
+        if (currentPlayerIndex == 0) {
+            player1.playDirac {
+                perform(Game(it, player2, 1))
+            }
+        } else {
+            player2.playDirac {
+                perform(Game(player1, it, 0))
+            }
+        }
+    }
+
+    fun deterministic(dieState: Int): Pair<Game, Int> {
+        val (player, newDieState) = currentPlayer.playDeterministic(dieState)
+        return if (currentPlayerIndex == 0) {
+            Pair(Game(player, player2, 1), newDieState)
+        } else {
+            Pair(Game(player1, player, 0), newDieState)
+        }
+    }
+
+    fun playDirac(winningScore: Int): Pair<Long, Long> {
+        val wins = LongArray(2) { 0L }
+        val dp = defaultMutableMapOf<Game, Long> { 0L }
+        dp[this] = 1L
+        Player.forEachStateBelow(winningScore) { state1 ->
+            Player.forEachStateBelow(winningScore) { state2 ->
+                for (currentPlayer in listOf(0, 1)) {
+                    val game = Game(state1, state2, currentPlayer)
+                    val ways = dp[game]
+                    if (ways > 0L) {
+                        game.dirac { nextState ->
+                            if (nextState.winning(winningScore)) {
+                                wins[nextState.otherPlayerIndex] += ways
+                            }
+                            dp[nextState] += ways
                         }
                     }
                 }
             }
-
         }
+        return Pair(wins[0], wins[1])
     }
-    return Pair(wins1, wins2)
+
+    fun playDeterministic(winningScore: Int): Long {
+        var current = this
+        var diceRollCount = 0L
+        var dieState = 1
+        while (!current.winning(winningScore)) {
+            val result = current.deterministic(dieState)
+            current = result.first
+            dieState = result.second
+            diceRollCount += 3L
+        }
+        return current.currentPlayer.score * diceRollCount
+    }
 }
 
 fun main() {
     val (player1, player2) = parseLines("/2021/day21.txt") { line ->
         line.split(" ").map { it.trim() }.last().toInt()
     }
-    val state = State(Player(1, player1), Player(2, player2), 1)
-    while (!state.play());
-
-    // Part 1
-    println(state.losingPlayerScore * state.dieRollCount)
-
+    val startState = Game(Player(player1, 0), Player(player2, 0), 0)
+    println(startState.playDeterministic(1000))
+    // Part 2
     timing {
-        // Part 2
-        val (wins1, wins2) = getWins(player1, player2)
+        val (wins1, wins2) = startState.playDirac(21)
         println(max(wins1, wins2))
     }
 }
