@@ -44,14 +44,18 @@ data class Range(private val minMax: List<Int>) {
 private fun solve(instructions: List<Instruction>): Long {
     val cubes = defaultMutableMapOf<Range, Int> { 0 }
     for (instruction in instructions) {
+        val update = defaultMutableMapOf<Range, Int> { 0 }
         cubes.entries.toList().forEach { entry ->
-            val (otherRange, count) = entry
+            val (otherRange, sign) = entry
             instruction.range.intersection(otherRange)?.let {
-                cubes[it] -= count
+                update[it] -= sign
             }
         }
         if (instruction.on) {
             cubes[instruction.range] += 1
+        }
+        update.forEach {
+            cubes[it.key] += it.value
         }
     }
     return cubes.entries.sumOf { it.key.volume() * it.value }
