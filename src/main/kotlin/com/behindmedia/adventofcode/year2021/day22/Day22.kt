@@ -45,10 +45,10 @@ private fun solve(instructions: List<Instruction>): Long {
     val cubes = defaultMutableMapOf<Range, Int> { 0 }
     for (instruction in instructions) {
         val update = defaultMutableMapOf<Range, Int> { 0 }
-        cubes.entries.toList().forEach { entry ->
-            val (otherRange, sign) = entry
+        cubes.forEach { entry ->
+            val (otherRange, count) = entry
             instruction.range.intersection(otherRange)?.let {
-                update[it] -= sign
+                update[it] -= count
             }
         }
         if (instruction.on) {
