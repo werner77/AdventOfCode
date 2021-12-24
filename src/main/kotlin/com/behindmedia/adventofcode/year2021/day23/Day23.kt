@@ -2,8 +2,22 @@ package com.behindmedia.adventofcode.year2021.day23
 
 import com.behindmedia.adventofcode.common.*
 
-data class Amphipod(val value: Char, val hasMoved: Boolean = false) {
-    fun isValidDestination(coordinate: Coordinate, roomLevelCount: Int, state: Map<Coordinate, Amphipod>): Boolean {
+private fun Coordinate.room(roomLevelCount: Int): Pair<Int, Int>? {
+    val roomLevel = y - 2
+    val roomIndex = if (x % 2 == 1) (x - 3) / 2 else -1
+    return if (roomLevel in 0 until roomLevelCount && roomIndex in 0 until 4) {
+        Pair(roomIndex, roomLevel)
+    } else null
+}
+
+private val invalidOutsideXCoordinates = setOf(3, 5, 7, 9)
+
+private fun Coordinate.isValidOutside(): Boolean {
+    return y == 1 && x !in invalidOutsideXCoordinates
+}
+
+private data class Amphipod(val value: Char, val hasMoved: Boolean = false) {
+    fun isValidDestination(coordinate: Coordinate, roomLevelCount: Int, state: State): Boolean {
         if (!hasMoved && coordinate.isValidOutside()) {
             return true
         }
@@ -19,76 +33,49 @@ data class Amphipod(val value: Char, val hasMoved: Boolean = false) {
         }
         return value
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        return value == (other as? Amphipod)?.value
-    }
-
-    override fun hashCode(): Int {
-        return value.hashCode()
-    }
 }
 
-fun Coordinate.room(roomLevelCount: Int): Pair<Int, Int>? {
-    val roomLevel = y - 2
-    val roomIndex = if (x % 2 == 1) (x - 3) / 2 else -1
-    return if (roomLevel in 0 until roomLevelCount && roomIndex in 0 until 4) {
-        Pair(roomIndex, roomLevel)
-    } else null
-}
-
-private val outsideXCoordinates = setOf(1, 2, 4, 6, 8, 10, 11)
-
-fun Coordinate.isValidOutside(): Boolean {
-    return y == 1 && x in outsideXCoordinates
-}
-
-fun Map<Coordinate, Char>.findValidDestinations(
+private inline fun Map<Coordinate, Char>.forEachValidDestination(
     from: Map.Entry<Coordinate, Amphipod>,
-    state: Map<Coordinate, Amphipod>,
-    roomLevelCount: Int
-): Collection<Path<Coordinate>> {
-    val result = mutableListOf<Path<Coordinate>>()
+    state: State,
+    roomLevelCount: Int,
+    perform: (Path<Coordinate>) -> Unit
+) {
     shortestPath(from = from.key,
-        neighbours = {
-            it.destination.directNeighbours
-        }, reachable = {
-            this[it] != '#' && state[it] == null
+        neighbours = { path ->
+            path.destination.directNeighbourSequence().filter { this[it] != '#' && state[it] == null }
         }, process = {
             if (from.value.isValidDestination(it.destination, roomLevelCount, state)) {
-                result += it
+                perform(it)
             }
             null
         })
-    return result
 }
 
-fun Map<Coordinate, Amphipod>.isComplete(roomLevelCount: Int): Boolean {
-    return entries.all { (c, a) ->
-        c.room(roomLevelCount)?.let { it.first == (a.value - 'A') } ?: false
-    }
+private typealias State = HashMap<Coordinate, Amphipod>
+
+private fun State.isComplete(roomLevelCount: Int): Boolean = entries.all { (c, a) ->
+    c.room(roomLevelCount)?.let { it.first == (a.value - 'A') } ?: false
+}
+
+private fun State.moving(from: Coordinate, to: Coordinate): State = State(this).also {
+    val current = it.remove(from) ?: error("Expected from coordinate to exist")
+    it[to] = if (current.hasMoved) current else current.copy(hasMoved = true)
 }
 
 fun solve(map: Map<Coordinate, Char>, roomLevelCount: Int): Long {
-    val initialState = map.filter { it.value - 'A' in 0 until 4 }.mapValues { Amphipod(it.value) }
+    val initialState = State(map.filter { it.value - 'A' in 0 until 4 }.mapValues { Amphipod(it.value) })
     return shortestWeightedPath(
         from = initialState,
         neighbours = { state ->
-            val destinations = mutableListOf<Pair<Map<Coordinate, Amphipod>, Long>>()
-            for (position in state) {
-                map.findValidDestinations(position, state, roomLevelCount).forEach {
-                    val newState = HashMap(state)
-                    newState -= position.key
-                    if (!position.value.hasMoved) {
-                        newState[it.destination] = position.value.copy(hasMoved = true)
-                    } else {
-                        newState[it.destination] = position.value
+            sequence {
+                for (entry in state) {
+                    map.forEachValidDestination(entry, state, roomLevelCount) {
+                        val newState = state.moving(entry.key, it.destination)
+                        yield(Pair(newState, it.pathLength * entry.value.weight()))
                     }
-                    destinations += Pair(newState, it.pathLength * position.value.weight())
                 }
             }
-            destinations
         },
         process = {
             if (it.destination.isComplete(roomLevelCount)) it.pathLength else null

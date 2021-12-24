@@ -187,7 +187,7 @@ class Day24 {
             if (recursive && coordinate.isCenter()) continue
 
             var neighbourCount = 0
-            neighbourCount += state.occupiedNeighbourCount(coordinate.directNeighbours, recursive)
+            neighbourCount += state.occupiedNeighbourCount(coordinate.directNeighbours.toList(), recursive)
 
             if (recursive) {
                 neighbourCount += nextState.occupiedNeighbourCount(coordinate.nextLevelNeighbours, recursive)

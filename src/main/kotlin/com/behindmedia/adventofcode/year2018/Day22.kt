@@ -95,7 +95,7 @@ class Day22 {
                 minimumPath = min(minimumPath, current.path + cost(current.node.gear, Gear.Torch))
             }
 
-            current.node.coordinate.forDirectNeighbours { neighbour ->
+            current.node.coordinate.directNeighbourSequence().forEach { neighbour ->
                 val erosionLevel = map[neighbour]
                 if (erosionLevel != null) {
                     val compatibleGears = compatibleGears(erosionLevel)

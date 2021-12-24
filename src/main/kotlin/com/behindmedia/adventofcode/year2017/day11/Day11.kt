@@ -12,14 +12,6 @@ private val directionsMap: Map<String, Coordinate3D> = mapOf(
     "nw" to Coordinate3D(0, 1, -1),
 )
 
-private fun path(start: Coordinate3D, destination: Coordinate3D): Int {
-    return shortestPath(
-        start,
-        { path -> directionsMap.values.map { path.destination + it } },
-        reachable = { true },
-        { if (it.destination == destination) it.pathLength else null })?.toInt() ?: error("No path found")
-}
-
 fun main() {
     val data = parse("/2017/day11.txt") { line ->
         line.trim().split(",").map { directionsMap[it] ?: error("Could not find direction: $it") }

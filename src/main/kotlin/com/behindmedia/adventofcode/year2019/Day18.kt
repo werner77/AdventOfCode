@@ -252,7 +252,7 @@ class Day18 {
                 }
                 pathEvaluationCount++
                 visited.add(currentCoordinate)
-                currentCoordinate.forDirectNeighbours {
+                currentCoordinate.directNeighbourSequence().forEach {
                     if (this.isAccessible(it, KeyCollection.all) && !visited.contains(it)) {
                         val neighbourNode = this.nodeAt(it)
                         val nextRequiredKeys = if (neighbourNode.isDoor) {

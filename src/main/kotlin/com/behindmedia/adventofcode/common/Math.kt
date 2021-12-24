@@ -93,8 +93,8 @@ data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
         val downLeft = down + left
         val upRight = up + right
         val downRight = down + right
-        val directNeighbourDirections = listOf(up, left, right, down)
-        val indirectNeighbourDirections = listOf(upLeft, downLeft, upRight, downRight)
+        val directNeighbourDirections = arrayOf(up, left, right, down)
+        val indirectNeighbourDirections = arrayOf(upLeft, downLeft, upRight, downRight)
         val allNeighbourDirections = directNeighbourDirections + indirectNeighbourDirections
     }
 
@@ -174,12 +174,27 @@ data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
         }
     }
 
-    inline fun forDirectNeighbours(perform: (Coordinate) -> Unit) {
-        for (i in 0 until 4) {
-            val xOffset = i % 2
-            val sign = if (i < 1 || i > 2) -1 else 1
-            val yOffset = (i + 1) % 2
-            perform(offset(sign * xOffset, sign * yOffset))
+    fun directNeighbourSequence(): Sequence<Coordinate> {
+        return sequence {
+            repeat(4) {
+                yield(this@Coordinate + directNeighbourDirections[it])
+            }
+        }
+    }
+
+    fun indirectNeighbourSequence(): Sequence<Coordinate> {
+        return sequence {
+            repeat(4) {
+                yield(this@Coordinate + indirectNeighbourDirections[it])
+            }
+        }
+    }
+
+    fun allNeighbourSequence(): Sequence<Coordinate> {
+        return sequence {
+            repeat(8) {
+                yield(this@Coordinate + allNeighbourDirections[it])
+            }
         }
     }
 
@@ -188,11 +203,8 @@ data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
      */
     val directNeighbours: List<Coordinate>
         get() {
-            return List<Coordinate>(4) {
-                val xOffset = it % 2
-                val sign = if (it < 1 || it > 2) -1 else 1
-                val yOffset = (it + 1) % 2
-                offset(sign * xOffset, sign * yOffset)
+            return List(4) {
+                this + directNeighbourDirections[it]
             }
         }
 
@@ -201,15 +213,15 @@ data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
      */
     val indirectNeighbours: List<Coordinate>
         get() {
-            return List<Coordinate>(4) {
-                val xOffset = if (it == 0 || it == 1) 1 else -1
-                val yOffset = if (it == 0 || it == 2) 1 else -1
-                offset(xOffset, yOffset)
+            return List(4) {
+                this + indirectNeighbourDirections[it]
             }
         }
 
     val allNeighbours: List<Coordinate>
-        get() = directNeighbours + indirectNeighbours
+        get() = List(8) {
+            if (it < 4) directNeighbours[it] else indirectNeighbours[it - 4]
+        }
 
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
@@ -246,7 +258,7 @@ data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
                 }
             }
             visited.add(current.coordinate)
-            current.coordinate.forDirectNeighbours { neighbour ->
+            current.coordinate.directNeighbourSequence().forEach { neighbour ->
                 if (!visited.contains(neighbour) && reachable(neighbour)) {
                     list.add(CoordinatePath(neighbour, current.pathLength + 1))
                 }
@@ -522,8 +534,8 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparab
  */
 inline fun <reified N, T> shortestPath(
     from: N,
-    neighbours: (Path<N>) -> Iterable<N>,
-    reachable: (N) -> Boolean,
+    neighbours: (Path<N>) -> Sequence<N>,
+    reachable: (N) -> Boolean = { true },
     process: (Path<N>) -> T?
 ): T? {
     val list = ArrayDeque<Path<N>>()
@@ -547,9 +559,9 @@ inline fun <reified N, T> shortestPath(
 /**
  * Dijkstra's algorithm to find the shortest path between weighted nodes.
  */
-fun <N, T> shortestWeightedPath(
+inline fun <N, T> shortestWeightedPath(
     from: N,
-    neighbours: (N) -> Iterable<Pair<N, Long>>,
+    neighbours: (N) -> Sequence<Pair<N, Long>>,
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()
