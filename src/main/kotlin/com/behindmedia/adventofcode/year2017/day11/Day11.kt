@@ -17,7 +17,7 @@ private fun path(start: Coordinate3D, destination: Coordinate3D): Int {
         start,
         { path -> directionsMap.values.map { path.destination + it } },
         reachable = { true },
-        { if (it.destination == destination) it.pathLength else null }) ?: error("No path found")
+        { if (it.destination == destination) it.pathLength else null })?.toInt() ?: error("No path found")
 }
 
 fun main() {

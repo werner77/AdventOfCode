@@ -32,7 +32,7 @@ private fun shortestPath(start: Coordinate, dest: Coordinate): Int {
         reachable = { isAccessible(it) },
         process = {
             if (it.destination == dest) it.pathLength else null
-        }) ?: error("Could not find path")
+        })?.toInt() ?: error("Could not find path")
 }
 
 private fun countLocations(start: Coordinate, maxLength: Int): Int {

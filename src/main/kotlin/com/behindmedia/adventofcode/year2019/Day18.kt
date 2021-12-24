@@ -246,7 +246,7 @@ class Day18 {
                         pathLength: Int, requiredKeys: KeyCollection) {
                 if (currentNode.isKey && pathLength != 0) {
                     // Found
-                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength, null))) {
+                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength.toLong(), null))) {
                         return
                     }
                 }
@@ -352,7 +352,7 @@ class Day18 {
 
                 // If this collection contains all the keys we were looking for: we're done!
                 if (completeKeyCollection in currentNodeCollection.keys) {
-                    return current.pathLength
+                    return current.pathLength.toInt()
                 }
 
                 nodeEvaluationCount++
@@ -364,7 +364,7 @@ class Day18 {
                     val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.destination.node),
                         currentNodeCollection.keys + edge.destination.node)
                     if (!settled.contains(neighbour)) {
-                        pending.update(neighbour, current.pathLength + edge.pathLength)
+                        pending.update(neighbour, current.pathLength.toInt() + edge.pathLength.toInt())
                     }
                 }
             }

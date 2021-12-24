@@ -11,11 +11,11 @@ private fun findMinCostPath(
         from = start,
         neighbours = { c ->
             c.directNeighbours.mapNotNull { n ->
-                map[n]?.let { Pair(n, it) }
+                map[n]?.let { Pair(n, it.toLong()) }
             }
         },
         process = { if (it.destination == end) it.pathLength else null }
-    ) ?: error("No path found")
+    )?.toInt() ?: error("No path found")
 }
 
 private fun expandMap(map: Map<Coordinate, Int>): Map<Coordinate, Int> {

@@ -161,6 +161,6 @@ class Day20 {
             process = { nodePath ->
                 if (nodePath.destination == leveledEnd) nodePath.pathLength else null
             }
-        ) ?: throw IllegalStateException("End not found")
+        )?.toInt() ?: throw IllegalStateException("End not found")
     }
 }

@@ -465,7 +465,7 @@ val <E> Map<Coordinate, E>.minCoordinate: Coordinate
 val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
     get() = Coordinate(maxX, maxY)
 
-class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : Comparable<Path<N>> {
+class Path<N>(val destination: N, val pathLength: Long, val parent: Path<N>?) : Comparable<Path<N>> {
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
@@ -484,7 +484,7 @@ class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : C
     }
 
     inline fun nodes(where: (N) -> Boolean): Collection<N> {
-        val result = ArrayDeque<N>(this.pathLength + 1)
+        val result = ArrayDeque<N>()
         any {
             if (where(it)) result.addFirst(it)
             false
@@ -547,9 +547,9 @@ inline fun <reified N, T> shortestPath(
 /**
  * Dijkstra's algorithm to find the shortest path between weighted nodes.
  */
-inline fun <reified N, T> shortestWeightedPath(
+fun <N, T> shortestWeightedPath(
     from: N,
-    neighbours: (N) -> Iterable<Pair<N, Int>>,
+    neighbours: (N) -> Iterable<Pair<N, Long>>,
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()
@@ -564,10 +564,8 @@ inline fun <reified N, T> shortestWeightedPath(
         val currentNode = current.destination
         settled.add(currentNode)
         for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
-            if (!settled.contains(neighbour)) {
-                val newDistance = current.pathLength + neighbourWeight
-                pending.add(Path(neighbour, newDistance, current))
-            }
+            val newDistance = current.pathLength + neighbourWeight
+            pending.add(Path(neighbour, newDistance, current))
         }
     }
     return null
