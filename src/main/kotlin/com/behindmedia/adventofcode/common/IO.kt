@@ -36,6 +36,22 @@ fun <T>parseMap(resource: String, converter: (Char) -> T?) : Map<Coordinate, T> 
     return result
 }
 
+fun <T>parseMapFromString(string: String, converter: (Char) -> T?) : Map<Coordinate, T> {
+    var y = 0
+    val result = mutableMapOf<Coordinate, T>()
+    string.split("\n").forEach {
+        var x = 0
+        for (c in it) {
+            converter(c)?.let {
+                result[Coordinate(x, y)] = it
+            }
+            x += 1
+        }
+        y += 1
+    }
+    return result
+}
+
 /**
  * Parses the specified resource using the supplied parser.
  */

@@ -81,7 +81,7 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
 /**
  * Describes a two-dimensional coordinate or vector.
  */
-data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
+data class Coordinate(val x: Int, val y: Int) : Comparable<Coordinate> {
 
     companion object {
         val origin = Coordinate(0, 0)
@@ -302,6 +302,92 @@ data class Coordinate (val x: Int, val y: Int) : Comparable<Coordinate> {
         return "($x,$y)"
     }
 }
+
+class CharMap(val sizeX: Int, val sizeY: Int, char: (Int, Int) -> Char = { _, _ -> defaultChar }) :
+    Iterable<Map.Entry<Coordinate, Char>> {
+    constructor(squareSize: Int, char: (Int, Int) -> Char = { _, _ -> defaultChar }) : this(
+        squareSize,
+        squareSize,
+        char
+    )
+
+    val size: Int
+        get() = sizeX * sizeY
+
+    companion object {
+        private const val defaultChar = ' '
+
+        operator fun invoke(string: String): CharMap {
+            val lines = string.split("\n")
+            val sizeY = lines.size
+            val sizeX = lines.getOrNull(0)?.length ?: 0
+            return CharMap(sizeX, sizeY) { x, y ->
+                lines[y][x]
+            }
+        }
+    }
+
+    override fun iterator(): Iterator<Map.Entry<Coordinate, Char>> {
+        return object : Iterator<Map.Entry<Coordinate, Char>> {
+            private var x = 0
+            private var y = 0
+
+            override fun hasNext(): Boolean {
+                return x < sizeX && y < sizeY
+            }
+
+            override fun next(): Map.Entry<Coordinate, Char> {
+                if (!hasNext()) throw NoSuchElementException()
+                return Entry(Coordinate(x, y), data[y][x]).also {
+                    if (x >= sizeX - 1) {
+                        x = 0
+                        y++
+                    } else {
+                        x++
+                    }
+                }
+            }
+        }
+    }
+
+    private data class Entry(override val key: Coordinate, override val value: Char) : Map.Entry<Coordinate, Char>
+
+    private val data = Array(sizeY) { y ->
+        CharArray(sizeX) { x ->
+            char.invoke(x, y)
+        }
+    }
+
+    operator fun get(coordinate: Coordinate): Char {
+        return data[coordinate.y][coordinate.x]
+    }
+
+    operator fun set(coordinate: Coordinate, value: Char) {
+        data[coordinate.y][coordinate.x] = value
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherMap = other as? CharMap ?: return false
+        return data.contentDeepEquals(otherMap.data)
+    }
+
+    override fun hashCode(): Int {
+        return data.contentDeepHashCode()
+    }
+
+    override fun toString(): String {
+        val builder = StringBuilder()
+        for (line in data) {
+            for (c in line) {
+                builder.append(c)
+            }
+            builder.append("\n")
+        }
+        return builder.toString()
+    }
+}
+
 
 /**
  * Function to compare doubles with an allowed fractional difference
