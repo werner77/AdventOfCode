@@ -114,7 +114,6 @@ private fun enhance(rules: List<Rule>, iterationCount: Int): CharMap {
         tileSize = if (size % 2 == 0) 2 else 3
         map = nextMap
         require(map.sizeX * map.sizeY == size * size)
-        println(it + 1)
     }
     return map
 }

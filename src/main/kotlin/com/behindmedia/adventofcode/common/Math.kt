@@ -3,6 +3,7 @@ package com.behindmedia.adventofcode.common
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.math.*
 
 
@@ -322,7 +323,7 @@ class CharMap(val sizeX: Int, val sizeY: Int, char: (Int, Int) -> Char = { _, _ 
             val sizeY = lines.size
             val sizeX = lines.getOrNull(0)?.length ?: 0
             return CharMap(sizeX, sizeY) { x, y ->
-                lines[y][x]
+                lines[y].getOrNull(x) ?: defaultChar
             }
         }
     }
@@ -364,6 +365,20 @@ class CharMap(val sizeX: Int, val sizeY: Int, char: (Int, Int) -> Char = { _, _ 
 
     operator fun set(coordinate: Coordinate, value: Char) {
         data[coordinate.y][coordinate.x] = value
+    }
+
+    fun getOrNull(coordinate: Coordinate): Char? {
+        return data.getOrNull(coordinate.y)?.getOrNull(coordinate.x)
+    }
+
+    fun toMap(): Map<Coordinate, Char> {
+        val map = HashMap<Coordinate, Char>(size, 1.0f)
+        for (x in 0 until sizeX) {
+            for (y in 0 until sizeY) {
+                map[Coordinate(x, y)] = data[y][x]
+            }
+        }
+        return map
     }
 
     override fun equals(other: Any?): Boolean {

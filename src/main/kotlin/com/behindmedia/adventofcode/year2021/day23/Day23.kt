@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode.year2021.day23
 
 import com.behindmedia.adventofcode.common.*
+import org.apache.commons.compress.utils.OsgiUtils
 
 private fun Coordinate.room(roomLevelCount: Int): Pair<Int, Int>? {
     val roomLevel = y - 2
@@ -35,7 +36,7 @@ private data class Amphipod(val value: Char, val hasMoved: Boolean = false) {
     }
 }
 
-private inline fun Map<Coordinate, Char>.forEachValidDestination(
+private inline fun CharMap.forEachValidDestination(
     from: Map.Entry<Coordinate, Amphipod>,
     state: State,
     roomLevelCount: Int,
@@ -63,8 +64,8 @@ private fun State.moving(from: Coordinate, to: Coordinate): State = State(this).
     it[to] = if (current.hasMoved) current else current.copy(hasMoved = true)
 }
 
-fun solve(map: Map<Coordinate, Char>, roomLevelCount: Int): Long {
-    val initialState = State(map.filter { it.value - 'A' in 0 until 4 }.mapValues { Amphipod(it.value) })
+fun solve(map: CharMap, roomLevelCount: Int): Long {
+    val initialState = State(map.toMap().filter { it.value - 'A' in 0 until 4 }.mapValues { Amphipod(it.value) })
     return shortestWeightedPath(
         from = initialState,
         neighbours = { state ->
@@ -84,10 +85,7 @@ fun solve(map: Map<Coordinate, Char>, roomLevelCount: Int): Long {
 }
 
 private fun part1() {
-    val map = parseMap("/2021/day23-1.txt") {
-        it
-    }
-
+    val map: CharMap = CharMap(read("/2021/day23-1.txt"))
     timing {
         // Part 1
         println(solve(map, 2))
@@ -95,10 +93,7 @@ private fun part1() {
 }
 
 private fun part2() {
-    val map = parseMap("/2021/day23-2.txt") {
-        it
-    }
-
+    val map: CharMap = CharMap(read("/2021/day23-2.txt"))
     timing {
         // Part 2
         println(solve(map, 4))
