@@ -17,18 +17,11 @@ fun main() {
     println(i)
 }
 
-fun Coordinate.addModulo(delta: Coordinate, minCoordinate: Coordinate, maxCoordinate: Coordinate): Coordinate {
-    var newX = this.x + delta.x
-    var newY = this.y + delta.y
-    val deltaX = newX - maxCoordinate.x
-    val deltaY = newY - maxCoordinate.y
-    if (deltaX > 0) {
-        newX = minCoordinate.x + deltaX - 1
-    }
-    if (deltaY > 0) {
-        newY = minCoordinate.y + deltaY - 1
-    }
-    return Coordinate(newX, newY)
+private fun Coordinate.addModulo(delta: Coordinate, minCoordinate: Coordinate, maxCoordinate: Coordinate): Coordinate {
+    return Coordinate(
+        minCoordinate.x + (delta.x + x - minCoordinate.x) % (maxCoordinate.x - minCoordinate.x + 1),
+        minCoordinate.y + (delta.y + y - minCoordinate.y) % (maxCoordinate.y - minCoordinate.y + 1)
+    )
 }
 
 private fun simulate(map: Map<Coordinate, Char>): Pair<Map<Coordinate, Char>, Int> {
