@@ -17,24 +17,18 @@ fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     }
 }
 
+fun <T>parseLinesFromString(string: String, parser: (String) -> T): List<T> {
+    val ret = mutableListOf<T>()
+    string.split("\n").forEach { line ->
+        ret.add(parser(line))
+    }
+    return ret
+}
+
 /**
  * Parses the lines of the specified resource as a map of values, assuming the origin is in the upper left corner.
  */
-fun <T>parseMap(resource: String, converter: (Char) -> T?) : Map<Coordinate, T> {
-    var y = 0
-    val result = mutableMapOf<Coordinate, T>()
-    parseLines(resource) {
-        var x = 0
-        for (c in it) {
-            converter(c)?.let {
-                result[Coordinate(x, y)] = it
-            }
-            x += 1
-        }
-        y += 1
-    }
-    return result
-}
+fun <T>parseMap(resource: String, converter: (Char) -> T?) : Map<Coordinate, T> = parseMapFromString(read(resource), converter)
 
 fun <T>parseMapFromString(string: String, converter: (Char) -> T?) : Map<Coordinate, T> {
     var y = 0
@@ -51,6 +45,8 @@ fun <T>parseMapFromString(string: String, converter: (Char) -> T?) : Map<Coordin
     }
     return result
 }
+
+fun parseMapFromString(string: String) : Map<Coordinate, Char> = parseMapFromString(string) { it }
 
 /**
  * Parses the specified resource using the supplied parser.
