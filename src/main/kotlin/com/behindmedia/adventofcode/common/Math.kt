@@ -485,6 +485,8 @@ val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
     get() = Coordinate(maxX, maxY)
 
 class Path<N>(val destination: N, val pathLength: Long, val parent: Path<N>?) : Comparable<Path<N>> {
+    val nodeCount: Int = if (parent == null) 1 else parent.nodeCount + 1
+
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
     }

@@ -103,7 +103,7 @@ fun main() {
 
     val newCircuits = circuits.map {
         if (it.output == "b") {
-            it.copy(inputs = setOf(value1.toString()))
+            Circuit(inputs = setOf(value1.toString()), output = "b", Operator.Copy)
         } else {
             it
         }
@@ -112,8 +112,8 @@ fun main() {
     println(value2)
 }
 
-private fun solve(circuits: List<Circuit>, overrideState: Map<String, Int> = emptyMap()): MutableMap<String, Int> {
-    val resolvedInputs = overrideState.toMutableMap()
+private fun solve(circuits: List<Circuit>): MutableMap<String, Int> {
+    val resolvedInputs = mutableMapOf<String, Int>()
     val queue = circuits.toMutableList()
     while (queue.isNotEmpty()) {
         queue.sortByDescending { it.unresolvedInputCount(resolvedInputs) }
