@@ -307,8 +307,8 @@ fun <K, V> defaultMutableMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V):
     return DefaultMutableMapWrapper(impl, defaultValue)
 }
 
-fun <K, V>Map<K, V>.toDefaultMap(defaultValue: () -> V): DefaultMap<K, V> = DefaultMapWrapper(this.toMap(), defaultValue)
-fun <K, V>Map<K, V>.toDefaultMutableMap(defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this.toMutableMap(), defaultValue)
+fun <K, V>Map<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMap<K, V> = DefaultMapWrapper(this, defaultValue)
+fun <K, V>MutableMap<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this, defaultValue)
 
 private class DefaultMutableMapWrapper<K, V>(
     private val impl: MutableMap<K, V>,
