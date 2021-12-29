@@ -19,7 +19,7 @@ fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
 
 fun <T>parseLinesFromString(string: String, parser: (String) -> T): List<T> {
     val ret = mutableListOf<T>()
-    string.split("\n").forEach { line ->
+    string.trim().split("\n").forEach { line ->
         ret.add(parser(line))
     }
     return ret
