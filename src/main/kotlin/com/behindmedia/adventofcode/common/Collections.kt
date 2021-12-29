@@ -46,6 +46,51 @@ fun <E> List<E>.slice(count: Int): List<List<E>> {
     return result
 }
 
+fun Iterable<Long>.product(): Long {
+    return this.productOf { it }
+}
+
+fun Iterable<Int>.product(): Int {
+    return this.productOf { it }
+}
+
+fun Iterable<Double>.product(): Double {
+    return this.productOf { it }
+}
+
+@OptIn(kotlin.experimental.ExperimentalTypeInference::class)
+@JvmName("productOfInt")
+@OverloadResolutionByLambdaReturnType
+inline fun <T> Iterable<T>.productOf(selector: (T) -> Int): Int {
+    var product: Int = 1
+    for (element in this) {
+        product *= selector(element)
+    }
+    return product
+}
+
+@OptIn(kotlin.experimental.ExperimentalTypeInference::class)
+@JvmName("productOfLong")
+@OverloadResolutionByLambdaReturnType
+inline fun <T> Iterable<T>.productOf(selector: (T) -> Long): Long {
+    var product: Long = 1L
+    for (element in this) {
+        product *= selector(element)
+    }
+    return product
+}
+
+@OptIn(kotlin.experimental.ExperimentalTypeInference::class)
+@JvmName("productOfDouble")
+@OverloadResolutionByLambdaReturnType
+inline fun <T> Iterable<T>.productOf(selector: (T) -> Double): Double {
+    var product: Double = 1.0
+    for (element in this) {
+        product *= selector(element)
+    }
+    return product
+}
+
 /**
  * Permutates all possible combinations in values without duplicates and calls the perform closure for each such permutation
  * until a non-null result is returned

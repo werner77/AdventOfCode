@@ -36,17 +36,6 @@ private data class Ingredient(
     }
 }
 
-private fun Collection<Pair<Ingredient, Long>>.totalScore(): Long {
-    val sum = LongArray(4) { 0L }
-    forEach { (value, amount) ->
-        sum[0] += value.capacity * amount
-        sum[1] += value.durability * amount
-        sum[2] += value.flavor * amount
-        sum[3] += value.texture * amount
-    }
-    return sum.fold(1L) { p, v -> p * max(v, 0L) }
-}
-
 private fun solve(ingredients: List<Ingredient>, predicate: (Long) -> Boolean = { _ -> true }): Long {
     fun solve(sums: LongArray, amount: Long, ingredients: Array<Ingredient>, ingredientIndex: Int): Long? {
         val ingredient = ingredients[ingredientIndex]
