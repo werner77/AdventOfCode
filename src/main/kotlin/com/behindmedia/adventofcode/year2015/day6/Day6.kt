@@ -55,8 +55,8 @@ private fun part1(data: List<Instruction>): CharMap {
     return state
 }
 
-private fun part2(data: List<Instruction>): ValueMap<Long> {
-    val state = ValueMap<Long>(squareSize = 1000) { _, _ -> 0L }
+private fun part2(data: List<Instruction>): ObjectMap<Long> {
+    val state = ObjectMap<Long>(squareSize = 1000) { _, _ -> 0L }
     for (instr in data) {
         for (c in instr.range) {
             when (instr.action) {

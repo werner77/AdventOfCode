@@ -2,7 +2,7 @@ package com.behindmedia.adventofcode.year2015.day17
 
 import com.behindmedia.adventofcode.common.parseLines
 
-private fun solve1(target: Int, current: Int, indexesLeft: Set<Int>, indexesDone: Set<Int>, values: IntArray, found: MutableSet<Set<Int>>) {
+private fun solve(target: Int, current: Int, indexesLeft: Set<Int>, indexesDone: Set<Int>, values: IntArray, found: MutableSet<Set<Int>>) {
     if (current == target) {
         found += indexesDone
     } else if (current > target) {
@@ -10,13 +10,13 @@ private fun solve1(target: Int, current: Int, indexesLeft: Set<Int>, indexesDone
     }
     for (index in indexesLeft) {
         val next = values[index]
-        solve1(target, current + next, indexesLeft - index, indexesDone + index, values, found)
+        solve(target, current + next, indexesLeft - index, indexesDone + index, values, found)
     }
 }
 
 private fun solve(target: Int, values: List<Int>): Set<Set<Int>> {
     val found = mutableSetOf<Set<Int>>()
-    solve1(target, 0, values.indices.toSet(), setOf(), values.toIntArray(), found)
+    solve(target, 0, values.indices.toSet(), setOf(), values.toIntArray(), found)
     return found
 }
 

@@ -17,6 +17,19 @@ fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     }
 }
 
+fun <T>parseNonBlankLines(resource: String, parser: (String) -> T) : List<T> {
+    val reader = readerForResource(resource)
+    return reader.use {
+        val ret = mutableListOf<T>()
+        it.forEachLine { line ->
+            if (line.isNotBlank()) {
+                ret.add(parser(line))
+            }
+        }
+        ret
+    }
+}
+
 fun <T>parseLinesFromString(string: String, parser: (String) -> T): List<T> {
     val ret = mutableListOf<T>()
     string.trim().split("\n").forEach { line ->
@@ -55,6 +68,10 @@ fun <T>parse(resource: String, parser: (String) -> T) : T {
     return parser(read(resource))
 }
 
+fun <T>parseString(string: String, parser: (String) -> T) : T {
+    return parser(string)
+}
+
 /**
  * Reads the specified resource as string from the classpath
  */
@@ -90,4 +107,44 @@ private fun readerForResource(resource: String): BufferedReader {
 
     val stream = url.openStream()
     return stream.bufferedReader()
+}
+
+operator fun StringBuilder.plusAssign(other: CharSequence) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: String) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Any) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: StringBuffer) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Char) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Int) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Double) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Boolean) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Long) {
+    this.append(other)
+}
+
+operator fun StringBuilder.plusAssign(other: Float) {
+    this.append(other)
 }

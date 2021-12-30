@@ -1,23 +1,17 @@
 package com.behindmedia.adventofcode.common
 
-import java.util.NoSuchElementException
-
-class CharMap(val sizeX: Int, val sizeY: Int, default: (Int, Int) -> Char = { _, _ -> defaultChar }) :
-    Iterable<Map.Entry<Coordinate, Char>> {
+class CharMap(override val sizeX: Int, override val sizeY: Int, default: (Int, Int) -> Char = { _, _ -> defaultChar }) : MutableValueMap<Char> {
     constructor(squareSize: Int, default: (Int, Int) -> Char = { _, _ -> defaultChar }) : this(
         squareSize,
         squareSize,
         default
     )
 
-    val size: Int
-        get() = sizeX * sizeY
-
     companion object {
         private const val defaultChar = ' '
 
         operator fun invoke(string: String): CharMap {
-            val lines = string.split("\n")
+            val lines = string.trim().split("\n")
             val sizeY = lines.size
             val sizeX = lines.getOrNull(0)?.length ?: 0
             return CharMap(sizeX, sizeY) { x, y ->
@@ -26,57 +20,22 @@ class CharMap(val sizeX: Int, val sizeY: Int, default: (Int, Int) -> Char = { _,
         }
     }
 
-    override fun iterator(): Iterator<Map.Entry<Coordinate, Char>> {
-        return object : Iterator<Map.Entry<Coordinate, Char>> {
-            private var x = 0
-            private var y = 0
-
-            override fun hasNext(): Boolean {
-                return x < sizeX && y < sizeY
-            }
-
-            override fun next(): Map.Entry<Coordinate, Char> {
-                if (!hasNext()) throw NoSuchElementException()
-                return Entry(Coordinate(x, y), data[y][x]).also {
-                    if (x >= sizeX - 1) {
-                        x = 0
-                        y++
-                    } else {
-                        x++
-                    }
-                }
-            }
-        }
-    }
-
-    private data class Entry(override val key: Coordinate, override val value: Char) : Map.Entry<Coordinate, Char>
-
     private val data = Array(sizeY) { y ->
         CharArray(sizeX) { x ->
             default.invoke(x, y)
         }
     }
 
-    operator fun get(coordinate: Coordinate): Char {
+    override operator fun get(coordinate: Coordinate): Char {
         return data[coordinate.y][coordinate.x]
     }
 
-    operator fun set(coordinate: Coordinate, value: Char) {
+    override operator fun set(coordinate: Coordinate, value: Char) {
         data[coordinate.y][coordinate.x] = value
     }
 
-    fun getOrNull(coordinate: Coordinate): Char? {
+    override fun getOrNull(coordinate: Coordinate): Char? {
         return data.getOrNull(coordinate.y)?.getOrNull(coordinate.x)
-    }
-
-    fun toMap(): Map<Coordinate, Char> {
-        val map = HashMap<Coordinate, Char>(size, 1.0f)
-        for (x in 0 until sizeX) {
-            for (y in 0 until sizeY) {
-                map[Coordinate(x, y)] = data[y][x]
-            }
-        }
-        return map
     }
 
     override fun equals(other: Any?): Boolean {
@@ -89,14 +48,5 @@ class CharMap(val sizeX: Int, val sizeY: Int, default: (Int, Int) -> Char = { _,
         return data.contentDeepHashCode()
     }
 
-    override fun toString(): String {
-        val builder = StringBuilder()
-        for (line in data) {
-            for (c in line) {
-                builder.append(c)
-            }
-            builder.append("\n")
-        }
-        return builder.toString()
-    }
+    override fun toString(): String = ValueMap.toString(this)
 }
