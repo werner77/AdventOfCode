@@ -1,6 +1,5 @@
 package com.behindmedia.adventofcode.year2015.day20
 
-import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.parse
 import com.behindmedia.adventofcode.common.timing
 
