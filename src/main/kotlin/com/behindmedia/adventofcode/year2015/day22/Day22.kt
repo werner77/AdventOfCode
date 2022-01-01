@@ -24,10 +24,7 @@ private val effects = listOf<Effect>(
 private data class State(val playerActive: Boolean, val mana: Int, val playerHitPoints: Int, val bossHitPoints: Int, val activeEffects: List<Effect>)
 
 private fun simulate(state: State, bossDamage: Int, cache: MutableMap<State, Int>, hardMode: Boolean): Int {
-    val cachedResult = cache[state]
-    if (cachedResult != null) {
-        return cachedResult
-    }
+    cache[state]?.let { return it }
 
     var newPlayerHitPoints = if (state.playerActive && hardMode) state.playerHitPoints - 1 else state.playerHitPoints
     var newMana = state.mana
