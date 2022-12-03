@@ -1,4 +1,4 @@
-package com.behindmedia.adventofcode.year2022
+package com.behindmedia.adventofcode.year2022.day1
 
 import com.behindmedia.adventofcode.common.*
 import kotlin.math.*
