@@ -31,12 +31,12 @@ private fun part1(data: List<List<Int>>) {
     for (d in data) {
         val set1 = (0 until d.size / 2).map { d[it] }.toSet()
         val set2 = (d.size / 2 until d.size).map { d[it] }.toSet()
-        val duplicateSet = set1.intersect(set2)
-        require(duplicateSet.size == 1)
-        ans += duplicateSet.first()
+        val intersection = set1.intersect(set2)
+        require(intersection.size == 1)
+        ans += intersection.first()
     }
     println(ans)
 }
 
 private val Char.priority: Int
-    get() = if (this in 'a'..'z') this - 'a' + 1 else this - 'A' + 27
+    get() = if (this.isLowerCase()) this - 'a' + 1 else this - 'A' + 27

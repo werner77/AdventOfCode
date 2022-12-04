@@ -91,6 +91,12 @@ fun <T> String.splitNonEmptySequence(vararg delimiters: String, conversion: (Str
         .map { conversion.invoke(it) }
 }
 
+fun <T> String.splitToSequenceByCharactersInString(delimiters: String, conversion: (String) -> T): Sequence<T> {
+    return splitToSequence(delimiters = delimiters.toCharArray())
+        .filter { it.isNotEmpty() }
+        .map { conversion.invoke(it) }
+}
+
 fun <T>timing(block: () -> T) {
     val start = System.currentTimeMillis()
     try {
