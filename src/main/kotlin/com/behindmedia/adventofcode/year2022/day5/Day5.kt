@@ -17,8 +17,7 @@ fun main() {
                 val itemIndex = 1 + 4 * i
                 val item = line[itemIndex]
                 if (item in 'A'..'Z') {
-                    val list = arrangement.getOrPut(i + 1) { mutableListOf() }
-                    list.add(0, item)
+                    arrangement.getOrPut(i + 1) { mutableListOf() }.add(0, item)
                 }
             }
         } else {
@@ -26,12 +25,12 @@ fun main() {
             commands.add(Command(match.groupValues[1].toInt(), match.groupValues[2].toInt(), match.groupValues[3].toInt()))
         }
     }
-    part1(arrangement.deepCopy(), commands)
-    part2(arrangement.deepCopy(), commands)
+    part1(arrangement, commands)
+    part2(arrangement, commands)
 }
 
-private fun Map<Int, MutableList<Char>>.deepCopy(): MutableMap<Int, MutableList<Char>> {
-    return this.entries.fold(mutableMapOf<Int, MutableList<Char>>()) { map, entry ->
+private fun Map<Int, List<Char>>.deepMutableCopy(): MutableMap<Int, MutableList<Char>> {
+    return this.entries.fold(mutableMapOf()) { map, entry ->
         map.apply {
             map[entry.key] = entry.value.toMutableList()
         }
@@ -39,25 +38,25 @@ private fun Map<Int, MutableList<Char>>.deepCopy(): MutableMap<Int, MutableList<
 }
 
 private fun part1(
-    arrangement: MutableMap<Int, MutableList<Char>>,
-    commands: MutableList<Command>
+    arrangement: Map<Int, List<Char>>,
+    commands: List<Command>
 ) {
     solve(arrangement, commands, false)
 }
 
 private fun part2(
-    arrangement: MutableMap<Int, MutableList<Char>>,
-    commands: MutableList<Command>
+    arrangement: Map<Int, List<Char>>,
+    commands: List<Command>
 ) {
     solve(arrangement, commands, true)
 }
 
 private fun solve(
-    arrangement: MutableMap<Int, MutableList<Char>>,
-    commands: MutableList<Command>,
+    arrangement: Map<Int, List<Char>>,
+    commands: List<Command>,
     reverseOrder: Boolean
 ) {
-    val destination = arrangement.toMutableMap()
+    val destination = arrangement.deepMutableCopy()
     for (command in commands) {
         val fromItems = destination[command.from] ?: error("No from items found")
         val toItems = destination[command.to] ?: error("No to items found")
