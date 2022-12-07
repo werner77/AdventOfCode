@@ -15,9 +15,9 @@ private fun findMarker(data: String, markerSize: Int) {
     val window = ArrayDeque<Char>()
     for (c in data) {
         if (window.size == markerSize) {
-            window.popFirst()
+            window.removeFirst()
         }
-        window.add(c)
+        window.addLast(c)
         count++
         if (window.size == markerSize && HashSet(window).size == window.size) {
             break
@@ -25,4 +25,3 @@ private fun findMarker(data: String, markerSize: Int) {
     }
     println(count)
 }
-
