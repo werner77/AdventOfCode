@@ -11,27 +11,23 @@ fun main() {
 }
 
 private fun part1(data: Map<Coordinate, Int>) {
-    val count = data.coordinateRange.count { isVisible(it, data) }
-    println(count)
+    println(data.coordinateRange.count { isVisible(it, data) })
 }
 
-private fun part2(
-    data: Map<Coordinate, Int>
-) {
-    val highestScore = data.coordinateRange.maxOf { calculateScenicScore(it, data) }
-    println(highestScore)
+private fun part2(data: Map<Coordinate, Int>) {
+    println(data.coordinateRange.maxOf { calculateScenicScore(it, data) })
 }
 
-private fun isVisible(treeCoordinate: Coordinate, data: Map<Coordinate, Int>): Boolean {
+private fun isVisible(treeCoordinate: Coordinate, map: Map<Coordinate, Int>): Boolean {
     val directions = Coordinate.directNeighbourDirections
-    val treeValue = data[treeCoordinate] ?: error("Expected tree coordinate to be on map")
+    val treeHeight = map[treeCoordinate] ?: error("Expected tree coordinate to be on map")
     for (direction in directions) {
         var visible = true
         var currentCoordinate = treeCoordinate
         while (true) {
             currentCoordinate += direction
-            val nextValue = data[currentCoordinate] ?: break
-            if (nextValue >= treeValue) {
+            val height = map[currentCoordinate] ?: break
+            if (height >= treeHeight) {
                 visible = false
                 break
             }
@@ -41,17 +37,17 @@ private fun isVisible(treeCoordinate: Coordinate, data: Map<Coordinate, Int>): B
     return false
 }
 
-private fun calculateScenicScore(treeCoordinate: Coordinate, data: Map<Coordinate, Int>): Int {
+private fun calculateScenicScore(treeCoordinate: Coordinate, map: Map<Coordinate, Int>): Int {
     val directions = Coordinate.directNeighbourDirections
     val scores = MutableList(directions.size) { 0 }
-    val highest = data[treeCoordinate] ?: error("Expected tree coordinate to be on map")
+    val treeHeight = map[treeCoordinate] ?: error("Expected tree coordinate to be on map")
     for ((i, direction) in directions.withIndex()) {
         var currentCoordinate = treeCoordinate
         while (true) {
             currentCoordinate += direction
-            val currentValue = data[currentCoordinate] ?: break
+            val height = map[currentCoordinate] ?: break
             scores[i]++
-            if (currentValue >= highest) break
+            if (height >= treeHeight) break
         }
     }
     return scores.product()
