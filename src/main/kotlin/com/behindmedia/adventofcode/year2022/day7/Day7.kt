@@ -3,6 +3,7 @@ package com.behindmedia.adventofcode.year2022.day7
 import com.behindmedia.adventofcode.common.*
 import com.behindmedia.adventofcode.year2022.day7.Node.Dir
 import com.behindmedia.adventofcode.year2022.day7.Node.File
+import kotlin.LazyThreadSafetyMode.NONE
 
 private sealed class Node {
 
@@ -27,32 +28,30 @@ private sealed class Node {
 
         fun getChild(name: String): Node? = _children[name]
 
-        val totalSize: Long
-            get() {
-                var sum = 0L
-                for (c in _children.values) {
-                    sum += when (c) {
-                        is File -> c.size
-                        is Dir -> c.totalSize
-                    }
+        val totalSize: Long by lazy(mode = NONE) {
+            var sum = 0L
+            for (c in _children.values) {
+                sum += when (c) {
+                    is File -> c.size
+                    is Dir -> c.totalSize
                 }
-                return sum
             }
+            sum
+        }
 
-        val allContainedDirectories: Set<Dir>
-            get() {
-                val set = mutableSetOf<Dir>()
-                set += this
-                for (c in _children.values) {
-                    when (c) {
-                        is File -> {
-                            //ignore
-                        }
-                        is Dir -> set += c.allContainedDirectories
+        val allContainedDirectories: Set<Dir> by lazy(mode = NONE) {
+            val set = mutableSetOf<Dir>()
+            set += this
+            for (c in _children.values) {
+                when (c) {
+                    is File -> {
+                        //ignore
                     }
+                    is Dir -> set += c.allContainedDirectories
                 }
-                return set
             }
+            set
+        }
     }
 }
 
@@ -103,8 +102,10 @@ fun main() {
         }
     }
 
-    part1(rootDir)
-    part2(rootDir)
+    timing {
+        part1(rootDir)
+        part2(rootDir)
+    }
 }
 
 private fun part1(rootDir: Dir) {

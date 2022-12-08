@@ -482,6 +482,8 @@ val <E> Map<Coordinate, E>.minCoordinate: Coordinate
 
 val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
     get() = Coordinate(maxX, maxY)
+val <E> Map<Coordinate, E>.coordinateRange: CoordinateRange
+    get() = CoordinateRange(keys)
 
 class Path<N>(val destination: N, val pathLength: Long, val parent: Path<N>?) : Comparable<Path<N>> {
     val nodeCount: Int = if (parent == null) 1 else parent.nodeCount + 1
