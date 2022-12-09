@@ -11,11 +11,11 @@ fun main() {
 }
 
 private fun part1(data: Map<Coordinate, Int>) {
-    println(data.coordinateRange.count { isVisible(it, data) })
+    println(data.keys.count { isVisible(it, data) })
 }
 
 private fun part2(data: Map<Coordinate, Int>) {
-    println(data.coordinateRange.maxOf { calculateScenicScore(it, data) })
+    println(data.keys.maxOf { getScenicScore(it, data) })
 }
 
 private fun isVisible(treeCoordinate: Coordinate, map: Map<Coordinate, Int>): Boolean {
@@ -37,7 +37,7 @@ private fun isVisible(treeCoordinate: Coordinate, map: Map<Coordinate, Int>): Bo
     return false
 }
 
-private fun calculateScenicScore(treeCoordinate: Coordinate, map: Map<Coordinate, Int>): Int {
+private fun getScenicScore(treeCoordinate: Coordinate, map: Map<Coordinate, Int>): Int {
     val directions = Coordinate.directNeighbourDirections
     val scores = MutableList(directions.size) { 0 }
     val treeHeight = map[treeCoordinate] ?: error("Expected tree coordinate to be on map")
