@@ -1,19 +1,22 @@
 package com.behindmedia.adventofcode.year2022.day9
 
 import com.behindmedia.adventofcode.common.*
-import com.behindmedia.adventofcode.common.Coordinate.Companion
 import kotlin.math.abs
 import kotlin.math.sign
 
-private data class Command(val dir: Char, val amount: Int) {
-    val direction: Coordinate
-        get() = when (dir) {
-            'L' -> Coordinate.left
-            'R' -> Coordinate.right
-            'D' -> Coordinate.down
-            'U' -> Companion.up
-            else -> error("Unknown direction: $dir")
+private data class Command(val direction: Coordinate, val amount: Int) {
+    companion object {
+        operator fun invoke(directionChar: Char, amount: Int): Command {
+            val direction = when (directionChar) {
+                'L' -> Coordinate.left
+                'R' -> Coordinate.right
+                'D' -> Coordinate.down
+                'U' -> Coordinate.up
+                else -> error("Unknown direction: $directionChar")
+            }
+            return Command(direction, amount)
         }
+    }
 }
 
 fun main() {
@@ -34,9 +37,8 @@ private fun part2(data: List<Command>) {
 }
 
 private fun simulate(commands: List<Command>, ropeLength: Int) {
-    val seen = mutableSetOf<Coordinate>()
+    val seen = mutableSetOf(Coordinate.origin)
     val knots = Array(ropeLength) { Coordinate.origin }
-    seen.add(Coordinate.origin)
     for (command in commands) {
         repeat(command.amount) {
             knots[0] += command.direction
