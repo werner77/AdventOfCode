@@ -57,10 +57,10 @@ private fun part2(
     val maxCycle = commands.keys.max()
     val map = mutableMapOf<Coordinate, Char>()
     var spriteCoordinate = 0
-    val gridWith = 40
+    val gridWidth = 40
     for (cycle in 1..maxCycle) {
-        val currentPixel = Coordinate((cycle - 1) % gridWith, (cycle - 1) / gridWith)
-        if ((0 until 3).map { spriteCoordinate + it }.contains(currentPixel.x)) {
+        val currentPixel = Coordinate((cycle - 1) % gridWidth, (cycle - 1) / gridWidth)
+        if (currentPixel.x in spriteCoordinate..spriteCoordinate + 2) {
             map[currentPixel] = '#'
         }
         spriteCoordinate = commands[cycle]?.invoke(spriteCoordinate) ?: spriteCoordinate
