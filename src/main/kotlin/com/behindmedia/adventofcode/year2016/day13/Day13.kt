@@ -29,7 +29,7 @@ private fun isAccessible(coordinate: Coordinate): Boolean {
 private fun shortestPath(start: Coordinate, dest: Coordinate): Int {
     return shortestPath(from = start,
         neighbours = { it.destination.directNeighbourSequence() },
-        reachable = { isAccessible(it) },
+        reachable = { _, it -> isAccessible(it) },
         process = {
             if (it.destination == dest) it.pathLength else null
         })?.toInt() ?: error("Could not find path")
@@ -39,7 +39,7 @@ private fun countLocations(start: Coordinate, maxLength: Int): Int {
     var count = 0
     return shortestPath(from = start,
         neighbours = { it.destination.directNeighbourSequence() },
-        reachable = { isAccessible(it) },
+        reachable = { _, it -> isAccessible(it) },
         process = {
             if (it.pathLength > maxLength) {
                 count

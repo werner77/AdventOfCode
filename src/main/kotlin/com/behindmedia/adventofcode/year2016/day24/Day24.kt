@@ -46,7 +46,7 @@ private fun findMinimumPath(
                 Node(it, path.destination.items + map.itemsAt(it))
             }
         },
-        reachable = { node ->
+        reachable = { _, node ->
             map[node.coordinate].let { it != null && it != '#' }
         },
         process = { path ->

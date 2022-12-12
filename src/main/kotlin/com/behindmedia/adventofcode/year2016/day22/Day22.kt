@@ -66,7 +66,7 @@ private fun part2(data: List<Disk>) {
 
     steps += shortestPath(from = freeNode.location,
         neighbours = { it.destination.directNeighbourSequence() },
-        reachable = { map[it] != '#' && it.x in 0..maxX && it.y in 0..maxY },
+        reachable = { _, it -> map[it] != '#' && it.x in 0..maxX && it.y in 0..maxY },
         process = { if (map[it.destination] == 'S') it.pathLength else null })?.toInt() ?: error("Could not find path")
 
     // S is now at x=0, maxY-1

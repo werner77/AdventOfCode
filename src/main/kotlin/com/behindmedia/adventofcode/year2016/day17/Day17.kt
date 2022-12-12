@@ -41,7 +41,7 @@ private fun findPossiblePaths(): List<Path<PathCoordinate>> {
                 path.destination.reachableCoordinates(passcode)
             }
         },
-        reachable = { it.coordinate.x in 0 until GRID_SIZE && it.coordinate.y in 0 until GRID_SIZE },
+        reachable = { _, it -> it.coordinate.x in 0 until GRID_SIZE && it.coordinate.y in 0 until GRID_SIZE },
         process = {
             if (it.destination.coordinate == end) {
                 // Candidate

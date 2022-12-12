@@ -545,7 +545,7 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparab
 inline fun <reified N, T> shortestPath(
     from: N,
     neighbours: (Path<N>) -> Sequence<N>,
-    reachable: (N) -> Boolean = { true },
+    reachable: (Path<N>, N) -> Boolean = { _, _ -> true },
     process: (Path<N>) -> T?
 ): T? {
     val list = ArrayDeque<Path<N>>()
@@ -558,7 +558,7 @@ inline fun <reified N, T> shortestPath(
             return it
         }
         for (neighbour in neighbours(current)) {
-            if (reachable(neighbour) && !visited.contains(neighbour)) {
+            if (reachable(current, neighbour) && !visited.contains(neighbour)) {
                 visited.add(neighbour)
                 list.add(Path(neighbour, current.pathLength + 1, current))
             }

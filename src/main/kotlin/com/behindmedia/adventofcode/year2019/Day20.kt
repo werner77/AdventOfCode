@@ -138,12 +138,9 @@ class Day20 {
     }
 
     fun findMinimumPath(input: String, startIdentifier: String = "AA", endIdentifier: String = "ZZ", recursive: Boolean): Int {
-
         val map = parseMap(input)
-
         val start = map.values.find { it.portal?.identifier == startIdentifier } ?: throw IllegalStateException("Portal with identifier $startIdentifier not found")
         val end = map.values.find { it.portal?.identifier == endIdentifier } ?: throw IllegalStateException("Portal with identifier $endIdentifier not found")
-
         return findMinimumSteps(start.coordinate, end.coordinate, map, recursive)
     }
 
@@ -151,11 +148,10 @@ class Day20 {
         // Breadth first search
         val leveledStart = LeveledCoordinate(start, 0)
         val leveledEnd = LeveledCoordinate(end, 0)
-
         return shortestPath(leveledStart, neighbours = { leveledCoordinate ->
                 map[leveledCoordinate.destination.coordinate]?.neighbours(leveledCoordinate.destination.level, recursiveMode)?.asSequence() ?: emptySequence()
             },
-            reachable = {
+            reachable = { _, it ->
                 map[it.coordinate]?.isReachable(it.level, recursiveMode) ?: false
             },
             process = { nodePath ->
