@@ -1,9 +1,11 @@
 package com.behindmedia.adventofcode.common
 
+import kotlin.Comparator
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.*
 import kotlin.math.*
+import java.util.function.Function
 
 
 /**
@@ -548,19 +550,19 @@ inline fun <reified N, T> shortestPath(
     reachable: (Path<N>, N) -> Boolean = { _, _ -> true },
     process: (Path<N>) -> T?
 ): T? {
-    val list = ArrayDeque<Path<N>>()
+    val pending = ArrayDeque<Path<N>>()
     val visited = mutableSetOf<N>()
-    list.add(Path(from, 0, null))
-    visited.add(from)
+    pending.add(Path(from, 0, null))
     while (true) {
-        val current = list.pollFirst() ?: return null
+        val current = pending.pollFirst() ?: return null
+        if (visited.contains(current.destination)) continue
+        visited += current.destination
         process(current)?.let {
             return it
         }
         for (neighbour in neighbours(current)) {
-            if (reachable(current, neighbour) && !visited.contains(neighbour)) {
-                visited.add(neighbour)
-                list.add(Path(neighbour, current.pathLength + 1, current))
+            if (reachable(current, neighbour)) {
+                pending.add(Path(neighbour, current.pathLength + 1, current))
             }
         }
     }
@@ -612,6 +614,42 @@ inline fun binarySearch(
             end = if (inverted) mid + 1 else mid - 1
         }
     }
+    return result
+}
+
+fun <C: Comparable<C>> topologicalSort(
+    incomingEdges: Map<C, Collection<C>>
+): List<C> {
+    return topologicalSort(incomingEdges = incomingEdges, comparator = Comparator.comparing(Function.identity()))
+}
+
+fun <C> topologicalSort(
+    incomingEdges: Map<C, Collection<C>>,
+    comparator: Comparator<C>
+): List<C> {
+    // Find all nodes with have no incoming edges
+    val remainingEdges = incomingEdges.entries.fold(mutableMapOf<C, MutableSet<C>>()) { map, entry ->
+        map.apply {
+            put(entry.key, entry.value.toMutableSet())
+        }
+    }
+    val pending = TreeSet<C>(comparator).apply {
+        addAll(incomingEdges.entries.filter { it.value.isEmpty() }.map { it.key })
+    }
+    val result = mutableListOf<C>()
+    while (pending.isNotEmpty()) {
+        val next = pending.popFirst() ?: error("No element found left")
+        result += next
+        // Remove next from the incoming edges
+        for ((c, e) in remainingEdges) {
+            e.remove(next)
+            if (e.isEmpty()) {
+                pending += c
+                remainingEdges.remove(c)
+            }
+        }
+    }
+    if (remainingEdges.isNotEmpty()) error("Graph has a cycle")
     return result
 }
 
@@ -712,7 +750,7 @@ class Primes(maxNumber: Int) {
         var result = 1
         for ((factor, times) in getPrimeFactors(x)) {
             var sum = 0
-            for (i in 0 .. times) {
+            for (i in 0..times) {
                 sum += factor.pow(i)
             }
             result *= sum

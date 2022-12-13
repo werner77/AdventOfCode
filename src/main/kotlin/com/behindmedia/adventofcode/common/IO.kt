@@ -17,6 +17,19 @@ fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     }
 }
 
+fun <T>parseValidLines(resource: String, parser: (String) -> T?) : List<T> {
+    val reader = readerForResource(resource)
+    return reader.use {
+        val ret = mutableListOf<T>()
+        it.forEachLine { line ->
+            parser(line)?.let { value ->
+                ret.add(value)
+            }
+        }
+        ret
+    }
+}
+
 fun <T>parseNonBlankLines(resource: String, parser: (String) -> T) : List<T> {
     val reader = readerForResource(resource)
     return reader.use {
