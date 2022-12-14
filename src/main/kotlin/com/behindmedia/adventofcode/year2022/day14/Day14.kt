@@ -12,7 +12,7 @@ fun main() {
             .toList()
     }
     val source = Coordinate(500, 0)
-    val map: MutableMap<Coordinate, Char> = data.fold(mutableMapOf(source to '+')) { map, instructions ->
+    val map: Map<Coordinate, Char> = data.fold(mutableMapOf(source to '+')) { map, instructions ->
         map.apply {
             drawLine(map, instructions)
         }
@@ -39,7 +39,7 @@ private fun part2(mapIn: Map<Coordinate, Char>, source: Coordinate) {
     val floorCoordinateY = maxCoordinateY + 2
     while (true) {
         val nextCoordinate = simulate(map, source, floorCoordinateY) {
-            !map.containsKey(it) && it.y < floorCoordinateY
+            it.y < floorCoordinateY
         } ?: error("No value found")
         if (nextCoordinate == source) break
     }
@@ -47,21 +47,18 @@ private fun part2(mapIn: Map<Coordinate, Char>, source: Coordinate) {
 }
 
 // Simulates one grain of sane
-private fun simulate(map: MutableMap<Coordinate, Char>, source: Coordinate, maxCoordinateY: Int, reachable: (Coordinate) -> Boolean = { !map.containsKey(it) }): Coordinate? {
+private fun simulate(map: MutableMap<Coordinate, Char>, source: Coordinate, maxCoordinateY: Int, reachable: (Coordinate) -> Boolean = { true }): Coordinate? {
     var coordinate = source
-    while (coordinate.y < maxCoordinateY) {
-        var foundDirection = false
+    outer@while (coordinate.y < maxCoordinateY) {
         for (direction in listOf(Coordinate.down, Coordinate.downLeft, Coordinate.downRight)) {
-            if (reachable(coordinate + direction)) {
-                coordinate += direction
-                foundDirection = true
-                break
+            val nextCoordinate = coordinate + direction
+            if (!map.containsKey(nextCoordinate) && reachable(nextCoordinate)) {
+                coordinate = nextCoordinate
+                continue@outer
             }
         }
-        if (!foundDirection) {
-            map[coordinate] = 'o'
-            return coordinate
-        }
+        map[coordinate] = 'o'
+        return coordinate
     }
     return null
 }
