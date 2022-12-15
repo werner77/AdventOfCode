@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2022.day15
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.parseLines
+import com.behindmedia.adventofcode.common.timing
 import com.behindmedia.adventofcode.common.whenNotNull
 import kotlin.math.abs
 import kotlin.math.max
@@ -15,9 +16,12 @@ fun main() {
             Pair(sensor, beacon)
         } ?: error("Could not match line")
     }
+
     val size = 4000000
-    part1(data, size / 2)
-    part2(data, size)
+    timing {
+        part1(data, size / 2)
+        part2(data, size)
+    }
 }
 
 private val Coordinate.tuningFrequency: Long
