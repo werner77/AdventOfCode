@@ -10,12 +10,12 @@ class CharMap(override val sizeX: Int, override val sizeY: Int, default: (Int, I
     companion object {
         private const val defaultChar = ' '
 
-        operator fun invoke(string: String): CharMap {
+        operator fun invoke(string: String, emptyChar: Char = defaultChar): CharMap {
             val lines = string.trim().split("\n")
             val sizeY = lines.size
             val sizeX = lines.getOrNull(0)?.length ?: 0
             return CharMap(sizeX, sizeY) { x, y ->
-                lines[y].getOrNull(x) ?: defaultChar
+                lines[y].getOrNull(x) ?: emptyChar
             }
         }
     }

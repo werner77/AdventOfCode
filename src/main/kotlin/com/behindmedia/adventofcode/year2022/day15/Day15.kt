@@ -20,6 +20,8 @@ fun main() {
     val size = 4000000
     timing {
         part1(data, size / 2)
+    }
+    timing {
         part2(data, size)
     }
 }
@@ -28,16 +30,14 @@ private val Coordinate.tuningFrequency: Long
     get() = 4000000L * x.toLong() + y.toLong()
 
 private fun findRanges(data: List<Pair<Coordinate, Coordinate>>, y: Int): List<Pair<Int, Int>> {
-    val result = mutableListOf<Pair<Int, Int>>()
+    val result = ArrayList<Pair<Int, Int>>(data.size)
     for ((sensor, beacon) in data) {
-        val maxDistance = sensor.manhattenDistance(beacon)
-        val maxDistanceAtY = maxDistance - abs(y - sensor.y)
-        if (maxDistanceAtY >= 0) {
-            result += Pair(sensor.x - maxDistanceAtY, sensor.x + maxDistanceAtY)
+        val maxDistance = sensor.manhattenDistance(beacon) - abs(y - sensor.y)
+        if (maxDistance >= 0) {
+            result += Pair(sensor.x - maxDistance, sensor.x + maxDistance)
         }
     }
-    result.sortWith(compareBy({ it.first }, { it.second }))
-    return result
+    return result.apply { sortBy { it.first } }
 }
 
 private fun part1(data: List<Pair<Coordinate, Coordinate>>, y: Int) {
