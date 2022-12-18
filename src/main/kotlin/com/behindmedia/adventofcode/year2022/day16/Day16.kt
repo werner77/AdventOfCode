@@ -90,7 +90,7 @@ private fun String.toId(): IDType {
 
 fun main() {
     val regex = """Valve ([A-Z]+) has flow rate=(\d+); tunnels? leads? to valves? ([A-Z ,]+)""".toRegex()
-    val map = parseLines("/2022/day16.txt") { line ->
+    val map = parseLines("/2022/day16-1.txt") { line ->
         val match = regex.matchEntire(line.trim()) ?: error("No match for line : $line")
         val id = addOrGetValveId(match.groupValues[1])
         val flowRate = match.groupValues[2].toInt()
@@ -102,7 +102,7 @@ fun main() {
         }
     }
     timing {
-        val state = State(ValveSet(), ValveSet("AA".toId()))
+        val state = State1(ValveSet(), "AA".toId())
         val value1 = part1(
             data = map,
             cache = mutableMapOf(),
@@ -114,7 +114,7 @@ fun main() {
         println(value1)
     }
     timing {
-        val state = State(ValveSet(), ValveSet("AA".toId()))
+        val state = State2(ValveSet(), "AA".toId(), "AA".toId())
         val value2 = part2(
             data = map,
             cache = mutableMapOf(),
@@ -127,7 +127,19 @@ fun main() {
     }
 }
 
-private data class State(val openValves: ValveSet, val currentValves: ValveSet)
+private data class State1(val openValves: ValveSet, val currentValve: IDType)
+
+private data class State2(val openValves: ValveSet, val valve1: IDType, val valve2: IDType) {
+    private val valveSet = ValveSet(valve1, valve2)
+    override fun equals(other: Any?): Boolean {
+        val otherState = other as? State2 ?: return false
+        return otherState.openValves == this.openValves && other.valveSet == this.valveSet
+    }
+
+    override fun hashCode(): Int {
+        return 37 * openValves.hashCode() + valveSet.hashCode()
+    }
+}
 
 private fun <T>Set<T>.plusOptional(element: T?): Set<T> {
     return element?.let { this + it } ?: this
@@ -135,8 +147,8 @@ private fun <T>Set<T>.plusOptional(element: T?): Set<T> {
 
 private fun part1(
     data: Map<IDType, Valve>,
-    cache: MutableMap<State, Pair<Int, Int>>,
-    state: State,
+    cache: MutableMap<State1, Pair<Int, Int>>,
+    state: State1,
     flow: Int,
     elapsedTime: Int,
     maxTime: Int
@@ -150,13 +162,13 @@ private fun part1(
         return -1
     }
     cache[state] = Pair(flow, elapsedTime)
-    val currentValve = data[state.currentValves.single()] ?: error("Valve not found")
+    val currentValve = data[state.currentValve] ?: error("Valve not found")
     var maxFlow = flow
     for (action in currentValve.actions(state.openValves)) {
         val value = part1(
             data = data,
             cache = cache,
-            state = State(state.openValves.plusOptional(action.openValve), ValveSet(action.nextValve)),
+            state = State1(state.openValves.plusOptional(action.openValve), action.nextValve),
             flow = flow + action.flowIncrement * (maxTime - elapsedTime - 1), // Add the cumulative flow to the end
             elapsedTime = elapsedTime + 1,
             maxTime = maxTime
@@ -170,8 +182,8 @@ private fun part1(
 
 private fun part2(
     data: Map<IDType, Valve>,
-    cache: MutableMap<State, Pair<Int, Int>>,
-    state: State,
+    cache: MutableMap<State2, Pair<Int, Int>>,
+    state: State2,
     flow: Int,
     elapsedTime: Int,
     maxTime: Int
@@ -180,14 +192,16 @@ private fun part2(
     if (elapsedTime == maxTime || state.openValves.isComplete()) {
         return flow
     }
+
+    // If there is a state which has at least the current open valves && elapsedTime <= current elapsed time return
     val cachedValue = cache[state]
     if (cachedValue != null && cachedValue.first >= flow && cachedValue.second <= elapsedTime) {
         return -1
     }
     cache[state] = Pair(flow, elapsedTime)
 
-    val valve1 = data[state.currentValves.first()] ?: error("Valve not found")
-    val valve2 = data[state.currentValves.last()] ?: error("Valve not found")
+    val valve1 = data[state.valve1] ?: error("Valve not found")
+    val valve2 = data[state.valve2] ?: error("Valve not found")
 
     var maxFlow = flow
     for (action1 in valve1.actions(state.openValves)) {
@@ -196,7 +210,7 @@ private fun part2(
             val value = part2(
                 data = data,
                 cache = cache,
-                state = State(nextOpenValves.plusOptional(action2.openValve), ValveSet(action1.nextValve, action2.nextValve)),
+                state = State2(nextOpenValves.plusOptional(action2.openValve), action1.nextValve, action2.nextValve),
                 flow = flow + (action1.flowIncrement + action2.flowIncrement) * (maxTime - elapsedTime - 1), // Add the cumulative flow to the end
                 elapsedTime = elapsedTime + 1,
                 maxTime = maxTime
