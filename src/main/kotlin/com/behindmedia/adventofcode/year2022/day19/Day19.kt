@@ -13,6 +13,7 @@ private enum class Kind(val index: Int) {
     Ore(0), Clay(1), Obsidian(2), Geode(3);
 
     companion object {
+        const val count: Int = 4
         val allKindsWithNull: List<Kind?> = listOf(null, Ore, Clay, Obsidian, Geode).reversed()
 
         fun from(index: Int): Kind {
@@ -48,7 +49,6 @@ private class BluePrint(val id: Int, val robots: Array<Set<Cost>>) {
         }
     }
 
-
     fun qualityLevel(maxGeodes: Int): Int {
         return id * maxGeodes
     }
@@ -76,15 +76,15 @@ private class BluePrint(val id: Int, val robots: Array<Set<Cost>>) {
 }
 
 fun main() {
-    val bluePrints = parseLines("/2022/day19-1.txt") { line ->
+    val bluePrints = parseLines("/2022/day19.txt") { line ->
         BluePrint(line)
     }
     timing {
         part1(bluePrints)
     }
-//    timing {
-//        part2(bluePrints)
-//    }
+    timing {
+        part2(bluePrints)
+    }
 }
 
 private fun part1(bluePrints: List<BluePrint>) {
@@ -100,16 +100,15 @@ private fun part1(bluePrints: List<BluePrint>) {
 private fun part2(bluePrints: List<BluePrint>) {
     var product = 1L
     val initialState = State(Ore to 1)
-    for (bp in bluePrints.subList(0, 3)) {
+    for ((i, bp) in bluePrints.withIndex()) {
         val maxValue = findMaxValue(bp, initialState, 0, 32, mutableMapOf(), mutableMapOf())
         product *= maxValue
+        if (i == 2) break
     }
     println(product)
 }
 
-private typealias StateValue = StateValueImpl
-
-private class State(private val values: Array<Int> = Array(8) { 0 }) {
+private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }) {
 
     companion object {
         operator fun invoke(vararg robots: Pair<Kind, Int>): State {
@@ -126,7 +125,7 @@ private class State(private val values: Array<Int> = Array(8) { 0 }) {
     }
 
     fun getMaterialAmount(kind: Kind): Int {
-        return values[kind.index + 4]
+        return values[kind.index + Kind.count]
     }
 
     private fun incrementRobotAmount(kind: Kind): Int {
@@ -135,7 +134,7 @@ private class State(private val values: Array<Int> = Array(8) { 0 }) {
     }
 
     private fun addMaterialAmount(kind: Kind, amount: Int): Int {
-        val index = kind.index + 4
+        val index = kind.index + Kind.count
         values[index] += amount
         return values[index]
     }
@@ -165,65 +164,46 @@ private class State(private val values: Array<Int> = Array(8) { 0 }) {
         return copy
     }
 
-    fun value(bluePrint: BluePrint, minutesRemaining: Int): StateValue {
-        // Calculate the amount of ore we would have until the end with this state
-        // This is the sum of all materials expressed in ore plus the amount of materials each robot can produce till the end
-//        var result = 0L
-//        for (kind in Kind.values()) {
-//            val costInOre = bluePrint.costInOre(kind)
-//            result += costInOre * getMaterialAmount(kind)
-//            result += costInOre * getRobotAmount(kind) * minutesRemaining
-//        }
-//        return result
-
-        return StateValueImpl { kind ->
-            getMaterialAmount(kind) + getRobotAmount(kind) * minutesRemaining
-        }
-
-//        var value = 0L
-//        for (kind in Kind.values()) {
-//
-//            value = value or (projectedAmount shl (8 * kind.index))
-//        }
-//        return value
+    fun value(minutesRemaining: Int): StateValue {
+        return StateValue(state = this, minutesRemaining = minutesRemaining)
     }
 }
 
-private class StateValueImpl(val values: Array<Int>) {
-    constructor(initializer: (Kind) -> Int) : this(Array<Int>(Kind.values().size) { initializer(Kind.from(it)) })
-    fun isGreaterThan(other: StateValueImpl): Boolean {
-        for (i in values.indices) {
-            if (this.values[i] < other.values[i]) {
-                return false
+private class StateValue(state: State, minutesRemaining: Int) {
+
+    private val values = IntArray(Kind.values().size) {
+        val kind = Kind.from(it)
+        state.getMaterialAmount(kind) + state.getRobotAmount(kind) * minutesRemaining
+    }
+    private val maxRemainingGeodeAmount: Int = max(0, ((minutesRemaining - 1) * minutesRemaining) / 2)
+
+    fun canBeGreaterThan(other: StateValue): Boolean {
+        var foundGreaterValue = false
+        for (kind in Kind.values()) {
+            if (this.values[kind.index] > other.values[kind.index]) {
+                foundGreaterValue = true
             }
         }
-        return true
+        if (!foundGreaterValue) return false
+        return values[Geode.index] + maxRemainingGeodeAmount > other.values[Geode.index]
     }
 }
 
 private fun findMaxValue(bp: BluePrint, state: State, time: Int, maxTime: Int, maxVisitedValues: MutableMap<Int, StateValue>, cache: MutableMap<Any, Int>): Int {
-    // State:
-    // - number of robots active of each kind
-    // - the amount of material of each kind
-
-    // Find:
-    // - max value of Geodes
-    // - this means: max value of geode robots
-    // - this means: max value of materials needed to get geode robots
     if (time >= maxTime) {
         return state.getMaterialAmount(kind = Geode)
     }
 
-    val cacheKey = Pair(time, state)
-    val cachedValue = cache[cacheKey]
-    if (cachedValue != null) return cachedValue
-
-    val currentValue = state.value(bp, maxTime - time)
+    val currentValue = state.value(maxTime - time)
     val maxVisitedValue = maxVisitedValues[time]
-    if (maxVisitedValue != null && maxVisitedValue.isGreaterThan(currentValue)) {
+    if (maxVisitedValue != null && !currentValue.canBeGreaterThan(maxVisitedValue)) {
         return -1
     }
     maxVisitedValues[time] = currentValue
+
+    val cacheKey = Pair(time, state)
+    val cachedValue = cache[cacheKey]
+    if (cachedValue != null) return cachedValue
 
     var maxValue = 0
 
