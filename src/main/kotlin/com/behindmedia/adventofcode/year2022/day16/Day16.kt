@@ -1,224 +1,179 @@
 package com.behindmedia.adventofcode.year2022.day16
 
-import com.behindmedia.adventofcode.common.parseLines
-import com.behindmedia.adventofcode.common.splitNonEmptySequence
-import com.behindmedia.adventofcode.common.timing
+import com.behindmedia.adventofcode.common.*
+import com.behindmedia.adventofcode.year2022.day16.Valve.Companion.allValveIds
+import kotlin.LazyThreadSafetyMode.NONE
+import kotlin.math.max
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
-private typealias IDType = Long
+private data class Valve(val name: String, val flowRate: Int, val connectedValves: List<String>) {
 
-private data class Action(val nextValve: IDType, val openValve: IDType?, val flowIncrement: Int)
-
-private data class Valve(val id: IDType, val flowRate: Int, val connectedValves: List<IDType>) {
-
-    // Yields all the possible actions for this valve given the supplied set of open valves
-    fun actions(openValves: ValveSet): List<Action> {
-        val result = ArrayList<Action>(connectedValves.size + 1)
-        if (flowRate > 0 && id !in openValves) {
-            result += Action(id, id, flowRate)
-        }
-        for (connected in connectedValves) {
-            result += Action(connected, null, 0)
-        }
-        return result
+    val id: Long by lazy(mode = NONE) {
+        getAndIncrementValveId()
     }
-}
 
-@JvmInline
-private value class ValveSet private constructor(private val value: Long) {
     companion object {
-        operator fun invoke(vararg ids: IDType): ValveSet {
-            var value = 0L
-            for (id in ids) {
-                value = value or id
+        private var nextValveId: Long = 1L
+        private fun getAndIncrementValveId(): Long {
+            return nextValveId.also {
+                nextValveId = nextValveId shl 1
             }
-            return ValveSet(value)
         }
-    }
-    operator fun plus(valve: IDType): ValveSet {
-        return ValveSet(value or valve)
-    }
-    operator fun minus(valve: IDType): ValveSet {
-        return ValveSet(value and valve.inv())
-    }
-    operator fun contains(valve: IDType): Boolean {
-        return value and valve == valve
-    }
-    fun plusOptional(valve: IDType?): ValveSet {
-        return valve?.let { this + it } ?: this
-    }
-    fun single(): IDType {
-        return value
-    }
-    fun first(): IDType {
-        for (i in 0 until valveNameMap.size) {
-            val mask = 1L shl i
-            if (value and mask == mask) return mask
-        }
-        error("No element found")
-    }
-    fun last(): IDType {
-        for (i in valveNameMap.size - 1 downTo 0) {
-            val mask = 1L shl i
-            if (value and mask == mask) return mask
-        }
-        error("No element found")
-    }
-    fun isComplete(): Boolean {
-        return value == completeValveMask
-    }
-}
 
-private val valveNameMap = mutableMapOf<String, Long>()
-private var completeValveMask = 0L
-
-private fun addOrGetValveId(string: String): Long {
-    val existing = valveNameMap[string]
-    if (existing != null) {
-        return existing
+        val allValveIds: Long
+            get() = nextValveId - 1
     }
-    require(valveNameMap.size < 64)
-    val bit = valveNameMap.size
-    val mask = 1L shl bit
-    valveNameMap[string] = mask
-    completeValveMask = completeValveMask or mask
-    return mask
-}
 
-private fun String.toId(): IDType {
-    return valveNameMap[this] ?: error("No ID found for valve with name: $this")
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherValve = other as? Valve ?: return false
+        return this.name == otherValve.name
+    }
+
+    override fun hashCode(): Int {
+        return name.hashCode()
+    }
 }
 
 fun main() {
     val regex = """Valve ([A-Z]+) has flow rate=(\d+); tunnels? leads? to valves? ([A-Z ,]+)""".toRegex()
-    val map = parseLines("/2022/day16-1.txt") { line ->
+    val valveMap = parseLines("/2022/day16.txt") { line ->
         val match = regex.matchEntire(line.trim()) ?: error("No match for line : $line")
-        val id = addOrGetValveId(match.groupValues[1])
+        val name = match.groupValues[1]
         val flowRate = match.groupValues[2].toInt()
-        val valves = match.groupValues[3].splitNonEmptySequence(" ", ",").map { addOrGetValveId(it) }.toList()
-        Valve(id, flowRate, valves)
-    }.fold(mutableMapOf<IDType, Valve>()) { map, valve ->
+        val valves = match.groupValues[3].splitNonEmptySequence(" ", ",").toList()
+        Valve(name, flowRate, valves)
+    }.fold(mutableMapOf<String, Valve>()) { map, valve ->
         map.apply {
-            put(valve.id, valve)
+            put(valve.name, valve)
         }
     }
+
+    // Calculate the graph
+    val connections = calculateConnections(data = valveMap)
+    val start = valveMap["AA"] ?: error("Start node not found")
     timing {
-        val state = State1(ValveSet(), "AA".toId())
-        val value1 = part1(
-            data = map,
-            cache = mutableMapOf(),
-            state = state,
-            flow = 0,
-            elapsedTime = 0,
-            maxTime = 30
-        )
-        println(value1)
+        part1(start, connections)
     }
     timing {
-        val state = State2(ValveSet(), "AA".toId(), "AA".toId())
-        val value2 = part2(
-            data = map,
-            cache = mutableMapOf(),
-            state = state,
-            flow = 0,
-            elapsedTime = 0,
-            maxTime = 26
-        )
-        println(value2)
+        part2(start, connections)
     }
-}
-
-private data class State1(val openValves: ValveSet, val currentValve: IDType)
-
-private data class State2(val openValves: ValveSet, val valve1: IDType, val valve2: IDType) {
-    private val valveSet = ValveSet(valve1, valve2)
-    override fun equals(other: Any?): Boolean {
-        val otherState = other as? State2 ?: return false
-        return otherState.openValves == this.openValves && other.valveSet == this.valveSet
-    }
-
-    override fun hashCode(): Int {
-        return 37 * openValves.hashCode() + valveSet.hashCode()
-    }
-}
-
-private fun <T>Set<T>.plusOptional(element: T?): Set<T> {
-    return element?.let { this + it } ?: this
 }
 
 private fun part1(
-    data: Map<IDType, Valve>,
-    cache: MutableMap<State1, Pair<Int, Int>>,
-    state: State1,
-    flow: Int,
-    elapsedTime: Int,
-    maxTime: Int
-): Int {
-    // All valves open or no more time, no actions left to perform
-    if (elapsedTime == maxTime || state.openValves.isComplete()) {
-        return flow
-    }
-    val cachedValue = cache[state]
-    if (cachedValue != null && cachedValue.first >= flow && cachedValue.second <= elapsedTime) {
-        return -1
-    }
-    cache[state] = Pair(flow, elapsedTime)
-    val currentValve = data[state.currentValve] ?: error("Valve not found")
-    var maxFlow = flow
-    for (action in currentValve.actions(state.openValves)) {
-        val value = part1(
-            data = data,
-            cache = cache,
-            state = State1(state.openValves.plusOptional(action.openValve), action.nextValve),
-            flow = flow + action.flowIncrement * (maxTime - elapsedTime - 1), // Add the cumulative flow to the end
-            elapsedTime = elapsedTime + 1,
-            maxTime = maxTime
-        )
-        if (value > maxFlow) {
-            maxFlow = value
-        }
-    }
-    return maxFlow
+    start: Valve,
+    connections: Map<Long, List<Pair<Valve, Int>>>
+) {
+    val ans = dfs(
+        valveId = start.id,
+        openValves = 0,
+        time = 30,
+        connections = connections,
+        cache = mutableMapOf()
+    )
+    println(ans)
 }
 
 private fun part2(
-    data: Map<IDType, Valve>,
-    cache: MutableMap<State2, Pair<Int, Int>>,
-    state: State2,
-    flow: Int,
-    elapsedTime: Int,
-    maxTime: Int
-): Int {
-    // All valves open or no more time, no actions left to perform
-    if (elapsedTime == maxTime || state.openValves.isComplete()) {
-        return flow
-    }
-
-    // If there is a state which has at least the current open valves && elapsedTime <= current elapsed time return
-    val cachedValue = cache[state]
-    if (cachedValue != null && cachedValue.first >= flow && cachedValue.second <= elapsedTime) {
-        return -1
-    }
-    cache[state] = Pair(flow, elapsedTime)
-
-    val valve1 = data[state.valve1] ?: error("Valve not found")
-    val valve2 = data[state.valve2] ?: error("Valve not found")
-
-    var maxFlow = flow
-    for (action1 in valve1.actions(state.openValves)) {
-        val nextOpenValves = state.openValves.plusOptional(action1.openValve)
-        for (action2 in valve2.actions(nextOpenValves)) {
-            val value = part2(
-                data = data,
-                cache = cache,
-                state = State2(nextOpenValves.plusOptional(action2.openValve), action1.nextValve, action2.nextValve),
-                flow = flow + (action1.flowIncrement + action2.flowIncrement) * (maxTime - elapsedTime - 1), // Add the cumulative flow to the end
-                elapsedTime = elapsedTime + 1,
-                maxTime = maxTime
-            )
-            if (value > maxFlow) {
-                maxFlow = value
+    start: Valve,
+    connections: Map<Long, List<Pair<Valve, Int>>>
+) {
+    val ans = AtomicInteger(0)
+    val cache = ConcurrentHashMap<Any, Int>()
+    runBlocking {
+        withContext(Dispatchers.Default) {
+            for (i in 1..allValveIds / 2) {
+                val first = i and allValveIds
+                val second = first xor allValveIds
+                launch {
+                    val value = dfs(
+                        valveId = start.id,
+                        openValves = first,
+                        time = 26,
+                        connections = connections,
+                        cache = cache
+                    ) + dfs(
+                        valveId = start.id,
+                        time = 26,
+                        openValves = second,
+                        connections = connections,
+                        cache = cache
+                    )
+                    ans.updateAndGet {
+                        max(it, value)
+                    }
+                }
             }
         }
     }
-    return maxFlow
+    println(ans.get())
+}
+
+private fun calculateConnections(data: Map<String, Valve>): Map<Long, List<Pair<Valve, Int>>> {
+    val connections = mutableMapOf<Long, List<Pair<Valve, Int>>>()
+    val filteredNodes = data.values.filter { it.name == "AA" || it.flowRate > 0 }.toSet()
+    for (valve in filteredNodes) {
+        // For each starting valve find the shortest path to any of
+        connections[valve.id] = findShortestPaths(from = valve, map = data, includeNodes = filteredNodes)
+    }
+    return connections
+}
+
+private fun findShortestPaths(from: Valve, map: Map<String, Valve>, includeNodes: Set<Valve>): List<Pair<Valve, Int>> {
+    // destination map
+    val result = mutableListOf<Pair<Valve, Int>>()
+    return shortestPath(
+        from = from,
+        neighbours = { path ->
+            path.destination.connectedValves.map { map[it]!! }.asSequence()
+        },
+        process = { path ->
+            if (includeNodes.contains(path.destination)) {
+                result += Pair(path.destination, path.pathLength.toInt())
+            }
+            if (result.size == includeNodes.size) {
+                result
+            } else {
+                null
+            }
+        }
+    ) ?: error("Expected path to all valves to be found")
+}
+
+private fun dfs(
+    valveId: Long,
+    time: Int,
+    openValves: Long,
+    connections: Map<Long, List<Pair<Valve, Int>>>,
+    cache: MutableMap<Any, Int>
+): Int {
+    var maxValue = 0
+    val cacheKey = Triple(openValves, valveId, time)
+    val cachedValue = cache[cacheKey]
+    if (cachedValue != null) {
+        return cachedValue
+    }
+    for ((next, duration) in connections[valveId]!!) {
+        val remainingTime = time - duration - 1
+        if (remainingTime <= 0) continue
+        val nextId = next.id
+        if (nextId and openValves != 0L) continue
+        maxValue = max(
+            maxValue,
+            remainingTime * next.flowRate + dfs(
+                nextId,
+                remainingTime,
+                openValves or nextId,
+                connections,
+                cache
+            )
+        )
+    }
+    cache[cacheKey] = maxValue
+    return maxValue
 }

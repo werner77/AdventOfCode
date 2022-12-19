@@ -8,6 +8,7 @@ import com.behindmedia.adventofcode.year2022.day19.Kind.Geode
 import com.behindmedia.adventofcode.year2022.day19.Kind.Obsidian
 import com.behindmedia.adventofcode.year2022.day19.Kind.Ore
 import kotlin.math.max
+import java.util.concurrent.atomic.AtomicInteger
 
 private enum class Kind(val index: Int) {
     Ore(0), Clay(1), Obsidian(2), Geode(3);
@@ -88,24 +89,39 @@ fun main() {
 }
 
 private fun part1(bluePrints: List<BluePrint>) {
-    var sum = 0L
+    val sum = AtomicInteger(0)
     val initialState = State(Ore to 1)
-    for (bp in bluePrints) {
+    bluePrints.parallelStream().forEach { bp ->
         val maxValue = findMaxValue(bp, initialState, 0, 24, mutableMapOf(), mutableMapOf())
-        sum += bp.qualityLevel(maxValue)
+        sum.updateAndGet {
+            bp.qualityLevel(maxValue) + it
+        }
     }
-    println(sum)
+    println(sum.get())
 }
 
 private fun part2(bluePrints: List<BluePrint>) {
-    var product = 1L
+    val product = AtomicInteger(1)
     val initialState = State(Ore to 1)
-    for ((i, bp) in bluePrints.withIndex()) {
-        val maxValue = findMaxValue(bp, initialState, 0, 32, mutableMapOf(), mutableMapOf())
-        product *= maxValue
-        if (i == 2) break
+    bluePrints.take(3).parallelStream().forEach { bp ->
+        val cache = object: HashMap<Any, Int>() {
+            var hitSize: Int = 0
+            override fun get(key: Any): Int? {
+                val v = super.get(key)
+                if (v != null) {
+                    hitSize++
+                }
+                return v
+            }
+        }
+        val maxValue = findMaxValue(bp, initialState, 0, 32, mutableMapOf(), cache)
+        product.updateAndGet {
+            it * maxValue
+        }
+        println("Cache size: ${cache.size}")
+        println("Cache hits: ${cache.hitSize}")
     }
-    println(product)
+    println(product.get())
 }
 
 private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }) {
@@ -164,12 +180,12 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
         return copy
     }
 
-    fun value(minutesRemaining: Int): StateValue {
-        return StateValue(state = this, minutesRemaining = minutesRemaining)
+    fun value(minutesRemaining: Int, bluePrint: BluePrint): StateValue {
+        return StateValue(state = this, minutesRemaining = minutesRemaining, bluePrint = bluePrint)
     }
 }
 
-private class StateValue(state: State, minutesRemaining: Int) {
+private class StateValue(state: State, bluePrint: BluePrint, minutesRemaining: Int) {
 
     private val values = IntArray(Kind.values().size) {
         val kind = Kind.from(it)
@@ -189,12 +205,12 @@ private class StateValue(state: State, minutesRemaining: Int) {
     }
 }
 
-private fun findMaxValue(bp: BluePrint, state: State, time: Int, maxTime: Int, maxVisitedValues: MutableMap<Int, StateValue>, cache: MutableMap<Any, Int>): Int {
+private fun findMaxValue(bluePrint: BluePrint, state: State, time: Int, maxTime: Int, maxVisitedValues: MutableMap<Int, StateValue>, cache: MutableMap<Any, Int>): Int {
     if (time >= maxTime) {
         return state.getMaterialAmount(kind = Geode)
     }
 
-    val currentValue = state.value(maxTime - time)
+    val currentValue = state.value(maxTime - time, bluePrint)
     val maxVisitedValue = maxVisitedValues[time]
     if (maxVisitedValue != null && !currentValue.canBeGreaterThan(maxVisitedValue)) {
         return -1
@@ -208,8 +224,8 @@ private fun findMaxValue(bp: BluePrint, state: State, time: Int, maxTime: Int, m
     var maxValue = 0
 
     for (kind in allKindsWithNull) {
-        val nextState = state.nextState(bp, kind) ?: continue
-        val value = findMaxValue(bp, nextState, time + 1, maxTime, maxVisitedValues, cache)
+        val nextState = state.nextState(bluePrint, kind) ?: continue
+        val value = findMaxValue(bluePrint, nextState, time + 1, maxTime, maxVisitedValues, cache)
         maxValue = max(maxValue, value)
     }
 
