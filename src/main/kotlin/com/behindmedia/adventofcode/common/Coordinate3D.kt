@@ -119,6 +119,8 @@ fun Collection<Coordinate3D>.minMaxCoordinate(): Pair<Coordinate3D, Coordinate3D
     return Pair(minCoordinate, maxCoordinate)
 }
 
+fun Collection<Coordinate3D>.range(): CoordinateRange3D = CoordinateRange3D(this)
+
 /**
  * Range to enumerate coordinates between the (minx, miny) and (maxx, maxy) found in a list of coordinates.
  */

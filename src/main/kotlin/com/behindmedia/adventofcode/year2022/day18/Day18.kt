@@ -16,25 +16,24 @@ fun main() {
 }
 
 private fun part1(data: Set<Coordinate3D>) {
-    computeSurfaceArea(data) { _, _, _ ->
+    computeSurfaceArea(data) { _, _ ->
         true
     }
 }
 
 private fun part2(data: Set<Coordinate3D>) {
-    computeSurfaceArea(data) { minCoordinate, maxCoordinate, next ->
-        hasPathToOutside(next, data, minCoordinate, maxCoordinate)
+    computeSurfaceArea(data) { range, next ->
+        hasPathToOutside(next, data, range)
     }
 }
 
-private fun computeSurfaceArea(data: Set<Coordinate3D>, predicate: (Coordinate3D, Coordinate3D, Coordinate3D) -> Boolean) {
-    val minCoordinate = data.minCoordinate
-    val maxCoordinate = data.maxCoordinate
+private fun computeSurfaceArea(data: Set<Coordinate3D>, predicate: (CoordinateRange3D, Coordinate3D) -> Boolean) {
+    val range = data.range()
     var total = 0
     for (c in data) {
         for (direction in Coordinate3D.allDirections) {
             val next = c + direction
-            if (!data.contains(next) && predicate.invoke(minCoordinate, maxCoordinate, next)) {
+            if (!data.contains(next) && predicate.invoke(range, next)) {
                 total++
             }
         }
@@ -45,8 +44,7 @@ private fun computeSurfaceArea(data: Set<Coordinate3D>, predicate: (Coordinate3D
 private fun hasPathToOutside(
     start: Coordinate3D,
     data: Set<Coordinate3D>,
-    minCoordinate: Coordinate3D,
-    maxCoordinate: Coordinate3D
+    range: CoordinateRange3D
 ): Boolean {
     val pending = ArrayDeque<Coordinate3D>()
     pending.add(start)
@@ -57,10 +55,7 @@ private fun hasPathToOutside(
             continue
         }
         seen += current
-        val inside = current.x in minCoordinate.x..maxCoordinate.x &&
-                current.y in minCoordinate.y..maxCoordinate.y &&
-                current.z in minCoordinate.z..maxCoordinate.z
-        if (!inside) {
+        if (current !in range) {
             return true
         }
         for (d in Coordinate3D.allDirections) {
