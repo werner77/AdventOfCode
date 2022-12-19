@@ -76,15 +76,15 @@ private class BluePrint(val id: Int, val robots: Array<Set<Cost>>) {
 }
 
 fun main() {
-    val bluePrints = parseLines("/2022/day19.txt") { line ->
+    val bluePrints = parseLines("/2022/day19-1.txt") { line ->
         BluePrint(line)
     }
     timing {
         part1(bluePrints)
     }
-    timing {
-        part2(bluePrints)
-    }
+//    timing {
+//        part2(bluePrints)
+//    }
 }
 
 private fun part1(bluePrints: List<BluePrint>) {
@@ -213,16 +213,16 @@ private fun findMaxValue(bp: BluePrint, state: State, time: Int, maxTime: Int, m
     if (time >= maxTime) {
         return state.getMaterialAmount(kind = Geode)
     }
-    val currentValue = state.value(bp, maxTime - time)
-    val maxVisitedValue = maxVisitedValues[time]
-    if (maxVisitedValue != null && maxVisitedValue.isGreaterThan(currentValue)) {
-        return -1
-    }
 
     val cacheKey = Pair(time, state)
     val cachedValue = cache[cacheKey]
     if (cachedValue != null) return cachedValue
 
+    val currentValue = state.value(bp, maxTime - time)
+    val maxVisitedValue = maxVisitedValues[time]
+    if (maxVisitedValue != null && maxVisitedValue.isGreaterThan(currentValue)) {
+        return -1
+    }
     maxVisitedValues[time] = currentValue
 
     var maxValue = 0
