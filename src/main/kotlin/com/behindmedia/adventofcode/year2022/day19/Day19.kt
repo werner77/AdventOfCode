@@ -18,7 +18,7 @@ private enum class Kind(val index: Int) {
         val allKindsWithNull: List<Kind?> = listOf(null, Ore, Clay, Obsidian, Geode).reversed()
 
         fun from(index: Int): Kind {
-            return when(index) {
+            return when (index) {
                 0 -> Ore
                 1 -> Clay
                 2 -> Obsidian
@@ -92,7 +92,7 @@ private fun part1(bluePrints: List<BluePrint>) {
     val sum = AtomicInteger(0)
     val initialState = State(Ore to 1)
     bluePrints.parallelStream().forEach { bp ->
-        val maxValue = findMaxValue(bp, initialState, 0, 24, mutableMapOf(), mutableMapOf())
+        val maxValue = dfs(bp, initialState, 24)
         sum.updateAndGet {
             bp.qualityLevel(maxValue) + it
         }
@@ -104,22 +104,10 @@ private fun part2(bluePrints: List<BluePrint>) {
     val product = AtomicInteger(1)
     val initialState = State(Ore to 1)
     bluePrints.take(3).parallelStream().forEach { bp ->
-        val cache = object: HashMap<Any, Int>() {
-            var hitSize: Int = 0
-            override fun get(key: Any): Int? {
-                val v = super.get(key)
-                if (v != null) {
-                    hitSize++
-                }
-                return v
-            }
-        }
-        val maxValue = findMaxValue(bp, initialState, 0, 32, mutableMapOf(), cache)
+        val maxValue = dfs(bp, initialState, 32)
         product.updateAndGet {
             it * maxValue
         }
-        println("Cache size: ${cache.size}")
-        println("Cache hits: ${cache.hitSize}")
     }
     println(product.get())
 }
@@ -144,15 +132,15 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
         return values[kind.index + Kind.count]
     }
 
-    private fun incrementRobotAmount(kind: Kind): Int {
+    private fun incrementRobotAmount(kind: Kind) {
         values[kind.index] += 1
-        return values[kind.index]
     }
 
-    private fun addMaterialAmount(kind: Kind, amount: Int): Int {
+    private fun addMaterialAmount(kind: Kind, amount: Int): Boolean {
         val index = kind.index + Kind.count
+        if (-amount > values[index]) return false
         values[index] += amount
-        return values[index]
+        return true
     }
 
     override fun equals(other: Any?): Boolean {
@@ -169,8 +157,7 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
         if (constructRobot != null) {
             val cost = bluePrint.robots[constructRobot.index]
             for (c in cost) {
-                val newValue = copy.addMaterialAmount(c.kind, -c.cost)
-                if (newValue < 0L) return null
+                if (!copy.addMaterialAmount(c.kind, -c.cost)) return null
             }
             copy.incrementRobotAmount(constructRobot)
         }
@@ -194,41 +181,39 @@ private class StateValue(state: State, bluePrint: BluePrint, minutesRemaining: I
     private val maxRemainingGeodeAmount: Int = max(0, ((minutesRemaining - 1) * minutesRemaining) / 2)
 
     fun canBeGreaterThan(other: StateValue): Boolean {
-        var foundGreaterValue = false
-        for (kind in Kind.values()) {
-            if (this.values[kind.index] > other.values[kind.index]) {
-                foundGreaterValue = true
-            }
-        }
-        if (!foundGreaterValue) return false
+        if (Kind.values().none { this.values[it.index] > other.values[it.index] }) return false
         return values[Geode.index] + maxRemainingGeodeAmount > other.values[Geode.index]
     }
 }
 
-private fun findMaxValue(bluePrint: BluePrint, state: State, time: Int, maxTime: Int, maxVisitedValues: MutableMap<Int, StateValue>, cache: MutableMap<Any, Int>): Int {
-    if (time >= maxTime) {
+private fun dfs(
+    bluePrint: BluePrint,
+    state: State,
+    remainingTime: Int,
+    maxVisitedValues: Array<StateValue?> = Array(remainingTime) { null },
+    cache: MutableMap<Any, Int> = HashMap(1024 * 64)
+): Int {
+    if (remainingTime == 0) {
         return state.getMaterialAmount(kind = Geode)
     }
 
-    val currentValue = state.value(maxTime - time, bluePrint)
-    val maxVisitedValue = maxVisitedValues[time]
+    val currentValue = state.value(remainingTime, bluePrint)
+    val maxVisitedValue = maxVisitedValues[remainingTime - 1]
     if (maxVisitedValue != null && !currentValue.canBeGreaterThan(maxVisitedValue)) {
         return -1
     }
-    maxVisitedValues[time] = currentValue
+    maxVisitedValues[remainingTime - 1] = currentValue
 
-    val cacheKey = Pair(time, state)
+    val cacheKey = Pair(remainingTime, state)
     val cachedValue = cache[cacheKey]
     if (cachedValue != null) return cachedValue
 
-    var maxValue = 0
-
+    var maxValue = state.getMaterialAmount(kind = Geode)
     for (kind in allKindsWithNull) {
         val nextState = state.nextState(bluePrint, kind) ?: continue
-        val value = findMaxValue(bluePrint, nextState, time + 1, maxTime, maxVisitedValues, cache)
+        val value = dfs(bluePrint, nextState, remainingTime - 1, maxVisitedValues, cache)
         maxValue = max(maxValue, value)
     }
-
     cache[cacheKey] = maxValue
     return maxValue
 }

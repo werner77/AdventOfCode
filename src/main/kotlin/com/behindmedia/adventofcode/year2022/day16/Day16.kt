@@ -55,8 +55,8 @@ fun main() {
     }
 
     // Calculate the graph
-    val connections = calculateConnections(data = valveMap)
     val start = valveMap["AA"] ?: error("Start node not found")
+    val connections = calculateConnections(data = valveMap, startNode = start)
     timing {
         part1(start, connections)
     }
@@ -87,9 +87,12 @@ private fun part2(
     val cache = ConcurrentHashMap<Any, Int>()
     runBlocking {
         withContext(Dispatchers.Default) {
-            for (i in 1..allValveIds / 2) {
-                val first = i and allValveIds
-                val second = first xor allValveIds
+            // Omit the last valveId which is the starting point with flowRate == 0.
+            // Additionally, we can halve the number of values to iterate over because the two actors are symmetric in every way.
+            val max = allValveIds / 4
+            for (i in 1..allValveIds / 4) {
+                val first = i and max
+                val second = first xor max
                 launch {
                     val value = dfs(
                         valveId = start.id,
@@ -114,11 +117,12 @@ private fun part2(
     println(ans.get())
 }
 
-private fun calculateConnections(data: Map<String, Valve>): Map<Long, List<Pair<Valve, Int>>> {
+private fun calculateConnections(startNode: Valve, data: Map<String, Valve>): Map<Long, List<Pair<Valve, Int>>> {
     val connections = mutableMapOf<Long, List<Pair<Valve, Int>>>()
-    val filteredNodes = data.values.filter { it.name == "AA" || it.flowRate > 0 }.toSet()
-    for (valve in filteredNodes) {
+    val filteredNodes = data.values.filter { it.flowRate > 0 }.toSet()
+    for (valve in filteredNodes + startNode) {
         // For each starting valve find the shortest path to any of
+        // This will also populate the Long ids for each valve. The start valve will have the last Id and is not included in the graph for the other nodes.
         connections[valve.id] = findShortestPaths(from = valve, map = data, includeNodes = filteredNodes)
     }
     return connections
