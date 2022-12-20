@@ -141,24 +141,29 @@ fun <C> topologicalSort(
     comparator: Comparator<C>
 ): List<C> {
     // Find all nodes with have no incoming edges
-    val remainingEdges = incomingEdges.entries.fold(mutableMapOf<C, MutableSet<C>>()) { map, entry ->
-        map.apply {
-            put(entry.key, entry.value.toMutableSet())
+    val remainingEdges = mutableMapOf<C, MutableSet<C>>()
+    val pending = TreeSet<C>(comparator)
+    for ((c, edges) in incomingEdges) {
+        if (edges.isEmpty()) {
+            // Add to pending
+            pending.add(c)
+        } else {
+            // Add to remaining
+            remainingEdges[c] = edges.toMutableSet()
         }
-    }
-    val pending = TreeSet<C>(comparator).apply {
-        addAll(incomingEdges.entries.filter { it.value.isEmpty() }.map { it.key })
     }
     val result = mutableListOf<C>()
     while (pending.isNotEmpty()) {
         val next = pending.popFirst() ?: error("No element found left")
         result += next
         // Remove next from the incoming edges
-        for ((c, e) in remainingEdges) {
+        val iterator = remainingEdges.iterator()
+        while(iterator.hasNext()) {
+            val (c, e) = iterator.next()
             e.remove(next)
             if (e.isEmpty()) {
                 pending += c
-                remainingEdges.remove(c)
+                iterator.remove()
             }
         }
     }

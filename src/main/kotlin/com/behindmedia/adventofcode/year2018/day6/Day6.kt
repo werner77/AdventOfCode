@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode.year2018.day6
 
 import com.behindmedia.adventofcode.common.*
+import kotlin.math.max
 
 private data class Location(val identifier: Int, val coordinate: Coordinate)
 
@@ -10,54 +11,111 @@ fun main() {
         val (x, y) = line.splitNonEmptySequence(" ", ",").map { it.toInt() }.toList()
         Location(index++, Coordinate(x, y))
     }
-
-    val minX = locations.minOf { it.coordinate.x }
-    val minY = locations.minOf { it.coordinate.y }
-    val maxX = locations.maxOf { it.coordinate.x }
-    val maxY = locations.maxOf { it.coordinate.y }
-    val minCoordinate = Coordinate(minX, minY) - Coordinate(100, 100)
-    val maxCoordinate = Coordinate(maxX, maxY) + Coordinate(100, 100)
+    val coordinateRange = locations.map { it.coordinate }.range()
+    part1(coordinateRange, locations)
+    part2(coordinateRange, locations)
+}
+private fun part1(
+    coordinateRange: CoordinateRange,
+    locations: List<Location>
+) {
     val map = mutableMapOf<Coordinate, Int>()
-    for (coordinate in CoordinateRange(minCoordinate, maxCoordinate)) {
-        // Find the closest coordinate
-        val minLocations = locations.allMinBy { it.coordinate.manhattenDistance(coordinate) }
-        require(minLocations.size > 0)
-        if (minLocations.size == 1) {
-            map[coordinate] = minLocations.first().identifier
+    for (c in coordinateRange) {
+        // Find the nearest location
+        val l = nearestLocation(c, locations)
+        if (l != null) {
+            map[c] = l.identifier
         } else {
-            map[coordinate] = 0
+            // This designates an equal distance coordinate, null means outside
+            map[c] = 0
         }
     }
-
-    val minX1 = map.keys.minOf { it.x }
-    val minY1 = map.keys.minOf { it.y }
-    val maxX1 = map.keys.maxOf { it.x }
-    val maxY1 = map.keys.maxOf { it.y }
-    val edgeValues = map.filter { it.key.x in setOf(minX1, maxX1) && it.key.y in setOf(minY1, maxY1) }.map { it.value }.toSet()
-
-    var maxArea = 0
-    for (i in 1 until index) {
-        if (i in edgeValues) continue
-        val area = map.values.count { it == i }
-        if (area > maxArea) {
-            maxArea = area
+    var maxValue = 0
+    for (identifier in locations.map { it.identifier }) {
+        // Non-infinite means a location is fully surrounded by zeros
+        val area = findNonInfiniteArea(identifier, map)
+        if (area != null) {
+            maxValue = max(maxValue, area)
         }
     }
-    println(maxArea)
+    println(maxValue)
 }
 
-private fun List<Location>.allMinBy(selector: (Location) -> Int): List<Location> {
-    val result = mutableListOf<Location>()
-    var currentMin = Int.MAX_VALUE
-    for (l in this) {
-        val value = selector.invoke(l)
-        if (value < currentMin) {
-            result.clear()
-            currentMin = value
-            result += l
-        } else if (value == currentMin) {
-            result += l
+private fun part2(
+    coordinateRange: CoordinateRange,
+    locations: List<Location>
+) {
+    val map2 = mutableMapOf<Coordinate, Int>()
+    for (c in coordinateRange) {
+        var totalDistance = 0
+        for (l in locations) {
+            val distance = c.manhattenDistance(l.coordinate)
+            totalDistance += distance
+        }
+        map2[c] = totalDistance
+    }
+    println(findAreaWithValueLessThan(10000, map2))
+}
+
+private fun findNonInfiniteArea(identifier: Int, map: Map<Coordinate, Int>): Int? {
+    // Find any coordinate with value == identifier
+    val initial = map.entries.firstOrNull { it.value == identifier }?.key ?: return null
+    var size = 0
+    val foundPath = shortestPath(
+        from = initial,
+        neighbours = { path ->
+            path.destination.directNeighbourSequence()
+        },
+        reachable = { _, coordinate ->
+            map[coordinate] == identifier || map[coordinate] == null
+        },
+        process = { path ->
+            if (map[path.destination] == null) {
+                true
+            } else {
+                size++
+                null
+            }
+        }
+    ) ?: false
+    return if (!foundPath) {
+        size
+    } else {
+        null
+    }
+}
+
+private fun findAreaWithValueLessThan(maxValue: Int, map: Map<Coordinate, Int>): Int? {
+    // Find any coordinate with value == identifier
+    val initial = map.entries.firstOrNull { it.value < maxValue }?.key ?: return null
+    var size = 0
+    shortestPath(
+        from = initial,
+        neighbours = { path ->
+            path.destination.directNeighbourSequence()
+        },
+        reachable = { _, coordinate ->
+            map[coordinate]?.let { it <= maxValue } ?: false
+        },
+        process = { path ->
+            size++
+            null
+        }
+    )
+    return size
+}
+
+private fun nearestLocation(coordinate: Coordinate, locations: List<Location>): Location? {
+    var minDistance = Int.MAX_VALUE
+    var foundLocation: Location? = null
+    for (location in locations) {
+        val distance = coordinate.manhattenDistance(location.coordinate)
+        if (distance < minDistance) {
+            minDistance = distance
+            foundLocation = location
+        } else if (distance == minDistance) {
+            foundLocation = null
         }
     }
-    return result
+    return foundLocation
 }

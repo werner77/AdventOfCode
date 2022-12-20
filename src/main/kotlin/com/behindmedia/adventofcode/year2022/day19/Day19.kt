@@ -8,6 +8,7 @@ import com.behindmedia.adventofcode.year2022.day19.Kind.Geode
 import com.behindmedia.adventofcode.year2022.day19.Kind.Obsidian
 import com.behindmedia.adventofcode.year2022.day19.Kind.Ore
 import kotlin.math.max
+import kotlin.math.min
 import java.util.concurrent.atomic.AtomicInteger
 
 private enum class Kind(val index: Int) {
@@ -29,8 +30,7 @@ private enum class Kind(val index: Int) {
     }
 }
 
-private data class Cost(val kind: Kind, val cost: Int)
-private class BluePrint(val id: Int, val robots: Array<Set<Cost>>) {
+private class BluePrint(val id: Int, val robots: Array<Map<Kind, Int>>) {
 
     companion object {
         private val regex =
@@ -39,40 +39,19 @@ private class BluePrint(val id: Int, val robots: Array<Set<Cost>>) {
         operator fun invoke(string: String): BluePrint {
             val match = regex.matchEntire(string)?.groupValues ?: error("Invalid string: $string")
             val id = match[1].toInt()
-            val robots = mutableMapOf<Kind, Set<Cost>>()
-            robots[Ore] = setOf(Cost(Ore, match[2].toInt()))
-            robots[Clay] = setOf(Cost(Ore, match[3].toInt()))
-            robots[Obsidian] = setOf(Cost(Ore, match[4].toInt()), Cost(Clay, match[5].toInt()))
-            robots[Geode] = setOf(Cost(Ore, match[6].toInt()), Cost(Obsidian, match[7].toInt()))
+            val robots = mutableMapOf<Kind, Map<Kind, Int>>()
+            robots[Ore] = mapOf(Ore to match[2].toInt())
+            robots[Clay] = mapOf(Ore to match[3].toInt())
+            robots[Obsidian] = mapOf(Ore to match[4].toInt(), Clay to match[5].toInt())
+            robots[Geode] = mapOf(Ore to match[6].toInt(), Obsidian to match[7].toInt())
             return BluePrint(id, Array(Kind.values().size) {
-                robots[Kind.from(it)] ?: emptySet()
+                robots[Kind.from(it)] ?: emptyMap()
             })
         }
     }
 
     fun qualityLevel(maxGeodes: Int): Int {
         return id * maxGeodes
-    }
-
-    private fun calculateCostInOre(kind: Kind): Int {
-        val costs = robots[kind.index]
-        var result = 0
-        for (c in costs) {
-            result += if (c.kind == Ore) {
-                c.cost
-            } else {
-                calculateCostInOre(c.kind) * c.cost
-            }
-        }
-        return result
-    }
-
-    private val costsInOre = Array(Kind.values().size) { index ->
-        calculateCostInOre(Kind.from(index))
-    }
-
-    fun costInOre(kind: Kind): Int {
-        return costsInOre[kind.index]
     }
 }
 
@@ -136,6 +115,10 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
         values[kind.index] += 1
     }
 
+    private fun setRobotAmount(kind: Kind, value: Int) {
+        values[kind.index] = value
+    }
+
     private fun addMaterialAmount(kind: Kind, amount: Int): Boolean {
         val index = kind.index + Kind.count
         if (-amount > values[index]) return false
@@ -152,23 +135,41 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
         return this.values.contentHashCode()
     }
 
-    fun nextState(bluePrint: BluePrint, constructRobot: Kind?): State? {
+    fun nextState(bluePrint: BluePrint, constructRobot: Kind?, remainingTime: Int): State? {
         val copy: State = State(this.values.copyOf())
         if (constructRobot != null) {
-            val cost = bluePrint.robots[constructRobot.index]
-            for (c in cost) {
-                if (!copy.addMaterialAmount(c.kind, -c.cost)) return null
+            val costs = bluePrint.robots[constructRobot.index]
+            for ((kind, cost) in costs) {
+                if (!copy.addMaterialAmount(kind, -cost)) return null
             }
             copy.incrementRobotAmount(constructRobot)
         }
         for (kind in Kind.values()) {
             copy.addMaterialAmount(kind, this.getRobotAmount(kind))
         }
+        // Max out the robots/materials based on the remaining time to minimize the number of different states
+        copy.applyLimits(bluePrint, remainingTime)
         return copy
     }
 
     fun value(minutesRemaining: Int, bluePrint: BluePrint): StateValue {
         return StateValue(state = this, minutesRemaining = minutesRemaining, bluePrint = bluePrint)
+    }
+
+    private fun applyLimits(bluePrint: BluePrint, remainingTime: Int) {
+        for (kind in Kind.values()) {
+            if (kind == Geode) continue
+            val maxSpendPerMinute = bluePrint.robots.maxOf { it[kind] ?: 0 }
+            // Subtract 1 since at least the last minute would be necessary to produce Geode otherwise it doesn't add value.
+            val maxSpend = maxSpendPerMinute * (remainingTime - 1)
+            val materialAmount = getMaterialAmount(kind)
+            val diff = materialAmount - maxSpend
+            if (diff > 0) {
+                // Eliminate all the waste
+                addMaterialAmount(kind, -min(diff, materialAmount))
+                setRobotAmount(kind, 0)
+            }
+        }
     }
 }
 
@@ -210,7 +211,7 @@ private fun dfs(
 
     var maxValue = state.getMaterialAmount(kind = Geode)
     for (kind in allKindsWithNull) {
-        val nextState = state.nextState(bluePrint, kind) ?: continue
+        val nextState = state.nextState(bluePrint, kind, remainingTime - 1) ?: continue
         val value = dfs(bluePrint, nextState, remainingTime - 1, maxVisitedValues, cache)
         maxValue = max(maxValue, value)
     }
