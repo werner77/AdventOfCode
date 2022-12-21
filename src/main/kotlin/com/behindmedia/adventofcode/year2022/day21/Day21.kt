@@ -65,18 +65,17 @@ private sealed class Formula {
 }
 
 fun main() {
-    val data = parseLines("/2022/day21.txt") { line ->
+    val data: Map<String, Formula> = parseLines("/2022/day21.txt") { line ->
         val components = line.split(":").map { it.trim() }
         val monkey = components[0]
         val literal = components[1].toLongOrNull()
-
         if (literal != null) {
             Constant(monkey, literal)
         } else {
             val (left, type, right) = components[1].split(" ").map { it.trim() }
             Operation(monkey, left, right, OperationType.fromString(type))
         }
-    }.fold(mutableMapOf<String, Formula>()) { map, op ->
+    }.fold(mutableMapOf()) { map, op ->
         map.apply {
             put(op.id, op)
         }
@@ -84,11 +83,14 @@ fun main() {
 
     val root: Operation = data["root"] as? Operation ?: error("Root not found")
 
-    // Part 1
-    part1(root, data)
-
-    // Part 2
-    part2(data, root)
+    timing {
+        // Part 1
+        part1(root, data)
+    }
+    timing {
+        // Part 2
+        part2(data, root)
+    }
 }
 
 private fun part1(
@@ -99,27 +101,25 @@ private fun part1(
 }
 
 private fun part2(
-    data: Map<String, Formula>,
+    formulas: Map<String, Formula>,
     root: Operation
 ) {
-    val f1 = data[root.left] ?: error("Root has no left value")
-    val f2 = data[root.right] ?: error("Root has no right value")
+    require(formulas["humn"] != null)
+    val f1 = formulas[root.left] ?: error("Root has no left value")
+    val f2 = formulas[root.right] ?: error("Root has no right value")
     val x = AtomicLong(0)
     val evaluation = Evaluation("humn") {
         x.get()
     }
-    val modifiedData = data.toMutableMap()
-    modifiedData.put("humn", evaluation) ?: error("Expected humn to exist")
+    val modifiedFormulas = formulas + (evaluation.id to evaluation)
     val f: (Long) -> Long = { input ->
         x.set(input)
-        f1.compute(modifiedData) - f2.compute(modifiedData)
+        f1.compute(modifiedFormulas) - f2.compute(modifiedFormulas)
     }
 
     // Find all ranges where sign(f(min)) != sign(f(max))
     val ranges = findRangesWithOppositeSign(f)
-    println(ranges)
     for ((min, max) in ranges) {
-        println("Evaluating range [$min, $max]")
         // First find a [x1, x2] such that F(x) has opposite signs for x1 and x2
         // Then half the interval on both sides and take the side where the above is still true
         val ans = bisect(min, max) {
@@ -130,6 +130,10 @@ private fun part2(
     }
 }
 
+/**
+ * Find all ranges [x1, x2] where sign(f(x1)) != sign(f(x2)), sorted by size of the range in ascending order.
+ * Note that some bigger numbers may actually produce overflow.
+ */
 private fun findRangesWithOppositeSign(f: (Long) -> Long): MutableList<Pair<Long, Long>> {
     val ranges = mutableListOf<Pair<Long, Long>>()
     for (startValue in listOf(Long.MIN_VALUE, Long.MAX_VALUE)) {
@@ -163,15 +167,15 @@ private fun findRangesWithOppositeSign(f: (Long) -> Long): MutableList<Pair<Long
     Recurse into ever smaller halves until min == max and f(min) == 0
  */
 private fun bisect(min: Long, max: Long, f: (Long) -> Long): Long? {
-
     // Exit conditions
     if (min > max) {
         return null
     } else if (min == max) {
-        return if (f(min) != 0L) {
-            null
-        } else {
+        return if (f(min) == 0L) {
+            // Found root
             min
+        } else {
+            null
         }
     }
 
