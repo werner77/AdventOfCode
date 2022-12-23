@@ -303,6 +303,7 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
     override val start: Coordinate
         get() = minMaxCoordinate.first
 
+
     val sizeX: Int
         get() = endInclusive.x - start.x + 1
 
@@ -312,6 +313,9 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
     val size: Int
         get() = sizeX * sizeY
 
+    override fun contains(value: Coordinate): Boolean {
+        return value.x in start.x..endInclusive.x && value.y in start.y..endInclusive.y
+    }
 }
 
 fun Collection<Coordinate>.range(): CoordinateRange = CoordinateRange(this)

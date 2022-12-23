@@ -65,14 +65,16 @@ private fun part1(
                 }
         }
     }
-    solve(map, directions) { coordinate, direction ->
-        when (direction) {
+    solve(map, directions) { c, direction ->
+        val coordinate = c + direction
+        val nextCoordinate = when (direction) {
             Coordinate.up -> Coordinate(coordinate.x, yBoundaries[coordinate.x]!!.second)
             Coordinate.down -> Coordinate(coordinate.x, yBoundaries[coordinate.x]!!.first)
             Coordinate.left -> Coordinate(xBoundaries[coordinate.y]!!.second, coordinate.y)
             Coordinate.right -> Coordinate(xBoundaries[coordinate.y]!!.first, coordinate.y)
             else -> error("Invalid direction")
         }
+        Pair(nextCoordinate, direction)
     }
 }
 
@@ -80,117 +82,116 @@ private fun part2(
     map: Map<Coordinate, Char>,
     directions: List<Direction>
 ) {
-    val size = 50
+    val size = max(map.sizeX / 4, map.sizeY / 4)
+    val mappings = mutableListOf<CoordinateDirectionMapping>()
 
-    val tests = listOf<Triple<Coordinate, Coordinate, Coordinate>>(
-        Triple(Coordinate(size * 3 - 1, 5), Coordinate.right, Coordinate.right),
-        Triple(Coordinate(size * 2 - 1, size + 5), Coordinate.right, Coordinate.down),
-        Triple(Coordinate(size * 2 - 1, size * 2 + 5), Coordinate.right, Coordinate.right),
-        Triple(Coordinate(size - 1, size * 3 + 5), Coordinate.right, Coordinate.down),
-        Triple(Coordinate(size + 5, 0), Coordinate.up, Coordinate.left),
-        Triple(Coordinate(size * 2 + 5, 0), Coordinate.up, Coordinate.down),
-        Triple(Coordinate(5, size * 2), Coordinate.up, Coordinate.left),
-        Triple(Coordinate(size, 5), Coordinate.left, Coordinate.left),
-        Triple(Coordinate(size, size + 5), Coordinate.left, Coordinate.up),
-        Triple(Coordinate(0, size * 2 + 5), Coordinate.left, Coordinate.left),
-        Triple(Coordinate(0, size * 3 + 5), Coordinate.left, Coordinate.up),
-        Triple(Coordinate(size * 2 + 5, size - 1), Coordinate.down, Coordinate.right),
-        Triple(Coordinate(size + 5, size * 3 - 1), Coordinate.down, Coordinate.right),
-        Triple(Coordinate(5, size * 4 - 1), Coordinate.down, Coordinate.up),
-    )
+    // This maps the sides of the quadrants, there are 16 in total, of which only 6 are occupied
+    // We have to map 7 sides back and forth
+    // Invert means that the perpendicular coordinate is inverted in the edge mapping
 
-    tests.forEach {
-        testDirectionWrapping(it, size)
+    // Map all the sides
+    mappings.addForwardAndBackMappings(
+        row = 0,
+        column = 1,
+        direction = Coordinate.up,
+        toRow = 3,
+        toColumn = 0,
+        toDirection = Coordinate.right,
+        invert = false,
+        size = size
+    ) // A
+
+    mappings.addForwardAndBackMappings(
+        row = 1,
+        column = 1,
+        direction = Coordinate.left,
+        toRow = 2,
+        toColumn = 0,
+        toDirection = Coordinate.down,
+        invert = false,
+        size = size
+    ) // B
+
+    mappings.addForwardAndBackMappings(
+        row = 0,
+        column = 1,
+        direction = Coordinate.left,
+        toRow = 2,
+        toColumn = 0,
+        toDirection = Coordinate.right,
+        invert = true,
+        size = size
+    ) // C
+
+
+    mappings.addForwardAndBackMappings(
+        row = 0,
+        column = 2,
+        direction = Coordinate.up,
+        toRow = 3,
+        toColumn = 0,
+        toDirection = Coordinate.up,
+        invert = false,
+        size = size
+    ) // D
+
+    mappings.addForwardAndBackMappings(
+        row = 0,
+        column = 2,
+        direction = Coordinate.right,
+        toRow = 2,
+        toColumn = 1,
+        toDirection = Coordinate.left,
+        invert = true,
+        size = size
+    ) // E
+
+    mappings.addForwardAndBackMappings(
+        row = 2,
+        column = 1,
+        direction = Coordinate.down,
+        toRow = 3,
+        toColumn = 0,
+        toDirection = Coordinate.left,
+        invert = false,
+        size = size
+    ) // F
+
+    mappings.addForwardAndBackMappings(
+        row = 0,
+        column = 2,
+        direction = Coordinate.down,
+        toRow = 1,
+        toColumn = 1,
+        toDirection = Coordinate.left,
+        invert = false,
+        size = size
+    ) // G
+
+    solve(map, directions) { coordinate, direction ->
+        // Find the mapping for this edge, there should be exactly one
+        mappings.asSequence().mapNotNull { it.invoke(coordinate, direction) }.singleOrNull() ?: error("No mapping found")
     }
-
-    // Size of the cube == 50
-    // Moving left/right off the map
-//    solve(map, directions) { coordinate, direction ->
-//        getNextWrappedCoordinate(coordinate, size, direction)
-//    }
-}
-
-private fun getNextWrappedCoordinate(
-    coordinate: Coordinate,
-    size: Int,
-    direction: Coordinate
-): Coordinate {
-    val quadrant = getQuadrant(coordinate, size)
-    return when (direction) {
-        Coordinate.up -> when (quadrant) {
-            1 -> Coordinate(0, 3 * size + (coordinate.x - size))
-            2 -> Coordinate(size - 1 - (coordinate.x - 2 * size), 4 * size - 1)
-            5 -> Coordinate(size + (coordinate.y - 2 * size), size + coordinate.x)
-            else -> error("Invalid")
-        }
-
-        Coordinate.down -> when (quadrant) {
-            2 -> Coordinate(2 * size - 1, size + (coordinate.x - 2 * size))
-            4 -> Coordinate(size - 1, 3 * size + (coordinate.x - size))
-            6 -> Coordinate(size * 3 - 1 - coordinate.x , 0) // y component could be inverted, check
-            else -> error("Invalid")
-        }
-
-        Coordinate.left -> when (quadrant) {
-            1 -> Coordinate(0, size * 3 - 1 - (coordinate.y))
-            3 -> Coordinate(coordinate.y - size, 2 * size)
-            5 -> Coordinate(size * 2 - 1 - (coordinate.y - 2 * size), 0)
-            6 -> Coordinate(size + (coordinate.y - 3 * size), 0)
-            else -> error("Invalid")
-        }
-
-        Coordinate.right -> when (quadrant) {
-            2 -> Coordinate(size * 2 - 1, size * 3 - 1 - (coordinate.y))
-            3 -> Coordinate(2 * size + (coordinate.y - size), size - 1)
-            4 -> Coordinate(3 * size - 1, size - 1 - (coordinate.y - 2 * size))
-            6 -> Coordinate(size + (coordinate.y - 3 * size), 3 * size - 1)
-            else -> error("Invalid")
-        }
-
-        else -> error("Invalid direction: $direction")
-    }
-}
-
-private fun getQuadrant(coordinate: Coordinate, size: Int): Int {
-    when (coordinate.x) {
-        in 0 until size -> {
-            when (coordinate.y / size) {
-                2 -> return 5
-                3 -> return 6
-            }
-        }
-
-        in size until size * 2 -> {
-            when (coordinate.y / size) {
-                0 -> return 1
-                1 -> return 3
-                2 -> return 4
-            }
-        }
-
-        in 2 * size until 3 * size -> {
-            when (coordinate.y / size) {
-                0 -> return 2
-            }
-        }
-    }
-    error("Invalid coordinate: $coordinate")
 }
 
 private fun solve(
     map: Map<Coordinate, Char>,
     directions: List<Direction>,
-    wrapAround: (Coordinate, Coordinate) -> Coordinate
+    wrapAround: (Coordinate, Coordinate) -> Pair<Coordinate, Coordinate>
 ) {
     val start = map.entries.first { it.value == '.' }.key
     val state = State(start, Coordinate.right)
     for (direction in directions) {
         for (k in 0 until direction.amount) {
             var c = state.coordinate + state.direction
+            var d = state.direction
             var h = map[c]
             if (h == null || h == ' ') {
-                c = wrapAround(c, state.direction)
+                val wrapped = wrapAround(state.coordinate, state.direction)
+                c = wrapped.first
+                d = wrapped.second
                 h = map[c]
+                require(h != null && h != ' ')
             }
             if (h == '#') {
                 // Wall, just stop
@@ -198,6 +199,7 @@ private fun solve(
             } else if (h == '.') {
                 // Move
                 state.coordinate = c
+                state.direction = d
             }
         }
         direction.rotation?.let {
@@ -211,7 +213,6 @@ private fun solve(
         Coordinate.up -> 3
         else -> error("Invalid direction")
     }
-
     println("Final coordinate: ${state.coordinate}")
     println("Final direction: ${state.direction}")
 
@@ -219,46 +220,70 @@ private fun solve(
     println(ans)
 }
 
-private fun getCoordinateMap(size: Int): Map<Coordinate, Coordinate3D> {
-    val map = mutableMapOf<Coordinate, Coordinate3D>()
-    var c = Coordinate3D(0, 0, 0)
-    var xDirection = Coordinate3D(1, 0, 0)
-    var yDirection = Coordinate3D(0, 1, 0)
-    for (j in 0 until 4) {
-        for (k in 0 until size) {
-            val y = j * size + k
-            for (i in 0 until 4) {
-                for (l in 0 until size) {
-                    val x = i * size + l
-                    map[Coordinate(x, y)] = c
-                    c += xDirection
+private typealias CoordinateDirectionMapping = (Coordinate, Coordinate) -> Pair<Coordinate, Coordinate>?
+
+private fun MutableList<CoordinateDirectionMapping>.addMapping(
+    quadrantRow: Int,
+    quadrantColumn: Int,
+    direction: Coordinate,
+    toQuadrantRow: Int,
+    toQuadrantColumn: Int,
+    toDirection: Coordinate,
+    invert: Boolean,
+    quadrantSize: Int
+) {
+    val quadrantRange = CoordinateRange(Coordinate.origin, quadrantSize, quadrantSize)
+    val mapping: CoordinateDirectionMapping = { inputCoordinate, inputDirection ->
+        // direction should match
+        var targetCoordinate: Coordinate? = null
+        if (inputDirection == direction) {
+            val normalizedStartCoordinate = inputCoordinate - Coordinate(quadrantColumn * quadrantSize, quadrantRow * quadrantSize)
+            val normalizedEndCoordinate = normalizedStartCoordinate + direction
+            if (normalizedStartCoordinate in quadrantRange && normalizedEndCoordinate !in quadrantRange) {
+                // Both x and y are in range, and target x1 and y2 are not in range, which means we are going over the edge
+                // The source value is the value of the coordinate that did not go out of range, which is where
+                var mappedValue = if (normalizedStartCoordinate.x == normalizedEndCoordinate.x) normalizedStartCoordinate.x
+                        else if (normalizedStartCoordinate.y == normalizedEndCoordinate.y) normalizedStartCoordinate.y
+                        else error("Should not be true")
+                if (invert) {
+                    mappedValue = quadrantSize - 1 - mappedValue
                 }
-                xDirection = Coordinate3D(-xDirection.z, xDirection.y, xDirection.x)
+                targetCoordinate = when (toDirection) {
+                    Coordinate.down -> {
+                        // Coming in from the top side, y == constant to min value of quadrant
+                        Coordinate(toQuadrantColumn * quadrantSize + mappedValue, toQuadrantRow * quadrantSize)
+                    }
+                    Coordinate.up -> {
+                        // Coming in from the bottom side, y == constant to max value of quadrant
+                        Coordinate(toQuadrantColumn * quadrantSize + mappedValue, (toQuadrantRow + 1) * quadrantSize - 1)
+                    }
+                    Coordinate.right -> {
+                        // Coming in from the left side, x == constant to min value of quadrant
+                        Coordinate(toQuadrantColumn * quadrantSize, toQuadrantRow * quadrantSize + mappedValue)
+                    }
+                    Coordinate.left -> {
+                        // Coming in from the right side, x == constant to max value of quadrant
+                        Coordinate((toQuadrantColumn + 1) * quadrantSize - 1, toQuadrantRow * quadrantSize + mappedValue)
+                    }
+                    else -> error("Invalid direction")
+                }
             }
-            c += yDirection
         }
-        yDirection = Coordinate3D(yDirection.x, -yDirection.z, yDirection.y)
+        targetCoordinate?.let { Pair(it, toDirection) }
     }
-    return map
+    this += mapping
 }
 
-private fun testDirectionWrapping(testCase: Triple<Coordinate, Coordinate, Coordinate>, size: Int) {
-    val (c, d1, d2) = testCase
-    println("----------------------------------------------------")
-    println("Testing coordinate: $c with direction $d1")
-    val q1 = getQuadrant(c, size)
-    println("Quadrant: $q1")
-    val next = getNextWrappedCoordinate(c, size, d1)
-
-    val q2 = getQuadrant(next, size)
-    println("Got wrapped coordinate: $next")
-    println("Quadrant: $q2")
-
-    val c1 = getNextWrappedCoordinate(next, size, d2)
-
-    if (c != c1) {
-        throw AssertionError("Failed test case for coordinate: $c and direction $d1 which was mapped to coordinate: $next but back to coordinate: $c1")
-    }
-    println("----------------------------------------------------")
-    println("")
+private fun MutableList<CoordinateDirectionMapping>.addForwardAndBackMappings(
+    row: Int,
+    column: Int,
+    direction: Coordinate,
+    toRow: Int,
+    toColumn: Int,
+    toDirection: Coordinate,
+    invert: Boolean,
+    size: Int
+) {
+    addMapping(row, column, direction, toRow, toColumn, toDirection, invert, size)
+    addMapping(toRow, toColumn, toDirection.inverted(), row, column, direction.inverted(), invert, size)
 }
