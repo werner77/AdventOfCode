@@ -303,6 +303,14 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
     override val start: Coordinate
         get() = minMaxCoordinate.first
 
+    val sizeX: Int
+        get() = endInclusive.x - start.x + 1
+
+    val sizeY: Int
+        get() = endInclusive.y - start.y + 1
+
+    val size: Int
+        get() = sizeX * sizeY
 
 }
 

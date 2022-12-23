@@ -306,7 +306,7 @@ class FilteredIterable<E>(private val iterable: Iterable<E>, private val predica
 fun Array<IntArray>.printMatrix() {
     val size = this.size
     for (i in 0 until size) {
-        for (j in 0 until size) {
+        for (j in 0 until this[0].size) {
             if (j > 0) {
                 print("\t")
             }

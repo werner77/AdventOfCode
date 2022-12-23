@@ -97,6 +97,18 @@ fun <E> Map<Coordinate, E>.printMap(default: E) {
     }
 }
 
+fun <E> Map<Coordinate, E>.printMapToString(default: E) : String {
+    val range = this.keys.range()
+    val buffer = StringBuilder()
+    for (c in range) {
+        buffer.append(this[c] ?: default)
+        if (c.x == range.endInclusive.x) {
+            buffer.appendLine()
+        }
+    }
+    return buffer.toString()
+}
+
 fun <E> Map<Coordinate, E>.printMap(default: (Coordinate) -> E) {
     val range = this.keys.range()
     for (c in range) {
