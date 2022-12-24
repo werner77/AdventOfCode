@@ -27,10 +27,10 @@ private data class Amphipod(val value: Char, val hasMoved: Boolean = false) {
         return expectedValue == value && (roomLevel == roomLevelCount - 1 || state[coordinate + Coordinate.down]?.value == expectedValue)
     }
 
-    fun weight(): Long {
-        var value = 1L
+    fun weight(): Int {
+        var value = 1
         for (i in 0 until this.value - 'A') {
-            value *= 10L
+            value *= 10
         }
         return value
     }
@@ -64,7 +64,7 @@ private fun State.moving(from: Coordinate, to: Coordinate): State = State(this).
     it[to] = if (current.hasMoved) current else current.copy(hasMoved = true)
 }
 
-fun solve(map: CharMap, roomLevelCount: Int): Long {
+fun solve(map: CharMap, roomLevelCount: Int): Int {
     val initialState = State(map.toMap().filter { it.value - 'A' in 0 until 4 }.mapValues { Amphipod(it.value) })
     return shortestWeightedPath(
         from = initialState,

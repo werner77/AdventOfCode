@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.year2018.day9
 
 import com.behindmedia.adventofcode.common.*
-import kotlin.math.*
 
 private data class Node(val value: Long) {
     lateinit var next: Node
@@ -45,14 +44,14 @@ private fun play(playerCount: Int, worth: Long) {
             currentNode = node
         } else {
             scores[k] += node.value
-            var n: Node = currentNode
+            var n1: Node = currentNode
             repeat(7) {
-                n = n.previous
+                n1 = n1.previous
             }
-            scores[k] += n.value
+            scores[k] += n1.value
 
-            val nLeft = n.previous
-            val nRight = n.next
+            val nLeft = n1.previous
+            val nRight = n1.next
 
             // Remove this node
             currentNode = nRight

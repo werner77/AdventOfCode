@@ -122,8 +122,8 @@ sealed class Instruction {
     }
 
     data class Rcv(val arg1: String) : Instruction() {
-        override fun execute(program: Program) {
-            program.receive()?.let { program[arg1] = it }
+        override fun execute(state: Program) {
+            state.receive()?.let { state[arg1] = it }
         }
     }
 }

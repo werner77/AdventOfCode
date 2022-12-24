@@ -11,7 +11,7 @@ private fun findMinCostPath(
         from = start,
         neighbours = { c ->
             c.directNeighbourSequence().mapNotNull { n ->
-                map[n]?.let { Pair(n, it.toLong()) }
+                map[n]?.let { Pair(n, it) }
             }
         },
         process = { if (it.destination == end) it.pathLength else null }

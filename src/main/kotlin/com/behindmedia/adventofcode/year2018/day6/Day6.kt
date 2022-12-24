@@ -97,7 +97,7 @@ private fun findAreaWithValueLessThan(maxValue: Int, map: Map<Coordinate, Int>):
         reachable = { _, coordinate ->
             map[coordinate]?.let { it <= maxValue } ?: false
         },
-        process = { path ->
+        process = {
             size++
             null
         }

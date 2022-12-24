@@ -13,8 +13,7 @@ sealed class Operation {
 
     companion object {
         operator fun invoke(string: String): Operation {
-            var operation: Operation? = null
-            operation =
+            var operation: Operation? =
                 swapPosRegex.matchEntire(string)?.groupValues?.let { SwapPositions(it[1].toInt(), it[2].toInt()) }
             if (operation != null) return operation
             operation = swapLetterRegex.matchEntire(string)?.groupValues?.let { SwapLetters(it[1], it[2]) }

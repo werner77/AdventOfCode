@@ -3,7 +3,7 @@ package com.behindmedia.adventofcode.common
 import java.util.ArrayDeque
 import java.util.PriorityQueue
 
-class Path<N>(val destination: N, val pathLength: Long, val parent: Path<N>?) : Comparable<Path<N>> {
+class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : Comparable<Path<N>> {
     val nodeCount: Int = if (parent == null) 1 else parent.nodeCount + 1
 
     override fun compareTo(other: Path<N>): Int {
@@ -88,7 +88,7 @@ inline fun <reified N, T> shortestPath(
  */
 inline fun <N, T> shortestWeightedPath(
     from: N,
-    neighbours: (N) -> Sequence<Pair<N, Long>>,
+    neighbours: (N) -> Sequence<Pair<N, Int>>,
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()

@@ -74,10 +74,10 @@ class Day21 {
 
     fun printAsciiOutput(outputs: List<Long>) {
         for (output in outputs) {
-            if (output > Char.MAX_VALUE.toLong()) {
+            if (output > Char.MAX_VALUE.code.toLong()) {
                 print(output)
             } else {
-                val c = output.toChar()
+                val c = output.toInt().toChar()
                 print("$c")
             }
         }

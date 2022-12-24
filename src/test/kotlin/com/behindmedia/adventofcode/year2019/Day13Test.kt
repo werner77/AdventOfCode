@@ -27,7 +27,7 @@ class Day13Test {
         val gui = TextWindow("AdventOfCode Day 13")
 
         val finalGameState = day13.play(program) { gameState ->
-            gui?.let {
+            gui.let {
                 it.setText(gameState.toString())
                 Thread.sleep(1000 / 25)
             }

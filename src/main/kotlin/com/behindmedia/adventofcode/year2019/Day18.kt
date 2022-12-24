@@ -27,13 +27,14 @@ private val Node.isEmpty: Boolean
 private val Node.correspondingKey: Char
     inline get() {
         assert(this.isDoor)
-        return this.toLowerCase()
+        return this.lowercaseChar()
     }
 
 /**
  * Optimized data structure based on bit masks to store which keys have been collected
  */
-private inline class KeyCollection(private val state: Int) {
+@JvmInline
+private value class KeyCollection(private val state: Int) {
 
     companion object {
         private const val completeState: Int = (1 shl 26) - 1
@@ -110,14 +111,15 @@ private inline class KeyCollection(private val state: Int) {
 /**
  * Optimized data structure to represent up to 4 nodes (current positions) with a single integer.
  */
-private inline class NodeCollection(private val state: Int) {
+@JvmInline
+private value class NodeCollection(private val state: Int) {
 
     companion object {
         fun from(nodes: List<Node>): NodeCollection {
             var state = 0
             nodes.forEachIndexed { index, node ->
                 val shift = shiftFor(index)
-                state = state or (node.toInt() shl shift)
+                state = state or (node.code shl shift)
             }
             return NodeCollection(state)
         }
@@ -139,7 +141,7 @@ private inline class NodeCollection(private val state: Int) {
     fun replacingNode(index: Int, node: Node): NodeCollection {
         val shift = shiftFor(index)
         var newState = state and (0xFF shl shift).inv()
-        newState = newState or (node.toInt() shl shift)
+        newState = newState or (node.code shl shift)
         return NodeCollection(newState)
     }
 }
@@ -186,7 +188,7 @@ class Day18 {
                             c
                         }
                         if (node.isCurrentPosition || node.isKey) {
-                            keyNodeCoordinates[node.toInt()] = Coordinate(x, y)
+                            keyNodeCoordinates[node.code] = Coordinate(x, y)
                         }
                         matrix[x][y] = node
                     }
@@ -200,7 +202,7 @@ class Day18 {
         }
 
         fun coordinateFor(node: Node): Coordinate {
-            return keyNodeCoordinates[node.toInt()] ?: throw IllegalArgumentException("Coordinate requested for none key node: $node")
+            return keyNodeCoordinates[node.code] ?: throw IllegalArgumentException("Coordinate requested for none key node: $node")
         }
 
         fun isAccessible(coordinate: Coordinate, keysInPossession: KeyCollection): Boolean {
@@ -212,7 +214,7 @@ class Day18 {
                 if (y in s.indices) {
                     val node = s[y]
                     val door = node.isDoor
-                    return (!door && !node.isWall) || (door && keysInPossession.contains(node.toLowerCase()))
+                    return (!door && !node.isWall) || (door && keysInPossession.contains(node.lowercaseChar()))
                 }
             }
             return false
@@ -246,7 +248,7 @@ class Day18 {
                         pathLength: Int, requiredKeys: KeyCollection) {
                 if (currentNode.isKey && pathLength != 0) {
                     // Found
-                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength.toLong(), null))) {
+                    if (onFound(Path(KeyedNode(currentNode, requiredKeys), pathLength, null))) {
                         return
                     }
                 }

@@ -10,11 +10,11 @@ class Day5 {
         val after = LinkedList<Char>(polymer.toList())
         while (true) {
             val next = after.popFirst() ?: break
-            if (next.toLowerCase() == ignore) continue
+            if (next.lowercaseChar() == ignore) continue
 
             val previous = before.lastOrNull()
 
-            if (previous?.toLowerCase() == next.toLowerCase() && previous.isLowerCase() != next.isLowerCase()) {
+            if (previous?.lowercaseChar() == next.lowercaseChar() && previous.isLowerCase() != next.isLowerCase()) {
                 before.removeLast()
             } else {
                 before.add(next)

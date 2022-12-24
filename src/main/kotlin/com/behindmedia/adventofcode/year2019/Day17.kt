@@ -69,7 +69,7 @@ class Day17 {
             }
 
             private fun List<String>.totalSize(): Int {
-                return this.sumBy { it.length } + max(0, this.size - 1)
+                return this.sumOf { it.length } + max(0, this.size - 1)
             }
 
             private fun breakupList(list: List<String>): List<List<String>>? {
@@ -133,7 +133,7 @@ class Day17 {
         while (computer.status != Computer.Status.Finished) {
             val result = computer.process()
             for (output in result.outputs) {
-                val ascii = output.toChar()
+                val ascii = output.toInt().toChar()
                 if (ascii == '\n') {
                     currentCoordinate = Coordinate(0, currentCoordinate.y + 1)
                 } else {

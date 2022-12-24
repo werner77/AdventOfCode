@@ -99,9 +99,9 @@ private sealed class Instruction {
     }
 
     data class Jio(val arg1: String, val arg2: String) : Instruction() {
-        override fun execute(program: Program) {
-            if (program[arg1] == 1L) {
-                program.offset(arg2.toInt())
+        override fun execute(state: Program) {
+            if (state[arg1] == 1L) {
+                state.offset(arg2.toInt())
             }
         }
     }

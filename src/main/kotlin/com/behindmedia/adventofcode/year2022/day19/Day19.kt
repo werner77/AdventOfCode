@@ -153,7 +153,7 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
     }
 
     fun value(minutesRemaining: Int, bluePrint: BluePrint): StateValue {
-        return StateValue(state = this, minutesRemaining = minutesRemaining, bluePrint = bluePrint)
+        return StateValue(state = this, minutesRemaining = minutesRemaining)
     }
 
     private fun applyLimits(bluePrint: BluePrint, remainingTime: Int) {
@@ -173,7 +173,7 @@ private class State(private val values: Array<Int> = Array(Kind.count * 2) { 0 }
     }
 }
 
-private class StateValue(state: State, bluePrint: BluePrint, minutesRemaining: Int) {
+private class StateValue(state: State, minutesRemaining: Int) {
 
     private val values = IntArray(Kind.values().size) {
         val kind = Kind.from(it)

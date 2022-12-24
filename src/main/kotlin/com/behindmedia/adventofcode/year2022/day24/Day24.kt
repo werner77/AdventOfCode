@@ -59,7 +59,7 @@ private fun part1(
     blizzards: List<Blizzard>,
     cache: MutableMap<Int, Set<Coordinate>>,
 ) {
-    println(findShortestPath(listOf(start, finish), data, range, blizzards, cache))
+    println(findShortestTime(listOf(start, finish), data, range, blizzards, cache))
 }
 
 private fun part2(
@@ -70,22 +70,22 @@ private fun part2(
     blizzards: List<Blizzard>,
     cache: MutableMap<Int, Set<Coordinate>>,
 ) {
-    println(findShortestPath(listOf(start, finish, start, finish), data, range, blizzards, cache))
+    println(findShortestTime(listOf(start, finish, start, finish), data, range, blizzards, cache))
 }
 
-private fun findShortestPath(
+private fun findShortestTime(
     coordinates: List<Coordinate>,
     map: Map<Coordinate, Char>,
     range: CoordinateRange,
     blizzards: List<Blizzard>,
     cache: MutableMap<Int, Set<Coordinate>>
 ): Int {
-    var totalLength = 0
+    var time = 0
     for (i in 0 until coordinates.size - 1) {
         val start = coordinates[i]
         val finish = coordinates[i + 1]
-        val length = findShortestPath(from = start,
-            startTime = totalLength,
+        time = findShortestPath(from = start,
+            startTime = time,
             neighbours = { it.destination.directNeighbours },
             reachable = { _, coordinate, time ->
                 val value = map[coordinate] ?: '#'
@@ -95,12 +95,11 @@ private fun findShortestPath(
             },
             process = { path ->
                 if (path.destination == finish) {
-                    path.pathLength.toInt()
+                    path.pathLength
                 } else null
             }) ?: error("No path found")
-        totalLength = length
     }
-    return totalLength
+    return time
 }
 
 private inline fun <reified N, T> findShortestPath(
@@ -112,20 +111,20 @@ private inline fun <reified N, T> findShortestPath(
 ): T? {
     val pending = ArrayDeque<Path<N>>()
     val visited = mutableSetOf(Pair(from, startTime))
-    pending.add(Path(from, startTime.toLong(), null))
+    pending.add(Path(from, startTime, null))
     while (true) {
         val current = pending.removeFirstOrNull() ?: return null
         process(current)?.let {
             return it
         }
         val candidates = neighbours(current) + listOf(current.destination)
-        val nextTime = (current.pathLength + 1).toInt()
+        val nextTime = current.pathLength + 1
         for (neighbour in candidates) {
             val next = Pair(neighbour, nextTime)
             if (next in visited) continue
             if (reachable(current, neighbour, nextTime)) {
                 visited += next
-                pending.add(Path(neighbour, nextTime.toLong(), current))
+                pending.add(Path(neighbour, nextTime, current))
             }
         }
     }

@@ -81,7 +81,7 @@ private fun performTurn(current: Pair<Coordinate, Actor>, map: Map<Coordinate, C
         actors[moveCoordinate] = actor
         coordinate = moveCoordinate
     }
-    val attackCandidate = findAttackCandidate(Pair(coordinate, actor), map, actors)
+    val attackCandidate = findAttackCandidate(Pair(coordinate, actor), actors)
     if (attackCandidate != null) {
         if (executeAttack(actor, attackCandidate)) {
             actors.remove(attackCandidate.first)
@@ -144,7 +144,7 @@ private fun <T: Any>Collection<T>.getOrNull(index: Int): T? {
 private data class Actor(val type: Char, val attackPower: Int = 3, var hitPoints: Int = 200) {
 }
 
-private fun findAttackCandidate(current: Pair<Coordinate, Actor>, map: Map<Coordinate, Char>, actors: Map<Coordinate, Actor>): Pair<Coordinate, Actor>? {
+private fun findAttackCandidate(current: Pair<Coordinate, Actor>, actors: Map<Coordinate, Actor>): Pair<Coordinate, Actor>? {
     val (coordinate, actor) = current
     val currentType = actor.type
     var candidate: Pair<Coordinate, Actor>? = null

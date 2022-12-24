@@ -23,7 +23,7 @@ fun main() {
     }
 
     // part 1
-    println(map.count { (key, value) -> value > 1 })
+    println(map.count { (_, value) -> value > 1 })
 
     // part 2
     for (s in data) {

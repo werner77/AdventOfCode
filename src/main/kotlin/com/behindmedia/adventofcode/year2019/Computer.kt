@@ -41,7 +41,7 @@ class Computer(initialState: List<Long>) {
             get() {
                 val buffer = StringBuilder()
                 for (l in outputs) {
-                    buffer.append(l.toChar())
+                    buffer.append(l.toInt().toChar())
                 }
                 buffer.append('\n')
                 return buffer.toString()
@@ -309,8 +309,8 @@ class Computer(initialState: List<Long>) {
 private fun String.toAsciiInput(): List<Long> {
     val ret = mutableListOf<Long>()
     for (c in this) {
-        ret.add(c.toLong())
+        ret.add(c.code.toLong())
     }
-    ret.add('\n'.toLong())
+    ret.add('\n'.code.toLong())
     return ret
 }

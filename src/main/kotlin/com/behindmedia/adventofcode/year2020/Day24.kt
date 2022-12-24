@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2020
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.parseLines
+import java.util.Locale
 
 class Day24 {
     enum class Direction(val coordinate: Coordinate) {
@@ -45,7 +46,7 @@ class Day24 {
             buffer.append(c)
 
             try {
-                val direction = Direction.valueOf(buffer.toString().toUpperCase())
+                val direction = Direction.valueOf(buffer.toString().uppercase(Locale.getDefault()))
                 result.add(direction)
                 buffer.clear()
             } catch (e: IllegalArgumentException) {

@@ -7,13 +7,13 @@ class Day1 {
     }
 
     fun getTotalFuel(masses: List<Int>): Int {
-        return masses.sumBy {
+        return masses.sumOf {
             getFuel(it)
         }
     }
 
     fun cumulativeTotalFuel(masses: List<Int>): Int {
-        return masses.sumBy {
+        return masses.sumOf {
             cumulativeFuel(it)
         }
     }

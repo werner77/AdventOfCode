@@ -46,7 +46,7 @@ class Day24 {
         for (i in 0 until minutes) {
             states = processRecursive(states)
         }
-        return states.values.sumBy { it.occupiedCount() }
+        return states.values.sumOf { it.occupiedCount() }
     }
 
     fun print(state: Int) {

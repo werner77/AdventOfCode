@@ -115,7 +115,7 @@ class Day22 {
 
     fun determineRiskLevel(depth: Long, target: Coordinate): Int {
         val erosionMap = getErosionMap(target, depth)
-        return erosionMap.values.sumBy { RegionType.from(it).rawValue.toInt() }
+        return erosionMap.values.sumOf { RegionType.from(it).rawValue.toInt() }
     }
 
     fun shortestPath(depth: Long, target: Coordinate): Int {

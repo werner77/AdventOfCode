@@ -24,7 +24,7 @@ private val Char.height: Int
     }
 
 private fun solve(map: Map<Coordinate, Char>, destination: Coordinate, startCoordinates: List<Coordinate>) {
-    var shortest = Long.MAX_VALUE
+    var shortest = Int.MAX_VALUE
     for (start in startCoordinates) {
         val path = shortestPath(
             from = start,

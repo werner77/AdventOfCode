@@ -17,8 +17,6 @@ class State(private val registers: DefaultMutableMap<String, Int> = defaultMutab
     var pos = 0
 }
 
-class Condition(args: List<String>)
-
 sealed class Operation {
     companion object {
         operator fun invoke(string: String): Operation {

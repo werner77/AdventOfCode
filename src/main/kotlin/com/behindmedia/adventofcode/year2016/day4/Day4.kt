@@ -85,7 +85,7 @@ private fun decrypt(string: String, id: Int): String {
 }
 
 private fun isValid(map: Map<Char, Int>, checksum: String): Boolean {
-    val sortedEntries = LinkedList(map.entries.sortedByDescending { it.value * 1024 - it.key.toInt() })
+    val sortedEntries = LinkedList(map.entries.sortedByDescending { it.value * 1024 - it.key.code })
     for (c in checksum) {
         val currentEntry = sortedEntries.popFirst() ?: return false
         if (c != currentEntry.key) return false

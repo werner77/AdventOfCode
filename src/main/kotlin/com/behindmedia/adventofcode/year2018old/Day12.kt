@@ -124,7 +124,7 @@ class Day12 {
             return baseChecksum
         }
 
-        val amountOfPlants = processResult.first.sumBy { if (it == '#') 1 else 0 }
+        val amountOfPlants: Int = processResult.first.sumOf { if (it == '#') 1 as Int else 0 }
 
         return (iterationCount - period.first) * amountOfPlants.toLong()  + baseChecksum
     }
