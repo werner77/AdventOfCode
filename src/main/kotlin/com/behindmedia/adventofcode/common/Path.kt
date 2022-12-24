@@ -71,13 +71,12 @@ inline fun <reified N, T> shortestPath(
     pending.add(Path(from, 0, null))
     while (true) {
         val current = pending.pollFirst() ?: return null
-        if (visited.contains(current.destination)) continue
         visited += current.destination
         process(current)?.let {
             return it
         }
         for (neighbour in neighbours(current)) {
-            if (reachable(current, neighbour)) {
+            if (neighbour !in visited && reachable(current, neighbour)) {
                 pending.add(Path(neighbour, current.pathLength + 1, current))
             }
         }
