@@ -4,22 +4,18 @@ import com.behindmedia.adventofcode.common.*
 
 private data class Blizzard(val initialPosition: Coordinate, val direction: Coordinate) {
     fun position(time: Int, sizeX: Int, sizeY: Int): Coordinate {
-        var x = ((initialPosition.x - 1) + time * direction.x) % (sizeX - 2)
-        var y = ((initialPosition.y - 1) + time * direction.y) % (sizeY - 2)
-        if (x < 0) x += sizeX - 2
-        if (y < 0) y += sizeY - 2
-        x++
-        y++
+        val x = ((initialPosition.x - 1) + time * direction.x).mod(sizeX - 2) + 1
+        val y = ((initialPosition.y - 1) + time * direction.y).mod(sizeY - 2) + 1
         return Coordinate(x, y)
     }
 }
 
 private operator fun Coordinate.Companion.invoke(char: Char): Coordinate? {
     return when (char) {
-        '>' -> Coordinate.right
-        '<' -> Coordinate.left
-        '^' -> Coordinate.up
-        'v' -> Coordinate.down
+        '>' -> right
+        '<' -> left
+        '^' -> up
+        'v' -> down
         else -> null
     }
 }
@@ -84,48 +80,30 @@ private fun findShortestTime(
     for (i in 0 until coordinates.size - 1) {
         val start = coordinates[i]
         val finish = coordinates[i + 1]
-        time = findShortestPath(from = start,
-            startTime = time,
-            neighbours = { it.destination.directNeighbours },
-            reachable = { _, coordinate, t ->
-                val value = map[coordinate] ?: '#'
-                value != '#' && coordinate !in getBlizzardPositionsAt(
+        time = shortestPath(
+            from = Pair(start, time),
+            neighbours = { path ->
+                val (c, t) = path.destination
+                list(5) {
+                    for (n in c.directNeighbours)
+                        add(Pair(n, t + 1))
+                    add(Pair(c, t + 1))
+                }
+            },
+            reachable = { _, (c, t) ->
+                val value = map[c] ?: '#'
+                value != '#' && c !in getBlizzardPositionsAt(
                     range.sizeX, range.sizeY, t, blizzards, cache
                 )
             },
             process = { path ->
-                if (path.destination == finish) {
-                    path.pathLength
-                } else null
-            }) ?: error("No path found")
+                if (path.destination.first == finish) {
+                    path.destination.second
+                } else {
+                    null
+                }
+            }
+        ) ?: error("No path found")
     }
     return time
-}
-
-private inline fun <reified N, T> findShortestPath(
-    from: N,
-    startTime: Int,
-    neighbours: (Path<N>) -> List<N>,
-    reachable: (Path<N>, N, Int) -> Boolean = { _, _, _ -> true },
-    process: (Path<N>) -> T?
-): T? {
-    val pending = ArrayDeque<Path<N>>()
-    val visited = mutableSetOf(Pair(from, startTime))
-    pending.add(Path(from, startTime, null))
-    while (true) {
-        val current = pending.removeFirstOrNull() ?: return null
-        process(current)?.let {
-            return it
-        }
-        val candidates = neighbours(current) + listOf(current.destination)
-        val nextTime = current.pathLength + 1
-        for (neighbour in candidates) {
-            val next = Pair(neighbour, nextTime)
-            if (next in visited) continue
-            if (reachable(current, neighbour, nextTime)) {
-                visited += next
-                pending.add(Path(neighbour, nextTime, current))
-            }
-        }
-    }
 }
