@@ -64,7 +64,7 @@ private fun findNonInfiniteArea(identifier: Int, map: Map<Coordinate, Int>): Int
     val foundPath = shortestPath(
         from = initial,
         neighbours = { path ->
-            path.destination.directNeighbourSequence()
+            path.destination.directNeighbours
         },
         reachable = { _, coordinate ->
             map[coordinate] == identifier || map[coordinate] == null
@@ -92,7 +92,7 @@ private fun findAreaWithValueLessThan(maxValue: Int, map: Map<Coordinate, Int>):
     shortestPath(
         from = initial,
         neighbours = { path ->
-            path.destination.directNeighbourSequence()
+            path.destination.directNeighbours
         },
         reachable = { _, coordinate ->
             map[coordinate]?.let { it <= maxValue } ?: false

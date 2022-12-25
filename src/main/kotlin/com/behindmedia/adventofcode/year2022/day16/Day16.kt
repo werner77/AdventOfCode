@@ -134,7 +134,7 @@ private fun findShortestPaths(from: Valve, map: Map<String, Valve>, includeNodes
     return shortestPath(
         from = from,
         neighbours = { path ->
-            path.destination.connectedValves.map { map[it]!! }.asSequence()
+            path.destination.connectedValves.map { map[it]!! }
         },
         process = { path ->
             if (includeNodes.contains(path.destination)) {

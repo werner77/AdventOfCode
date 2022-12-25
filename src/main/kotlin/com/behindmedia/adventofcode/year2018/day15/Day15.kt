@@ -104,7 +104,7 @@ private fun findMoveCoordinate(current: Coordinate, map: Map<Coordinate, Char>, 
     var shortestLength = Int.MAX_VALUE
     shortestPath(
         from = current,
-        neighbours = { it.destination.directNeighbourSequence() },
+        neighbours = { it.destination.directNeighbours },
         reachable = { _, c -> map[c] == '.' && c !in actors },
         process = { path ->
             if (path.destination in candidateTargets) {

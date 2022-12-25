@@ -27,7 +27,7 @@ class Day5 {
         var optimal: String? = null
 
         val allChars = polymer.fold(mutableSetOf<Char>()) { set, c ->
-            set.add(c.toLowerCase())
+            set.add(c.lowercaseChar())
             set
         }
 

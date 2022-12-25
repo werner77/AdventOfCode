@@ -28,7 +28,7 @@ private fun solve(map: Map<Coordinate, Char>, destination: Coordinate, startCoor
     for (start in startCoordinates) {
         val path = shortestPath(
             from = start,
-            neighbours = { it.destination.directNeighbourSequence() },
+            neighbours = { it.destination.directNeighbours },
             reachable = { current, next ->
                 val currentHeight = map[current.destination]?.height ?: error("Expected current height to be defined")
                 val nextHeight = map[next]?.height

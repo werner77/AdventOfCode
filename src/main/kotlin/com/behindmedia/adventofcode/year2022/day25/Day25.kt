@@ -9,19 +9,16 @@ private fun toSnafu(number: Long): String {
 
     var result = ""
     var n = number
-    var i = 1
     while (n != 0L) {
         n += 2
-        val k = n % 5
-        val c = when (k) {
+        val c = when (n % 5) {
             4L -> "2"
             3L -> "1"
             2L -> "0"
             1L -> "-"
             0L -> "="
-            else -> error("Invalid value: $k")
+            else -> error("Invalid value: ${n % 5}")
         }
-        i++
         result = c + result
         n /= 5
     }
@@ -32,14 +29,13 @@ private fun fromSnafu(string: String): Long {
     var value = 0L
     var multiplier = 1L
     for (i in string.length - 1 downTo 0) {
-        val c = string[i]
-        val k = when (c) {
+        val k = when (string[i]) {
             '2' -> 2
             '1' -> 1
             '0' -> 0
             '-' -> -1
             '=' -> -2
-            else -> error("Invalid character: $c")
+            else -> error("Invalid character: ${string[i]}")
         }
         value += multiplier * k
         multiplier *= 5L

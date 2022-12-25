@@ -36,11 +36,11 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
         }
     }
 
-    inline fun offset(vector: Coordinate3D): Coordinate3D {
+    fun offset(vector: Coordinate3D): Coordinate3D {
         return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)
     }
 
-    inline fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
+    fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
         return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 

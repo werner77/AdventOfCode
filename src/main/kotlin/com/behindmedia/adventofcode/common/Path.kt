@@ -62,7 +62,7 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparab
  */
 inline fun <reified N, T> shortestPath(
     from: N,
-    neighbours: (Path<N>) -> Sequence<N>,
+    neighbours: (Path<N>) -> Collection<N>,
     reachable: (Path<N>, N) -> Boolean = { _, _ -> true },
     process: (Path<N>) -> T?
 ): T? {
@@ -71,12 +71,14 @@ inline fun <reified N, T> shortestPath(
     pending.add(Path(from, 0, null))
     while (true) {
         val current = pending.pollFirst() ?: return null
+        if (visited.contains(current.destination)) continue
         visited += current.destination
         process(current)?.let {
             return it
         }
         for (neighbour in neighbours(current)) {
-            if (neighbour !in visited && reachable(current, neighbour)) {
+            if (neighbour in visited) continue
+            if (reachable(current, neighbour)) {
                 pending.add(Path(neighbour, current.pathLength + 1, current))
             }
         }
@@ -88,7 +90,7 @@ inline fun <reified N, T> shortestPath(
  */
 inline fun <N, T> shortestWeightedPath(
     from: N,
-    neighbours: (N) -> Sequence<Pair<N, Int>>,
+    neighbours: (N) -> Collection<Pair<N, Int>>,
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()

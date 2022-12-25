@@ -65,7 +65,7 @@ private fun part2(data: List<Disk>) {
     // First bring free node to S
 
     steps += shortestPath(from = freeNode.location,
-        neighbours = { it.destination.directNeighbourSequence() },
+        neighbours = { it.destination.directNeighbours },
         reachable = { _, it -> map[it] != '#' && it.x in 0..maxX && it.y in 0..maxY },
         process = { if (map[it.destination] == 'S') it.pathLength else null })?.toInt() ?: error("Could not find path")
 

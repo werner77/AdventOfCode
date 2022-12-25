@@ -16,12 +16,12 @@ private val charMap = mapOf<Coordinate, Char>(
 )
 
 data class PathCoordinate(val coordinate: Coordinate, val directions: String) {
-    fun reachableCoordinates(passcode: String): Sequence<PathCoordinate> {
-        return sequence {
+    fun reachableCoordinates(passcode: String): List<PathCoordinate> {
+        return list(4) {
             val modifiedPasscode = passcode + directions
             val hash = md5(modifiedPasscode)
             for ((i, direction) in Coordinate.directNeighbourDirections.withIndex()) {
-                if (hash[i].isAccessible) yield(PathCoordinate(coordinate + direction, directions + charMap[direction]))
+                if (hash[i].isAccessible) add(PathCoordinate(coordinate + direction, directions + charMap[direction]))
             }
         }
     }
@@ -36,7 +36,7 @@ private fun findPossiblePaths(): List<Path<PathCoordinate>> {
         from = start,
         neighbours = { path ->
             if (path.destination.coordinate == end) {
-                emptySequence()
+                emptyList()
             } else {
                 path.destination.reachableCoordinates(passcode)
             }

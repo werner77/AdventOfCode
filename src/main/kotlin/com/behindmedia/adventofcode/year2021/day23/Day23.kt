@@ -44,7 +44,7 @@ private inline fun CharMap.forEachValidDestination(
 ) {
     shortestPath(from = from.key,
         neighbours = { path ->
-            path.destination.directNeighbourSequence().filter { this[it] != '#' && state[it] == null }
+            path.destination.directNeighbours.filter { this[it] != '#' && state[it] == null }
         }, process = {
             if (from.value.isValidDestination(it.destination, roomLevelCount, state)) {
                 perform(it)
@@ -69,11 +69,11 @@ fun solve(map: CharMap, roomLevelCount: Int): Int {
     return shortestWeightedPath(
         from = initialState,
         neighbours = { state ->
-            sequence {
+            list {
                 for (entry in state) {
                     map.forEachValidDestination(entry, state, roomLevelCount) {
                         val newState = state.moving(entry.key, it.destination)
-                        yield(Pair(newState, it.pathLength * entry.value.weight()))
+                        add(Pair(newState, it.pathLength * entry.value.weight()))
                     }
                 }
             }

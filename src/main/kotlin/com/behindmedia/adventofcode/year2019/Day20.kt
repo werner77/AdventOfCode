@@ -149,7 +149,7 @@ class Day20 {
         val leveledStart = LeveledCoordinate(start, 0)
         val leveledEnd = LeveledCoordinate(end, 0)
         return shortestPath(leveledStart, neighbours = { leveledCoordinate ->
-                map[leveledCoordinate.destination.coordinate]?.neighbours(leveledCoordinate.destination.level, recursiveMode)?.asSequence() ?: emptySequence()
+                map[leveledCoordinate.destination.coordinate]?.neighbours(leveledCoordinate.destination.level, recursiveMode) ?: emptyList()
             },
             reachable = { _, it ->
                 map[it.coordinate]?.isReachable(it.level, recursiveMode) ?: false

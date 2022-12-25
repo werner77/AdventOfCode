@@ -42,7 +42,7 @@ private fun findMinimumPath(
     return shortestPath(
         from = startNode,
         neighbours = { path ->
-            path.destination.coordinate.directNeighbourSequence().map {
+            path.destination.coordinate.directNeighbours.map {
                 Node(it, path.destination.items + map.itemsAt(it))
             }
         },

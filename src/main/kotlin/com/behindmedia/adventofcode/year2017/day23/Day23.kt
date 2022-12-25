@@ -44,9 +44,9 @@ class Program(
 private fun decompiled(a: Long = 0L): Long {
     var b = 65L
     var c = b
-    var d = 0L
-    var f = 0L
-    var g = 0L
+    var d: Long
+    var f: Long
+    var g: Long
     var h = 0L
     if (a != 0L) {
         b = b * 100 + 100_000

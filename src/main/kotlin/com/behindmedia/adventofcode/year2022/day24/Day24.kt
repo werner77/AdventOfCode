@@ -87,10 +87,10 @@ private fun findShortestTime(
         time = findShortestPath(from = start,
             startTime = time,
             neighbours = { it.destination.directNeighbours },
-            reachable = { _, coordinate, time ->
+            reachable = { _, coordinate, t ->
                 val value = map[coordinate] ?: '#'
                 value != '#' && coordinate !in getBlizzardPositionsAt(
-                    range.sizeX, range.sizeY, time, blizzards, cache
+                    range.sizeX, range.sizeY, t, blizzards, cache
                 )
             },
             process = { path ->

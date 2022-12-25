@@ -93,3 +93,8 @@ inline fun <A : Any, B : Any, C: Any, D: Any, E: Any> guardNotNull(
     }
     elsePerform()
 }
+
+inline fun <T>list(size: Int? = null, builder: MutableList<T>.() -> Unit): List<T> {
+    val list: MutableList<T> = if (size == null) ArrayList() else ArrayList(size)
+    return list.apply(builder)
+}
