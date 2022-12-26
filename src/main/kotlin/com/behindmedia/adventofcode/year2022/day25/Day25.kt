@@ -6,23 +6,22 @@ private fun toSnafu(number: Long): String {
     if (number == 0L) {
         return "0"
     }
-
-    var result = ""
+    val result = ArrayDeque<Char>()
     var n = number
     while (n != 0L) {
         n += 2
         val c = when (n % 5) {
-            4L -> "2"
-            3L -> "1"
-            2L -> "0"
-            1L -> "-"
-            0L -> "="
+            4L -> '2'
+            3L -> '1'
+            2L -> '0'
+            1L -> '-'
+            0L -> '='
             else -> error("Invalid value: ${n % 5}")
         }
-        result = c + result
+        result.addFirst(c)
         n /= 5
     }
-    return result
+    return result.joinToString("")
 }
 
 private fun fromSnafu(string: String): Long {
