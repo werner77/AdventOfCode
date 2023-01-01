@@ -240,6 +240,18 @@ data class Coordinate(val x: Int, val y: Int) : Comparable<Coordinate> {
     }
 }
 
+data class Insets(val left: Int, val right: Int, val top: Int, val bottom: Int) {
+    companion object {
+        fun square(dimension: Int): Insets {
+            return Insets(dimension, dimension, dimension, dimension)
+        }
+
+        fun rectangle(horizontal: Int, vertical: Int): Insets {
+            return Insets(horizontal, horizontal, vertical, vertical)
+        }
+    }
+}
+
 /**
  * Range to enumerate coordinates between the (minx, miny) and (maxx, maxy) found in a list of coordinates.
  */
@@ -315,6 +327,10 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
 
     override fun contains(value: Coordinate): Boolean {
         return value.x in start.x..endInclusive.x && value.y in start.y..endInclusive.y
+    }
+
+    fun inset(insets: Insets): CoordinateRange {
+        return CoordinateRange(start + Coordinate(insets.left, insets.top), endInclusive - Coordinate(insets.right, insets.bottom))
     }
 }
 

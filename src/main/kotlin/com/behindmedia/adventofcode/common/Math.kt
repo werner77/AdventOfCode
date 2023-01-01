@@ -101,8 +101,11 @@ fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
 }
 
 
-fun <E> Map<Coordinate, E>.printMap(default: E) {
-    val range = this.keys.range()
+fun <E> Map<Coordinate, E>.printMap(default: E, includeBorder: Boolean = false) {
+    var range = this.keys.range()
+    if (includeBorder) {
+       range = range.inset(Insets.square(-1))
+    }
     for (c in range) {
         print(this[c] ?: default)
         if (c.x == range.endInclusive.x) {
@@ -134,7 +137,7 @@ fun <E> Map<Coordinate, E>.printMap(default: (Coordinate) -> E) {
 }
 
 
-inline fun binarySearch(
+fun binarySearch(
     lowerBound: Long,
     upperBound: Long,
     targetValue: Long,
@@ -155,6 +158,28 @@ inline fun binarySearch(
     }
     return result
 }
+
+fun binarySearch(
+    lowerBound: Long,
+    upperBound: Long,
+    inverted: Boolean = false,
+    evaluation: (Long) -> Int
+): Long? {
+    var begin = lowerBound
+    var end = upperBound
+    var result: Long? = null
+    while (begin <= end) {
+        val mid = (begin + end) / 2L
+        if (evaluation(mid) <= 0) {
+            result = mid
+            begin = if (inverted) mid - 1 else mid + 1
+        } else {
+            end = if (inverted) mid + 1 else mid - 1
+        }
+    }
+    return result
+}
+
 
 fun <C: Comparable<C>> topologicalSort(
     incomingEdges: Map<C, Collection<C>>
