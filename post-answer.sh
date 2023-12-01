@@ -49,26 +49,26 @@ while [[ $# -gt 0 ]]
     do
     key="$1"
     case $key in
-        --day)
-			shift
-            DAY="$1"
-        ;;
-        --year)
-            shift
-            YEAR="$1"
-        ;;
-        --part)
-            shift
-            PART="$1"
-        ;;
-        --token)
-			shift
-			TOKEN="$1"
+    --day)
+      shift
+      DAY="$1"
+    ;;
+    --year)
+      shift
+      YEAR="$1"
+    ;;
+    --part)
+      shift
+      PART="$1"
+    ;;
+    --token)
+      shift
+      TOKEN="$1"
 		;;
-        *)
-            ANSWER="$1"    
-            break
-        ;;
+    *)
+      ANSWER="$1"
+      break
+    ;;
     esac
     shift # past argument or value
 done

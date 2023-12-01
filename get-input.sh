@@ -46,22 +46,22 @@ while [[ $# -gt 0 ]]
     do
     key="$1"
     case $key in
-        --day)
-			shift
-            DAY="$1"
-        ;;
-        --year)
-            shift
-            YEAR="$1"
-        ;;
-        --token)
-			shift
-			TOKEN="$1"
+    --day)
+      shift
+      DAY="$1"
+      ;;
+    --year)
+      shift
+      YEAR="$1"
+      ;;
+    --token)
+      shift
+      TOKEN="$1"
 		;;
-        *)
-            output_error "Unknown option: $key"
-            usage
-        ;;
+    *)
+      output_error "Unknown option: $key"
+      usage
+    ;;
     esac
     shift # past argument or value
 done
