@@ -36,9 +36,9 @@ private fun processMap(
         while (iterator.hasNext()) {
             val c = iterator.next()
             val v = data[c]?.takeIf { it.isDigit() } ?: break
-            c.allNeighbours.firstOrNull {
+            symbolCoordinates += c.allNeighbours.filter {
                 data[it]?.let { value -> isValidSymbol(value) } == true
-            }?.let { symbolCoordinates += it }
+            }
             buffer += v
             if (c.x == maxX) break
         }
