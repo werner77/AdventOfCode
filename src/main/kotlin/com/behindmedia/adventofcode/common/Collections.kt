@@ -342,26 +342,28 @@ fun <K, V> defaultMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): Defaul
     return DefaultMapWrapper(impl, defaultValue)
 }
 
-fun <K, V> defaultMutableMapOf(defaultValue: () -> V): DefaultMutableMap<K, V> {
+fun <K, V> defaultMutableMapOf(putValueImplicitly: Boolean = false, defaultValue: () -> V): DefaultMutableMap<K, V> {
     val impl = mutableMapOf<K, V>()
-    return DefaultMutableMapWrapper(impl, defaultValue)
+    return DefaultMutableMapWrapper(impl = impl, defaultValue = defaultValue, putValueImplicitly = putValueImplicitly)
 }
 
-fun <K, V> defaultMutableMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMutableMap<K, V> {
+fun <K, V> defaultMutableMapOf(putValueImplicitly: Boolean = false, vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMutableMap<K, V> {
     val impl = mutableMapOf(*pairs)
-    return DefaultMutableMapWrapper(impl, defaultValue)
+    return DefaultMutableMapWrapper(impl = impl, defaultValue = defaultValue, putValueImplicitly = putValueImplicitly)
 }
 
 fun <K, V>Map<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMap<K, V> = DefaultMapWrapper(this, defaultValue)
-fun <K, V>MutableMap<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this, defaultValue)
+fun <K, V>MutableMap<K, V>.withDefaultValue(putValueImplicitly: Boolean = false, defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this, defaultValue, putValueImplicitly)
 
 private class DefaultMutableMapWrapper<K, V>(
     private val impl: MutableMap<K, V>,
     private val defaultValue: () -> V,
+    private val putValueImplicitly: Boolean = false
 ) : DefaultMutableMap<K, V>, MutableMap<K, V> by impl {
     override fun getOrPutDefault(key: K) = impl.getOrPut(key, defaultValue)
     override fun getOrDefault(key: K): V = impl.getOrElse(key, defaultValue)
-    override operator fun get(key: K): V = getOrDefault(key)
+    override operator fun get(key: K): V = if (putValueImplicitly) getOrPutDefault(key) else getOrDefault(key)
+
     override fun equals(other: Any?): Boolean {
         return impl == (other as? Map<*, *>)
     }

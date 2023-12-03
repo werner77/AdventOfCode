@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2023.day3
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.coordinateRange
+import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.maxX
 import com.behindmedia.adventofcode.common.parseMap
 import com.behindmedia.adventofcode.common.plusAssign
@@ -25,10 +26,10 @@ fun main() {
 private fun processMap(
     data: Map<Coordinate, Char>,
     isValidSymbol: (Char) -> Boolean
-): Map<Coordinate, MutableList<Int>> {
+): Map<Coordinate, List<Int>> {
     val maxX = data.maxX
     val iterator = data.coordinateRange.iterator()
-    val symbolMap = mutableMapOf<Coordinate, MutableList<Int>>()
+    val symbolMap = defaultMutableMapOf<Coordinate, MutableList<Int>>(true) { mutableListOf() }
     val buffer = StringBuilder()
     while (iterator.hasNext()) {
         buffer.clear()
@@ -44,7 +45,7 @@ private fun processMap(
         }
         if (buffer.isNotEmpty()) {
             symbolCoordinates.forEach { symbolCoordinate ->
-                symbolMap.getOrPut(symbolCoordinate) { mutableListOf() } += buffer.toString().toInt()
+                symbolMap[symbolCoordinate] += buffer.toString().toInt()
             }
         }
     }
