@@ -4,13 +4,13 @@ import com.behindmedia.adventofcode.common.binarySearch
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
 
-data class Almanac(val seeds: List<Long>, val mappings: Map<String, MappingGroup>, val categories: List<String>) {
+data class Almanac(val seeds: List<Long>, val mappings: List<MappingGroup>) {
 
     companion object {
         operator fun invoke(string: String, inverse: Boolean = false): Almanac {
             val sections = string.split("\n\n")
             val seeds = mutableListOf<Long>()
-            val mappings = LinkedHashMap<String, MappingGroup>()
+            val mappings = mutableListOf<MappingGroup>()
             for (section in sections) {
                 val lines = section.split("\n")
                 val header = lines[0]
@@ -23,38 +23,36 @@ data class Almanac(val seeds: List<Long>, val mappings: Map<String, MappingGroup
                     for (i in 1 until lines.size) {
                         val line = lines[i]
                         if (line.isEmpty()) continue
-                        val (dest, source, length) = line.split(" ").map { it.toLong() }
+                        val (dest, source, size) = line.split(" ").map { it.toLong() }
                         mappingList += Mapping(
                             source = if (inverse) dest else source,
                             dest = if (inverse) source else dest,
-                            size = length,
+                            size = size,
                         )
                     }
-                    mappings[if (inverse) sourceCategory else targetCategory] = MappingGroup(
+                    mappings += MappingGroup(
                         sourceCategory = if (inverse) targetCategory else sourceCategory,
                         destCategory = if (inverse) sourceCategory else targetCategory,
                         mappings = mappingList
                     )
                 }
             }
-            return Almanac(seeds = seeds, mappings = mappings, categories = if (inverse) mappings.keys.reversed() else mappings.keys.toList())
+            return Almanac(seeds = seeds, mappings = if (inverse) mappings.reversed() else mappings)
         }
     }
 
-    fun process(value: Long, categoryIndex: Int): Long {
-        if (categoryIndex == categories.size) {
-            return value
+    fun process(value: Long): Long {
+        var result = value
+        for (mapping in mappings) {
+            result = mapping.mappedValue(result)
         }
-        val targetCategory = categories[categoryIndex]
-        val mapping = mappings[targetCategory] ?: error("No mapping found")
-        val mappedValue = mapping.mappedValue(value)
-        return process(mappedValue, categoryIndex + 1)
+        return result
     }
 }
 
 data class Mapping(val source: Long, val dest: Long, val size: Long) {
     fun mappedValue(value: Long): Long? {
-        return if (value >= source && value - source < size) dest + (value - source) else null
+        return if (value in source until source + size) dest + (value - source) else null
     }
 }
 
@@ -67,8 +65,8 @@ data class MappingGroup(val sourceCategory: String, val destCategory: String, va
 fun main() {
     val input = read("/2023/day5.txt")
 
-    val almanac1 = Almanac(string = input)
-    val part1 = almanac1.seeds.minOf { seed -> almanac1.process(seed, 0) }
+    val almanac = Almanac(string = input)
+    val part1 = almanac.seeds.minOf { seed -> almanac.process(seed) }
 
     // Part 1
     timing {
@@ -77,13 +75,16 @@ fun main() {
 
     // Part2
     timing {
-        val almanac2 = Almanac(string = input, inverse = true)
-        val seedRanges = almanac2.seeds.chunked(2).map { (start, len) -> LongRange(start, start + len - 1) }
+        val inverseAlmanac = Almanac(string = input, inverse = true)
+        // Convert to long ranges
+        val seedRanges = inverseAlmanac.seeds.chunked(2).map { (start, len) -> LongRange(start, start + len - 1) }
 
+        // Find local minima and lower the upper bound every time until we find no valid result anymore
         var part2 = part1
         while (true) {
             part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = true) { value ->
-                seedRanges.any { it.contains(almanac2.process(value, 0)) }
+                // Valid if any of the ranges contains the value
+                seedRanges.any { it.contains(inverseAlmanac.process(value)) }
             } ?: break
         }
         println(part2)
