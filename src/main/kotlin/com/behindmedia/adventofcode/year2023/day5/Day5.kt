@@ -81,11 +81,14 @@ fun main() {
 
         // Find local minima and lower the upper bound every time until we find no valid result anymore
         var part2 = part1
+        var findMin = true
         while (true) {
-            part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = true) { value ->
+            part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = findMin) { value ->
                 // Valid if any of the ranges contains the value
                 seedRanges.any { it.contains(inverseAlmanac.process(value)) }
             } ?: break
+            // After we found a min, we find the next max (next range below the current range)
+            findMin = !findMin
         }
         println(part2)
     }
