@@ -92,7 +92,10 @@ fun main() {
             // If the binary search cannot find a result anymore we found the best result
             part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = findMin) { value ->
                 // Valid if any of the ranges contains the value
-                seedRanges.any { it.contains(inverseAlmanac.process(value)) }
+                seedRanges.any { range ->
+                    val seedValue = inverseAlmanac.process(value)
+                    range.contains(seedValue) && almanac.process(seedValue) == value
+                }
             } ?: break
             // We alternate between finding minima and maxima to catch all ranges
             findMin = !findMin
