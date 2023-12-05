@@ -2,12 +2,9 @@ package com.behindmedia.adventofcode.year2023.day5
 
 import com.behindmedia.adventofcode.common.binarySearch
 import com.behindmedia.adventofcode.common.read
+import com.behindmedia.adventofcode.common.timing
 
-data class Almanac(val seeds: List<Long>, val mappings: Map<String, MappingGroup>) {
-
-    private val categories: List<String> by lazy {
-        mappings.keys.toList()
-    }
+data class Almanac(val seeds: List<Long>, val mappings: Map<String, MappingGroup>, val categories: List<String>) {
 
     companion object {
         operator fun invoke(string: String, inverse: Boolean = false): Almanac {
@@ -40,7 +37,7 @@ data class Almanac(val seeds: List<Long>, val mappings: Map<String, MappingGroup
                     )
                 }
             }
-            return Almanac(seeds = seeds, mappings = if (inverse) mappings.reversed() else mappings)
+            return Almanac(seeds = seeds, mappings = mappings, categories = if (inverse) mappings.keys.reversed() else mappings.keys.toList())
         }
     }
 
@@ -52,12 +49,6 @@ data class Almanac(val seeds: List<Long>, val mappings: Map<String, MappingGroup
         val mapping = mappings[targetCategory] ?: error("No mapping found")
         val mappedValue = mapping.mappedValue(value)
         return process(mappedValue, categoryIndex + 1)
-    }
-}
-
-private fun <K, V>Map<K, V>.reversed(): Map<K, V> = this.entries.reversed().fold(LinkedHashMap<K, V>()) { map, entry ->
-    map.apply {
-        put(entry.key, entry.value)
     }
 }
 
@@ -80,17 +71,21 @@ fun main() {
     val part1 = almanac1.seeds.minOf { seed -> almanac1.process(seed, 0) }
 
     // Part 1
-    println(part1)
+    timing {
+        println(part1)
+    }
 
     // Part2
-    val almanac2 = Almanac(string = input, inverse = true)
-    val seedRanges = almanac2.seeds.chunked(2).map { (start, len) -> LongRange(start, start + len - 1) }
+    timing {
+        val almanac2 = Almanac(string = input, inverse = true)
+        val seedRanges = almanac2.seeds.chunked(2).map { (start, len) -> LongRange(start, start + len - 1) }
 
-    var part2 = part1
-    while (true) {
-        part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = true) { value ->
-            seedRanges.any { it.contains(almanac2.process(value, 0)) }
-        } ?: break
+        var part2 = part1
+        while (true) {
+            part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = true) { value ->
+                seedRanges.any { it.contains(almanac2.process(value, 0)) }
+            } ?: break
+        }
+        println(part2)
     }
-    println(part2)
 }
