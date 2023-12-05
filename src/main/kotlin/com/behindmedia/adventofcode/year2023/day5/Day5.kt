@@ -3,6 +3,7 @@ package com.behindmedia.adventofcode.year2023.day5
 import com.behindmedia.adventofcode.common.binarySearch
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
+import kotlin.math.min
 
 data class Almanac(val seeds: List<Long>, val mappings: List<MappingGroup>) {
 
@@ -83,11 +84,11 @@ fun main() {
         // The valid ranges of seeds
         val seedRanges = inverseAlmanac.seeds.chunked(2).map { (start, len) -> LongRange(start, start + len - 1) }
 
-        // We can start with the result from part1 as estimation of the minimum of the range
-        var part2 = part1
+        // We can start with the best estimate based on the boundaries of the ranges
+        var part2 = seedRanges.minOf { range -> min(almanac.process(range.first), almanac.process(range.last)) }
 
         // Start by finding the max of the range below this
-        var findMin = false
+        var findMin = true
         while (true) {
             // If the binary search cannot find a result anymore we found the best result
             part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = findMin) { value ->
