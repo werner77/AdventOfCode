@@ -87,7 +87,6 @@ fun main() {
         // We can start with the best estimate based on the boundaries of the ranges
         var part2 = seedRanges.minOf { range -> min(almanac.process(range.first), almanac.process(range.last)) }
 
-        // Start by finding the max of the range below this
         var findMin = true
         while (true) {
             // If the binary search cannot find a result anymore we found the best result
