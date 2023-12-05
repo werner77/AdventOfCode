@@ -151,9 +151,17 @@ fun binarySearch(
         val mid = (begin + end) / 2L
         if (evaluation(mid) <= targetValue) {
             result = mid
-            begin = if (inverted) mid - 1 else mid + 1
+            if (inverted) {
+                end = mid - 1
+            } else {
+                begin = mid + 1
+            }
         } else {
-            end = if (inverted) mid + 1 else mid - 1
+            if (inverted) {
+                begin = mid + 1
+            } else {
+                end = mid -1
+            }
         }
     }
     return result
@@ -163,18 +171,26 @@ fun binarySearch(
     lowerBound: Long,
     upperBound: Long,
     inverted: Boolean = false,
-    evaluation: (Long) -> Int
+    evaluation: (Long) -> Boolean
 ): Long? {
     var begin = lowerBound
     var end = upperBound
     var result: Long? = null
     while (begin <= end) {
         val mid = (begin + end) / 2L
-        if (evaluation(mid) <= 0) {
+        if (evaluation(mid)) {
             result = mid
-            begin = if (inverted) mid - 1 else mid + 1
+            if (inverted) {
+                end = mid - 1
+            } else {
+                begin = mid + 1
+            }
         } else {
-            end = if (inverted) mid + 1 else mid - 1
+            if (inverted) {
+                begin = mid + 1
+            } else {
+                end = mid -1
+            }
         }
     }
     return result

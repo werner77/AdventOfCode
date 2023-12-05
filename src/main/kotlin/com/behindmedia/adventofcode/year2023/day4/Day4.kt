@@ -1,9 +1,8 @@
 package com.behindmedia.adventofcode.year2023.day4
 
 import com.behindmedia.adventofcode.common.*
-import kotlin.math.*
 
-data class ScratchCard(val id: Int, val haveNumbers: Set<Long>, val winNumbers: Set<Long>) {
+data class ScratchCard(val id: Int, val haveNumbers: Set<Int>, val winNumbers: Set<Int>) {
 
     val numberOfWins: Int by lazy {
         haveNumbers.intersect(winNumbers).size
@@ -26,8 +25,8 @@ fun main() {
         val (card, contents) = line.split(":")
         val (win, have) = contents.split("|")
         val cardId = card.splitNonEmptySequence(" ").mapNotNull { it.toIntOrNull() }.single()
-        val haveNumbers = have.splitNonEmptySequence(" ").map { it.toLong() }.toSet()
-        val winningNumbers = win.splitNonEmptySequence(" ").map { it.toLong() }.toSet()
+        val haveNumbers = have.splitNonEmptySequence(" ").map { it.toInt() }.toSet()
+        val winningNumbers = win.splitNonEmptySequence(" ").map { it.toInt() }.toSet()
         ScratchCard(cardId, haveNumbers, winningNumbers)
     }
 
@@ -47,4 +46,3 @@ private fun process(cards: List<ScratchCard>, start: Int, end: Int): Int {
     }
     return ans
 }
-
