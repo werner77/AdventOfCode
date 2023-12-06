@@ -69,14 +69,6 @@ data class MappingGroup(val sourceCategory: String, val destCategory: String, va
 fun main() {
     val input = read("/2023/day5.txt")
 
-//    val input = """
-//        seeds: 1 10
-//
-//        seed-to-soil map:
-//        20 1 5
-//        30 7 4
-//    """.trimIndent()
-
     val almanac = Almanac(string = input)
     val part1 = almanac.seeds.minOf { seed -> almanac.process(seed) }
 
