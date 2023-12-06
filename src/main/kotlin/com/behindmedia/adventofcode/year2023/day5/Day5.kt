@@ -85,9 +85,6 @@ fun main() {
 
     // Part2
     // The idea is to reverse all the mappings and check whether the locations correspond to a seed which is in any of the valid ranges.
-    // The locations will have ranges themselves, each range has a min and max (obviously).
-    // We alternate between finding the max and min of those ranges (using binary search).
-    // After the final minimum, we will not find a maximum anymore, so that gives us our result.
     timing {
         // Construct the inverse mappings
         val inverseAlmanac = Almanac(string = input, inverse = true)
@@ -95,6 +92,7 @@ fun main() {
         // The valid ranges of seeds
         val seedRanges = inverseAlmanac.seeds.chunked(2).map { (start, len) -> start until start + len }
 
+        // Parallelize the search for the minimum location
         val coroutineCount = 24
         val location = AtomicLong(0L)
         val result = runBlocking {
