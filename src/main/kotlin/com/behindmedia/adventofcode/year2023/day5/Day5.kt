@@ -1,9 +1,12 @@
 package com.behindmedia.adventofcode.year2023.day5
 
-import com.behindmedia.adventofcode.common.binarySearch
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
-import kotlin.math.min
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.atomic.AtomicLong
 
 data class Almanac(val seeds: List<Long>, val mappings: List<MappingGroup>) {
 
@@ -66,6 +69,14 @@ data class MappingGroup(val sourceCategory: String, val destCategory: String, va
 fun main() {
     val input = read("/2023/day5.txt")
 
+//    val input = """
+//        seeds: 1 10
+//
+//        seed-to-soil map:
+//        20 1 5
+//        30 7 4
+//    """.trimIndent()
+
     val almanac = Almanac(string = input)
     val part1 = almanac.seeds.minOf { seed -> almanac.process(seed) }
 
@@ -82,24 +93,25 @@ fun main() {
         val inverseAlmanac = Almanac(string = input, inverse = true)
 
         // The valid ranges of seeds
-        val seedRanges = inverseAlmanac.seeds.chunked(2).map { (start, len) -> LongRange(start, start + len - 1) }
+        val seedRanges = inverseAlmanac.seeds.chunked(2).map { (start, len) -> start until start + len }
 
-        // We can start with the best estimate based on the boundaries of the ranges
-        var part2 = seedRanges.minOf { range -> min(almanac.process(range.first), almanac.process(range.last)) }
-
-        var findMin = true
-        while (true) {
-            // If the binary search cannot find a result anymore we found the best result
-            part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = findMin) { location ->
-                // Valid if any of the ranges contains the seed and the forward transformation results in a valid location.
-                seedRanges.any { range ->
-                    val seed = inverseAlmanac.process(location)
-                    range.contains(seed) && almanac.process(seed) == location
+        val coroutineCount = 24
+        val location = AtomicLong(0L)
+        val result = runBlocking {
+            (0 until coroutineCount).map {
+                async(Dispatchers.Default) {
+                    var current: Long
+                    while (true) {
+                        current = location.getAndIncrement()
+                        if (seedRanges.any { range ->
+                                val seed = inverseAlmanac.process(current)
+                                range.contains(seed) && almanac.process(seed) == current
+                            }) break
+                    }
+                    current
                 }
-            } ?: break
-            // We alternate between finding minima and maxima to catch all ranges
-            findMin = !findMin
+            }.awaitAll().min()
         }
-        println(part2)
+        println(result)
     }
 }
