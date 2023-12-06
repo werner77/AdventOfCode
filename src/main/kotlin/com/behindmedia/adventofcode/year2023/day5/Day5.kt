@@ -90,11 +90,11 @@ fun main() {
         var findMin = true
         while (true) {
             // If the binary search cannot find a result anymore we found the best result
-            part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = findMin) { value ->
-                // Valid if any of the ranges contains the value
+            part2 = binarySearch(lowerBound = 0, upperBound = part2 - 1, inverted = findMin) { location ->
+                // Valid if any of the ranges contains the seed and the forward transformation results in a valid location.
                 seedRanges.any { range ->
-                    val seedValue = inverseAlmanac.process(value)
-                    range.contains(seedValue) && almanac.process(seedValue) == value
+                    val seed = inverseAlmanac.process(location)
+                    range.contains(seed) && almanac.process(seed) == location
                 }
             } ?: break
             // We alternate between finding minima and maxima to catch all ranges
