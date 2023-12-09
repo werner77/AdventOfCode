@@ -39,22 +39,8 @@ tailrec fun greatestCommonDivisor(a: Long, b: Long): Long {
     return greatestCommonDivisor(b, a % b)
 }
 
-tailrec fun greatestCommonDivisor(a: Int, b: Int): Int {
-    if (b == 0) {
-        return a
-    }
-    return greatestCommonDivisor(b, a % b)
-}
-
 fun leastCommonMultiple(a: Long, b: Long): Long {
-    return if (a == 0L || b == 0L) 0 else {
-        val gcd = greatestCommonDivisor(a, b)
-        abs(a * b) / gcd
-    }
-}
-
-fun leastCommonMultiple(a: Int, b: Int): Int {
-    return if (a == 0 || b == 0) 0 else {
+    return if (a == 0L || b == 0L) 0L else {
         val gcd = greatestCommonDivisor(a, b)
         abs(a * b) / gcd
     }
