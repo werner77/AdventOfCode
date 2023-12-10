@@ -95,7 +95,7 @@ class Day10 {
         // Sort all the possible normalized vectors by their angle to the zeroVector
         val zeroVector = Coordinate(0, -1)
         val sortedVectors = vectors.keys.sortedBy {
-            it.angle(zeroVector)
+            it.positiveAngle(zeroVector)
         }
 
         // Now start eliminating asteroids by looping through the possible vectors sorted by angle ascending

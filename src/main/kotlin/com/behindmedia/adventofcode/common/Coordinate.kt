@@ -163,6 +163,13 @@ data class Coordinate(val x: Int, val y: Int) : Comparable<Coordinate> {
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
      */
+    fun positiveAngle(to: Coordinate): Double = positiveAngle(angle(to))
+
+    /**
+     * Returns the angle between -PI and PI relative to the specified vector
+     */
+    fun normalizedAngle(to: Coordinate): Double = normalizedAngle(angle(to))
+
     fun angle(to: Coordinate): Double {
         val a = to.x.toDouble()
         val b = to.y.toDouble()
@@ -172,9 +179,7 @@ data class Coordinate(val x: Int, val y: Int) : Comparable<Coordinate> {
         val atanA = atan2(a, b)
         val atanB = atan2(c, d)
 
-        val angle = atanA - atanB
-
-        return if (angle < 0) angle + 2 * PI else angle
+        return (atanA - atanB)
     }
 
     /**
@@ -380,3 +385,17 @@ val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
 
 val <E> Map<Coordinate, E>.coordinateRange: CoordinateRange
     get() = CoordinateRange(keys)
+
+fun normalizedAngle(angle: Double): Double {
+    var result = positiveAngle(angle)
+    if (result > PI) {
+        result -= 2 * PI
+    }
+    return result
+}
+
+fun positiveAngle(angle: Double): Double {
+    var result = angle % (2 * PI)
+    if (result < 0) result += 2 * PI
+    return result
+}

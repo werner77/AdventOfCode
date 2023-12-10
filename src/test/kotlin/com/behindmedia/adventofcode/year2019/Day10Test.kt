@@ -32,14 +32,14 @@ class Day10Test {
     @Test
     fun angle() {
         val zero = Coordinate(0, -1)
-        assertAlmostEqual(Coordinate(0, -1).angle(zero), 0.0)
-        assertAlmostEqual(Coordinate(1, -1).angle(zero),PI / 4.0)
-        assertAlmostEqual(Coordinate(1, 0).angle(zero),PI / 2.0)
-        assertAlmostEqual(Coordinate(1, 1).angle(zero),PI * 3.0 / 4.0)
-        assertAlmostEqual(Coordinate(0, 1).angle(zero), PI)
-        assertAlmostEqual(Coordinate(-1, 1).angle(zero),PI * 5.0 / 4.0)
-        assertAlmostEqual(Coordinate(-1, 0).angle(zero),PI * 3.0 / 2.0)
-        assertAlmostEqual(Coordinate(-1, -1).angle(zero),PI * 7.0 / 4.0)
+        assertAlmostEqual(Coordinate(0, -1).positiveAngle(zero), 0.0)
+        assertAlmostEqual(Coordinate(1, -1).positiveAngle(zero),PI / 4.0)
+        assertAlmostEqual(Coordinate(1, 0).positiveAngle(zero),PI / 2.0)
+        assertAlmostEqual(Coordinate(1, 1).positiveAngle(zero),PI * 3.0 / 4.0)
+        assertAlmostEqual(Coordinate(0, 1).positiveAngle(zero), PI)
+        assertAlmostEqual(Coordinate(-1, 1).positiveAngle(zero),PI * 5.0 / 4.0)
+        assertAlmostEqual(Coordinate(-1, 0).positiveAngle(zero),PI * 3.0 / 2.0)
+        assertAlmostEqual(Coordinate(-1, -1).positiveAngle(zero),PI * 7.0 / 4.0)
     }
 
     private fun assertAlmostEqual(a: Double, b: Double) {
