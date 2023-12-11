@@ -3,6 +3,7 @@ package com.behindmedia.adventofcode.year2023.day10
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.Path
 import com.behindmedia.adventofcode.common.parseMap
+import com.behindmedia.adventofcode.common.timing
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -11,11 +12,14 @@ fun main() {
     val startCoordinate = map.entries.single { it.value == 'S' }.key
     val path = findEnclosingPath(startCoordinate, map)
 
-    // Part 1
-    println(1 + path.pathLength / 2)
+    timing {
+        // Part 1
+        // The path is not closed completely (start coordinate is there only once), so we need to add 1
+        println(1 + path.pathLength / 2)
 
-    // Part 2
-    println(countEnclosed(map = map, enclosingPath = path))
+        // Part 2
+        println(countEnclosed(map = map, enclosingPath = path))
+    }
 }
 
 /**
@@ -24,9 +28,10 @@ fun main() {
  * - First ensure that the 'S' node is replaced with the proper pipe connection
  * - Determine the rotation sign of the enclosing path. The full circle makes a total rotation of either + or - 2 * PI.
  * - All regions that are inside this enclosing path at some point have a bordering coordinate which makes a perpendicular angle with the enclosing path (+/- PI / 2)
- * - The sign of this angle should be the opposite to the sign of the full revolution that the enclosing path makes. If this is true than the region is inside. Otherwise the region is outside.
+ * - The sign of this angle should be the opposite to the sign of the full revolution angle (see above) that the enclosing path makes. If this is true, then the region is inside, otherwise the region is outside.
+ * - We count the sizes of the visited locations within valid enclosed sections and add them all up together to get to the result.
  */
-private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<PositionDirection>): Int {
+private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<PositionDirectionTuple>): Int {
     // Keeps track of all seen coordinates
     val seen = mutableSetOf<Coordinate>()
 
@@ -70,7 +75,7 @@ private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<Positi
 private fun checkValidRegion(
     from: Coordinate,
     map: Map<Coordinate, Char>,
-    enclosingPath: Map<Coordinate, PositionDirection>,
+    enclosingPath: Map<Coordinate, PositionDirectionTuple>,
     requiredSign: Int
 ): Pair<Set<Coordinate>, Boolean> {
     val visited = mutableSetOf<Coordinate>()
@@ -127,12 +132,12 @@ private fun checkValidRegion(
 private fun findEnclosingPath(
     from: Coordinate,
     map: Map<Coordinate, Char>
-): Path<PositionDirection> {
-    val pending = ArrayDeque<Path<PositionDirection>>()
-    val visited = mutableSetOf<PositionDirection>()
+): Path<PositionDirectionTuple> {
+    val pending = ArrayDeque<Path<PositionDirectionTuple>>()
+    val visited = mutableSetOf<PositionDirectionTuple>()
     // Start exploring in all 4 directions from the start coordinate
     for (direction in Coordinate.directNeighbourDirections) {
-        pending += Path(PositionDirection(from, direction), 0, null)
+        pending += Path(PositionDirectionTuple(from, direction), 0, null)
     }
     while (true) {
         // No paths to explore anymore: break
@@ -145,7 +150,7 @@ private fun findEnclosingPath(
         }
         val nextValue = map[neighbour] ?: continue
         val nextDirection = nextValue.nextDirection(direction = direction) ?: continue
-        val nextPositionDirection = PositionDirection(neighbour, nextDirection)
+        val nextPositionDirection = PositionDirectionTuple(neighbour, nextDirection)
         if (nextPositionDirection in visited) continue
         val nextPath = Path(nextPositionDirection, path.pathLength + 1, path)
         pending += nextPath
@@ -154,7 +159,7 @@ private fun findEnclosingPath(
 }
 
 // Pair of position and direction
-data class PositionDirection(val position: Coordinate, val direction: Coordinate)
+data class PositionDirectionTuple(val position: Coordinate, val direction: Coordinate)
 
 private val Coordinate.isVertical: Boolean
     get() = this.y != 0 && this.x == 0
