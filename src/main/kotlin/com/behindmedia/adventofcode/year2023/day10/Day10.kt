@@ -18,15 +18,28 @@ fun main() {
     println(countEnclosed(map = map, enclosingPath = path))
 }
 
+/**
+ * The idea I came up with is the following:
+ *
+ * - First ensure that the 'S' node is replaced with the proper pipe connection
+ * - Determine the rotation sign of the enclosing path. The full circle makes a total rotation of either + or - 2 * PI.
+ * - All regions that are inside this enclosing path at some point have a bordering coordinate which makes a perpendicular angle with the enclosing path (+/- PI / 2)
+ * - The sign of this angle should be the opposite to the sign of the full revolution that the enclosing path makes. If this is true than the region is inside. Otherwise the region is outside.
+ */
 private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<PositionDirection>): Int {
     // Keeps track of all seen coordinates
     val seen = mutableSetOf<Coordinate>()
 
     val pathNodes = enclosingPath.allNodes
 
-    var lastDirection = pathNodes.last().direction
+    val firstNode = pathNodes.first()
+    val lastNode = pathNodes.last()
+
+    val actualStartValue = "|-LJ7F".single { it.nextDirection(lastNode.direction) == firstNode.direction }
+    val replacedMap: Map<Coordinate, Char> = map.toMutableMap().apply { put(firstNode.position, actualStartValue) }
 
     // Calculate the complete rotation angle: this determines what the vector angle should be for internal regions
+    var lastDirection = lastNode.direction
     val rotation = pathNodes.fold(0.0) { value, (_, direction) ->
         value + direction.normalizedAngle(lastDirection).also { lastDirection = direction }
     }
@@ -43,10 +56,12 @@ private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<Positi
     for (from in candidates) {
         // If already in one of the processed regions, just continue
         if (from in seen) continue
-        val (visited, valid) = checkValidRegion(from, map, enclosingPathMap, requiredSign)
+        val (visited, valid) = checkValidRegion(from, replacedMap, enclosingPathMap, requiredSign)
         if (valid) {
+            // If valid add the total size of this region to the inside tiles
             totalCount += visited.size
         }
+        // Ensure we don't handle any nodes twice
         seen += visited
     }
     return totalCount
@@ -64,7 +79,7 @@ private fun checkValidRegion(
 
     // If one invalid coordinate is found, the whole region is invalid
     var valid = true
-    outer@ while (true) {
+    while (true) {
         val path = pending.removeFirstOrNull() ?: break
 
         if (path.destination in visited) continue
@@ -83,12 +98,15 @@ private fun checkValidRegion(
 
             val enclosing = enclosingPath[neighbour]
             if (enclosing != null) {
+                // The neighbour is on the border: determine the sign of the perpendicular angle
                 val direction1 = neighbour - path.destination
                 var direction2 = enclosing.direction
 
                 if (direction1 == direction2) {
+                    // For cornering connections we have to take the previous direction if the directions are aligned
                     val value = map[enclosing.position] ?: error("No value for position: ${enclosing.position}")
-                    direction2 = value.previousDirection(direction2) ?: error("Could not get previous direction for direction: $direction2")
+                    direction2 = value.previousDirection(direction2)
+                        ?: error("Could not get previous direction for direction: $direction2")
                 }
 
                 // Calculate the angle between the two directions
@@ -122,14 +140,13 @@ private fun findEnclosingPath(
         val (position, direction) = path.destination
         visited += path.destination
         val neighbour = position + direction
-
         if (neighbour == from) {
             return path
         }
         val nextValue = map[neighbour] ?: continue
         val nextDirection = nextValue.nextDirection(direction = direction) ?: continue
         val nextPositionDirection = PositionDirection(neighbour, nextDirection)
-        if (nextPositionDirection in visited && neighbour != from) continue
+        if (nextPositionDirection in visited) continue
         val nextPath = Path(nextPositionDirection, path.pathLength + 1, path)
         pending += nextPath
     }
