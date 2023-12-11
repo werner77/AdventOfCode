@@ -91,6 +91,26 @@ inline fun <T> Iterable<T>.productOf(selector: (T) -> Double): Double {
     return product
 }
 
+fun <T> List<T>.forEachPair(unique: Boolean = false, block: (T, T) -> Unit) {
+    for (i in 0 until this.size) {
+        val startIndex = if (unique) i + 1 else 0
+        for (j in startIndex until this.size) {
+            if (i == j) continue
+            block.invoke(this[i], this[j])
+        }
+    }
+}
+
+fun <T> List<T>.forEachPairIndexed(unique: Boolean = false, block: (IndexedValue<T>, IndexedValue<T>) -> Unit) {
+    for (i in 0 until this.size) {
+        val startIndex = if (unique) i + 1 else 0
+        for (j in startIndex until this.size) {
+            if (i == j) continue
+            block.invoke(IndexedValue(i, this[i]), IndexedValue(j, this[j]))
+        }
+    }
+}
+
 /**
  * Permutates all possible combinations in values without duplicates and calls the perform closure for each such permutation
  * until a non-null result is returned
