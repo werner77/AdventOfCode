@@ -10,15 +10,15 @@ data class State(
     val lastGroupIndex: Int,
     val lastGroupSize: Int,
     val isGroupActive: Boolean,
-    val remainingQuestionMarks: Int
+    val remainingWildcards: Int
 ) {
-    fun nextState(inGroup: Boolean, isQuestionMark: Boolean): State {
+    fun nextState(inGroup: Boolean, isWildcard: Boolean): State {
         return copy(
             charIndex = charIndex + 1,
             lastGroupIndex = if (!isGroupActive && inGroup) lastGroupIndex + 1 else lastGroupIndex,
             lastGroupSize = if (!isGroupActive && inGroup) 1 else if (inGroup) lastGroupSize + 1 else lastGroupSize,
             isGroupActive = inGroup,
-            remainingQuestionMarks = if (isQuestionMark) remainingQuestionMarks - 1 else remainingQuestionMarks
+            remainingWildcards = if (isWildcard) remainingWildcards - 1 else remainingWildcards
         )
     }
 }
@@ -42,7 +42,7 @@ data class Record(val value: String, val groups: DefaultList<Int>) {
                 lastGroupIndex = -1,
                 lastGroupSize = 0,
                 isGroupActive = false,
-                remainingQuestionMarks = value.count { it == '?' }),
+                remainingWildcards = value.count { it == '?' }),
             cache = hashMapOf()
         )
     }
@@ -57,12 +57,12 @@ data class Record(val value: String, val groups: DefaultList<Int>) {
         if (state.lastGroupSize > groups[state.lastGroupIndex]) {
             return 0L
         }
-        if (state.remainingQuestionMarks < 0) {
+        if (state.remainingWildcards < 0) {
             return 0L
         }
         if (state.charIndex == value.length) {
             // Check for completeness
-            return if (state.remainingQuestionMarks == 0 && state.lastGroupSize == groups[state.lastGroupIndex] && state.lastGroupIndex == groups.size - 1) {
+            return if (state.remainingWildcards == 0 && state.lastGroupSize == groups[state.lastGroupIndex] && state.lastGroupIndex == groups.size - 1) {
                 1L
             } else {
                 0L
@@ -73,18 +73,18 @@ data class Record(val value: String, val groups: DefaultList<Int>) {
             when (value[state.charIndex]) {
                 '?' -> {
                     // Wildcard, process both options
-                    total += process(state = state.nextState(inGroup = false, isQuestionMark = true), cache = cache)
-                    total += process(state = state.nextState(inGroup = true, isQuestionMark = true), cache = cache)
+                    total += process(state = state.nextState(inGroup = false, isWildcard = true), cache = cache)
+                    total += process(state = state.nextState(inGroup = true, isWildcard = true), cache = cache)
                 }
 
                 '.' -> {
                     // Finish group if possible
-                    total += process(state = state.nextState(inGroup = false, isQuestionMark = false), cache = cache)
+                    total += process(state = state.nextState(inGroup = false, isWildcard = false), cache = cache)
                 }
 
                 '#' -> {
                     // Increase group count
-                    total += process(state = state.nextState(inGroup = true, isQuestionMark = false), cache = cache)
+                    total += process(state = state.nextState(inGroup = true, isWildcard = false), cache = cache)
                 }
             }
             // Store result in cache
