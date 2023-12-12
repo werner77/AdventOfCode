@@ -51,33 +51,32 @@ fun <E> List<E>.slice(count: Int): List<List<E>> {
     return result
 }
 
-fun <T> Collection<T>.sumOfParallel(operation: (T) -> Long): Long {
-    val processorCount = Runtime.getRuntime().availableProcessors()
-    val chunkSize = this.size / processorCount
-    val chunks = this.chunked(chunkSize)
+fun <T> Iterable<T>.sumOfParallel(operation: (T) -> Long): Long =
+    mapReduceParallel(0L, operation) { first, second -> first + second }
+
+fun <T> Sequence<T>.sumOfParallel(operation: (T) -> Long): Long =
+    mapReduceParallel(0L, operation) { first, second -> first + second }
+
+fun <T> Iterable<T>.productOfParallel(operation: (T) -> Long): Long =
+    mapReduceParallel(1L, operation) { first, second -> first * second }
+
+fun <T> Sequence<T>.productOfParallel(operation: (T) -> Long): Long =
+    mapReduceParallel(1L, operation) { first, second -> first * second }
+
+
+fun <T, R> Sequence<T>.mapReduceParallel(initial: R, map: (T) -> R, reduce: (R, R) -> R): R {
     return runBlocking {
-        val deferredResults = chunks.map { chunk ->
+        val deferredResults = map { chunk ->
             async(Dispatchers.Default) {
-                chunk.sumOf(operation)
+                map(chunk)
             }
         }
-        deferredResults.awaitAll().sum()
+        deferredResults.toList().awaitAll().fold(initial, reduce)
     }
 }
 
-fun <T> Collection<T>.productOfParallel(operation: (T) -> Long): Long {
-    val processorCount = Runtime.getRuntime().availableProcessors()
-    val chunkSize = this.size / processorCount
-    val chunks = this.chunked(chunkSize)
-    return runBlocking {
-        val deferredResults = chunks.map { chunk ->
-            async(Dispatchers.Default) {
-                chunk.productOf(operation)
-            }
-        }
-        deferredResults.awaitAll().product()
-    }
-}
+fun <T, R> Iterable<T>.mapReduceParallel(initial: R, map: (T) -> R, reduce: (R, R) -> R): R =
+    this.asSequence().mapReduceParallel(initial, map, reduce)
 
 fun Iterable<Long>.product(): Long {
     return this.productOf { it }

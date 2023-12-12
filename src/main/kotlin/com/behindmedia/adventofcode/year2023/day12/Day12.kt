@@ -88,7 +88,9 @@ fun main() {
     timing {
         // Part 1
         println(data.sumOf { it.possibleArrangements() })
+    }
 
+    timing {
         // Part 2
         println(data.map { it * 5 }.sumOf { it.possibleArrangements() })
     }
