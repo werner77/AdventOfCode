@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.common
 
+import kotlin.math.abs
 import java.util.ArrayDeque
 import java.util.PriorityQueue
 
@@ -49,6 +50,23 @@ val Path<Coordinate>.completeDirections: Collection<Coordinate>
             current = parent
         }
         return result
+    }
+
+
+val List<Coordinate>.doubleEnclosedSurfaceArea: Long
+    get() {
+        var result = 0L
+        for (i in 1..this.size) {
+            result += this[i % this.size].y * (this[(i - 1) % this.size].x - this[(i + 1) % this.size].x)
+        }
+        return abs(result)
+    }
+
+val List<Coordinate>.insidePointCount: Int
+    get() {
+        val area = doubleEnclosedSurfaceArea
+        val boundaryPointCount = this.size
+        return (area.toInt() - boundaryPointCount) / 2 + 1
     }
 
 class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparable<CoordinatePath> {

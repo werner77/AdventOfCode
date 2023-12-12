@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2023.day10
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.Path
+import com.behindmedia.adventofcode.common.insidePointCount
 import com.behindmedia.adventofcode.common.parseMap
 import com.behindmedia.adventofcode.common.timing
 import kotlin.math.roundToInt
@@ -15,10 +16,13 @@ fun main() {
     timing {
         // Part 1
         // The path is not closed completely (start coordinate is there only once), so we need to add 1
-        println(1 + path.pathLength / 2)
+        println((1 + path.pathLength) / 2)
 
         // Part 2
         println(countEnclosed(map = map, enclosingPath = path))
+
+        // Part 2, simple :-), using the Shoelace formula and Picks theorem
+        println(path.allNodes.map { it.position }.insidePointCount)
     }
 }
 

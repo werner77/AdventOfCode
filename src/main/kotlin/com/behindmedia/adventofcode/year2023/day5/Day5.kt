@@ -85,7 +85,7 @@ fun main() {
         val seedRanges = inverseAlmanac.seeds.chunked(2).map { (start, len) -> start until start + len }
 
         // Parallelize the search for the minimum location
-        val coroutineCount = 24
+        val coroutineCount = Runtime.getRuntime().availableProcessors()
         val location = AtomicLong(0L)
         val result = runBlocking {
             (0 until coroutineCount).map {
