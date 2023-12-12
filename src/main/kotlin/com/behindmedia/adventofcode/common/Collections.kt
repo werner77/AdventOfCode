@@ -374,6 +374,7 @@ fun <K, V> defaultMutableMapOf(putValueImplicitly: Boolean = false, vararg pairs
 
 fun <K, V>Map<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMap<K, V> = DefaultMapWrapper(this, defaultValue)
 fun <K, V>MutableMap<K, V>.withDefaultValue(putValueImplicitly: Boolean = false, defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this, defaultValue, putValueImplicitly)
+fun <V> List<V>.withDefaultValue(defaultValue: () -> V): DefaultList<V> = DefaultListWrapper(this, defaultValue)
 
 private class DefaultMutableMapWrapper<K, V>(
     private val impl: MutableMap<K, V>,
@@ -424,4 +425,30 @@ interface DefaultMap<K, V> : Map<K, V> {
 
 interface DefaultMutableMap<K, V> : DefaultMap<K, V>, MutableMap<K, V> {
     fun getOrPutDefault(key: K): V
+}
+
+interface DefaultList<V>: List<V> {
+    fun getOrDefault(index: Int): V
+}
+
+private class DefaultListWrapper<V>(private val impl: List<V>, private val defaultValue: () -> V): DefaultList<V>, List<V> by impl {
+    override fun getOrDefault(index: Int): V {
+        return impl.getOrNull(index) ?: defaultValue.invoke()
+    }
+
+    override fun get(index: Int): V {
+        return getOrDefault(index)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return this.impl == other
+    }
+
+    override fun hashCode(): Int {
+        return impl.hashCode()
+    }
+
+    override fun toString(): String {
+        return impl.toString()
+    }
 }
