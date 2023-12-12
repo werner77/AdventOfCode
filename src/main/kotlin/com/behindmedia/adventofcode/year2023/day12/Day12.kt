@@ -1,7 +1,9 @@
 package com.behindmedia.adventofcode.year2023.day12
 
+import com.behindmedia.adventofcode.common.CacheSupport.withCaching
 import com.behindmedia.adventofcode.common.DefaultList
 import com.behindmedia.adventofcode.common.parseLines
+import com.behindmedia.adventofcode.common.times
 import com.behindmedia.adventofcode.common.timing
 import com.behindmedia.adventofcode.common.withDefaultValue
 
@@ -9,16 +11,14 @@ data class State(
     val charIndex: Int,
     val lastGroupIndex: Int,
     val lastGroupSize: Int,
-    val isGroupActive: Boolean,
-    val remainingWildcards: Int
+    val isGroupActive: Boolean
 ) {
-    fun nextState(inGroup: Boolean, isWildcard: Boolean): State {
+    fun nextState(inGroup: Boolean): State {
         return copy(
             charIndex = charIndex + 1,
             lastGroupIndex = if (!isGroupActive && inGroup) lastGroupIndex + 1 else lastGroupIndex,
             lastGroupSize = if (!isGroupActive && inGroup) 1 else if (inGroup) lastGroupSize + 1 else lastGroupSize,
-            isGroupActive = inGroup,
-            remainingWildcards = if (isWildcard) remainingWildcards - 1 else remainingWildcards
+            isGroupActive = inGroup
         )
     }
 }
@@ -32,7 +32,7 @@ data class Record(val value: String, val groups: DefaultList<Int>) {
     }
 
     operator fun times(multiplier: Int): Record {
-        return Record(value = value * multiplier, groups = (groups * multiplier).withDefaultValue { 0 })
+        return Record(value = value.times(multiplier, "?"), groups = (groups * multiplier).withDefaultValue { 0 })
     }
 
     fun possibleArrangements(): Long {
@@ -41,56 +41,42 @@ data class Record(val value: String, val groups: DefaultList<Int>) {
                 charIndex = 0,
                 lastGroupIndex = -1,
                 lastGroupSize = 0,
-                isGroupActive = false,
-                remainingWildcards = value.count { it == '?' }),
-            cache = hashMapOf()
+                isGroupActive = false)
         )
     }
 
-    private fun process(state: State, cache: MutableMap<State, Long>): Long {
+    private fun process(state: State): Long = withCaching(state) {
         if (state.lastGroupIndex >= groups.size) {
-            return 0L
-        }
-        if (!state.isGroupActive && state.lastGroupSize < groups[state.lastGroupIndex]) {
-            return 0L
-        }
-        if (state.lastGroupSize > groups[state.lastGroupIndex]) {
-            return 0L
-        }
-        if (state.remainingWildcards < 0) {
-            return 0L
-        }
-        if (state.charIndex == value.length) {
+            0L
+        } else if (!state.isGroupActive && state.lastGroupSize < groups[state.lastGroupIndex]) {
+            0L
+        } else if (state.lastGroupSize > groups[state.lastGroupIndex]) {
+            0L
+        } else if (state.charIndex == value.length) {
             // Check for completeness
-            return if (state.remainingWildcards == 0 && state.lastGroupSize == groups[state.lastGroupIndex] && state.lastGroupIndex == groups.size - 1) {
+            if (state.lastGroupSize == groups[state.lastGroupIndex] && state.lastGroupIndex == groups.size - 1) {
                 1L
             } else {
                 0L
             }
-        }
-        return cache[state] ?: run {
+        } else {
             var total = 0L
             when (value[state.charIndex]) {
                 '?' -> {
                     // Wildcard, process both options
-                    total += process(state = state.nextState(inGroup = false, isWildcard = true), cache = cache)
-                    total += process(state = state.nextState(inGroup = true, isWildcard = true), cache = cache)
+                    total += process(state = state.nextState(inGroup = false))
+                    total += process(state = state.nextState(inGroup = true))
                 }
-
                 '.' -> {
                     // Finish group if possible
-                    total += process(state = state.nextState(inGroup = false, isWildcard = false), cache = cache)
+                    total += process(state = state.nextState(inGroup = false))
                 }
-
                 '#' -> {
                     // Increase group count
-                    total += process(state = state.nextState(inGroup = true, isWildcard = false), cache = cache)
+                    total += process(state = state.nextState(inGroup = true))
                 }
             }
-            // Store result in cache
-            total.also {
-                cache[state] = it
-            }
+            total
         }
     }
 }
@@ -106,23 +92,4 @@ fun main() {
         // Part 2
         println(data.map { it * 5 }.sumOf { it.possibleArrangements() })
     }
-}
-
-private operator fun List<Int>.times(multiplier: Int): List<Int> {
-    val result = ArrayList<Int>(this.size * multiplier)
-    repeat(multiplier) {
-        result += this
-    }
-    return result
-}
-
-private operator fun String.times(multiplier: Int): String {
-    val result = StringBuilder()
-    repeat(multiplier) {
-        if (result.isNotEmpty()) {
-            result.append('?')
-        }
-        result.append(this)
-    }
-    return result.toString()
 }

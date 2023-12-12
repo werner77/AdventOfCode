@@ -1,5 +1,10 @@
 package com.behindmedia.adventofcode.common
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+
 /**
  * Removes the first element if present and returns it.
  */
@@ -46,6 +51,34 @@ fun <E> List<E>.slice(count: Int): List<List<E>> {
     return result
 }
 
+fun <T> Collection<T>.sumOfParallel(operation: (T) -> Long): Long {
+    val processorCount = Runtime.getRuntime().availableProcessors()
+    val chunkSize = this.size / processorCount
+    val chunks = this.chunked(chunkSize)
+    return runBlocking {
+        val deferredResults = chunks.map { chunk ->
+            async(Dispatchers.Default) {
+                chunk.sumOf(operation)
+            }
+        }
+        deferredResults.awaitAll().sum()
+    }
+}
+
+fun <T> Collection<T>.productOfParallel(operation: (T) -> Long): Long {
+    val processorCount = Runtime.getRuntime().availableProcessors()
+    val chunkSize = this.size / processorCount
+    val chunks = this.chunked(chunkSize)
+    return runBlocking {
+        val deferredResults = chunks.map { chunk ->
+            async(Dispatchers.Default) {
+                chunk.productOf(operation)
+            }
+        }
+        deferredResults.awaitAll().product()
+    }
+}
+
 fun Iterable<Long>.product(): Long {
     return this.productOf { it }
 }
@@ -57,6 +90,28 @@ fun Iterable<Int>.product(): Int {
 fun Iterable<Double>.product(): Double {
     return this.productOf { it }
 }
+
+operator fun List<Int>.times(multiplier: Int): List<Int> {
+    val result = ArrayList<Int>(this.size * multiplier)
+    repeat(multiplier) {
+        result += this
+    }
+    return result
+}
+
+operator fun String.times(multiplier: Int) = this.times(multiplier, "")
+
+fun String.times(multiplier: Int, separator: String = ""): String {
+    val result = StringBuilder()
+    repeat(multiplier) {
+        if (result.isNotEmpty()) {
+            result.append(separator)
+        }
+        result.append(this)
+    }
+    return result.toString()
+}
+
 
 @OptIn(kotlin.experimental.ExperimentalTypeInference::class)
 @JvmName("productOfInt")
