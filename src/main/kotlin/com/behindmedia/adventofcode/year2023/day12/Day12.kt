@@ -46,34 +46,34 @@ data class Record(val value: String, val groups: DefaultList<Int>) {
     }
 
     private fun process(state: State): Long = withCaching(state) {
-        if (state.lastGroupIndex >= groups.size) {
+        if (it.lastGroupIndex >= groups.size) {
             0L
-        } else if (!state.isGroupActive && state.lastGroupSize < groups[state.lastGroupIndex]) {
+        } else if (!it.isGroupActive && it.lastGroupSize < groups[it.lastGroupIndex]) {
             0L
-        } else if (state.lastGroupSize > groups[state.lastGroupIndex]) {
+        } else if (it.lastGroupSize > groups[it.lastGroupIndex]) {
             0L
-        } else if (state.charIndex == value.length) {
+        } else if (it.charIndex == value.length) {
             // Check for completeness
-            if (state.lastGroupSize == groups[state.lastGroupIndex] && state.lastGroupIndex == groups.size - 1) {
+            if (it.lastGroupSize == groups[it.lastGroupIndex] && it.lastGroupIndex == groups.size - 1) {
                 1L
             } else {
                 0L
             }
         } else {
             var total = 0L
-            when (value[state.charIndex]) {
+            when (value[it.charIndex]) {
                 '?' -> {
                     // Wildcard, process both options
-                    total += process(state = state.nextState(inGroup = false))
-                    total += process(state = state.nextState(inGroup = true))
+                    total += process(state = it.nextState(inGroup = false))
+                    total += process(state = it.nextState(inGroup = true))
                 }
                 '.' -> {
                     // Finish group if possible
-                    total += process(state = state.nextState(inGroup = false))
+                    total += process(state = it.nextState(inGroup = false))
                 }
                 '#' -> {
                     // Increase group count
-                    total += process(state = state.nextState(inGroup = true))
+                    total += process(state = it.nextState(inGroup = true))
                 }
             }
             total

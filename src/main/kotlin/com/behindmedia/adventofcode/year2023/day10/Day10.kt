@@ -15,7 +15,7 @@ fun main() {
 
     timing {
         // Part 1
-        // The path is not closed completely (start coordinate is there only once), so we need to add 1
+        // The path does not contain the start, so we need to add 1
         println((1 + path.pathLength) / 2)
 
         // Part 2
