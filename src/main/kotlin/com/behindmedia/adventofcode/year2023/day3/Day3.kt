@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.year2023.day3
 
+import com.behindmedia.adventofcode.common.CharGrid
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.coordinateRange
 import com.behindmedia.adventofcode.common.defaultMutableMapOf
@@ -7,10 +8,11 @@ import com.behindmedia.adventofcode.common.maxX
 import com.behindmedia.adventofcode.common.parseMap
 import com.behindmedia.adventofcode.common.plusAssign
 import com.behindmedia.adventofcode.common.product
+import com.behindmedia.adventofcode.common.read
 
 fun main() {
 
-    val data = parseMap("/2023/day3.txt") { it }
+    val data = CharGrid(read("/2023/day3.txt"))
 
     // Part 1
     println(processMap(data) { it.isSymbol() }.values.sumOf { it.sum() })
@@ -24,7 +26,7 @@ fun main() {
  * If valid the neighbouring numbers of that coordinate will be put in the returned map.
  */
 private fun processMap(
-    data: Map<Coordinate, Char>,
+    data: CharGrid,
     isValidSymbol: (Char) -> Boolean
 ): Map<Coordinate, List<Int>> {
     val maxX = data.maxX
@@ -36,9 +38,9 @@ private fun processMap(
         val symbolCoordinates = mutableSetOf<Coordinate>()
         while (iterator.hasNext()) {
             val c = iterator.next()
-            val v = data[c]?.takeIf { it.isDigit() } ?: break
+            val v = data.getOrNull(c)?.takeIf { it.isDigit() } ?: break
             symbolCoordinates += c.allNeighbours.filter {
-                data[it]?.let { value -> isValidSymbol(value) } == true
+                data.getOrNull(it)?.let { value -> isValidSymbol(value) } == true
             }
             buffer += v
             if (c.x == maxX) break

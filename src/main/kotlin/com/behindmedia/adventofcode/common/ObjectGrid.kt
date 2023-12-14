@@ -19,10 +19,23 @@ interface ValueGrid<T: Any>: Iterable<Map.Entry<Coordinate, T>> {
     val sizeX: Int
     val sizeY: Int
 
+    val minX: Int
+        get() = if (sizeX > 0) 0 else error("Size x is 0")
+    val minY: Int
+        get() = if (sizeY > 0) 0 else error("Size y is 0")
+    val maxX: Int
+        get() = if (sizeX > 0) sizeX - 1 else error("Size x is 0")
+    val maxY: Int
+        get() = if (sizeY > 0) sizeY - 1 else error("Size y is 0")
+
     val size: Int
         get() = sizeX * sizeY
     val coordinateRange: CoordinateRange
         get() = CoordinateRange(Coordinate.origin, sizeX, sizeY)
+    val keys: List<Coordinate>
+        get() = coordinateRange.toList()
+    val values: List<T>
+        get() = coordinateRange.map { get(it) }
 
     fun copy(): ValueGrid<T>
 

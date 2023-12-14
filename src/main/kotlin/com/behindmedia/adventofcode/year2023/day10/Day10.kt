@@ -1,17 +1,18 @@
 package com.behindmedia.adventofcode.year2023.day10
 
+import com.behindmedia.adventofcode.common.CharGrid
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.Path
 import com.behindmedia.adventofcode.common.insidePointCount
-import com.behindmedia.adventofcode.common.parseMap
+import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
 fun main() {
-    val map = parseMap("/2023/day10.txt") { it }
-    val startCoordinate = map.entries.single { it.value == 'S' }.key
-    val path = findEnclosingPath(startCoordinate, map)
+    val grid = CharGrid(read("/2023/day10.txt"))
+    val startCoordinate = grid.single { it.value == 'S' }.key
+    val path = findEnclosingPath(startCoordinate, grid)
 
     timing {
         // Part 1
@@ -19,7 +20,7 @@ fun main() {
         println((1 + path.pathLength) / 2)
 
         // Part 2
-        println(countEnclosed(map = map, enclosingPath = path))
+        println(countEnclosed(map = grid, enclosingPath = path))
 
         // Part 2, simple :-), using the Shoelace formula and Picks theorem
         println(path.allNodes.map { it.position }.insidePointCount)
@@ -35,7 +36,7 @@ fun main() {
  * - The sign of this angle should be the opposite to the sign of the full revolution angle (see above) that the enclosing path makes. If this is true, then the region is inside, otherwise the region is outside.
  * - We count the sizes of the visited locations within valid enclosed sections and add them all up together to get to the result.
  */
-private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<PositionDirectionTuple>): Int {
+private fun countEnclosed(map: CharGrid, enclosingPath: Path<PositionDirectionTuple>): Int {
     // Keeps track of all seen coordinates
     val seen = mutableSetOf<Coordinate>()
 
@@ -45,7 +46,7 @@ private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<Positi
     val lastNode = pathNodes.last()
 
     val actualStartValue = "|-LJ7F".single { it.nextDirection(lastNode.direction) == firstNode.direction }
-    val replacedMap: Map<Coordinate, Char> = map.toMutableMap().apply { put(firstNode.position, actualStartValue) }
+    val replacedMap: CharGrid = map.mutableCopy().apply { set(firstNode.position, actualStartValue) }
 
     // Calculate the complete rotation angle: this determines what the vector angle should be for internal regions
     var lastDirection = lastNode.direction
@@ -78,7 +79,7 @@ private fun countEnclosed(map: Map<Coordinate, Char>, enclosingPath: Path<Positi
 
 private fun checkValidRegion(
     from: Coordinate,
-    map: Map<Coordinate, Char>,
+    grid: CharGrid,
     enclosingPath: Map<Coordinate, PositionDirectionTuple>,
     requiredSign: Int
 ): Pair<Set<Coordinate>, Boolean> {
@@ -96,7 +97,7 @@ private fun checkValidRegion(
         visited += path.destination
 
         for (neighbour in path.destination.directNeighbours) {
-            if (map[neighbour] == null) {
+            if (grid.getOrNull(neighbour) == null) {
                 // Coordinate is next to border, mark region as invalid
                 valid = false
                 continue
@@ -113,7 +114,7 @@ private fun checkValidRegion(
 
                 if (direction1 == direction2) {
                     // For cornering connections we have to take the previous direction if the directions are aligned
-                    val value = map[enclosing.position] ?: error("No value for position: ${enclosing.position}")
+                    val value = grid[enclosing.position]
                     direction2 = value.previousDirection(direction2)
                         ?: error("Could not get previous direction for direction: $direction2")
                 }
@@ -135,7 +136,7 @@ private fun checkValidRegion(
 
 private fun findEnclosingPath(
     from: Coordinate,
-    map: Map<Coordinate, Char>
+    grid: CharGrid
 ): Path<PositionDirectionTuple> {
     val pending = ArrayDeque<Path<PositionDirectionTuple>>()
     val visited = mutableSetOf<PositionDirectionTuple>()
@@ -152,7 +153,7 @@ private fun findEnclosingPath(
         if (neighbour == from) {
             return path
         }
-        val nextValue = map[neighbour] ?: continue
+        val nextValue = grid.getOrNull(neighbour) ?: continue
         val nextDirection = nextValue.nextDirection(direction = direction) ?: continue
         val nextPositionDirection = PositionDirectionTuple(neighbour, nextDirection)
         if (nextPositionDirection in visited) continue

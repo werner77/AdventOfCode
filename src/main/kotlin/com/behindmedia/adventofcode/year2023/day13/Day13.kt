@@ -6,7 +6,7 @@ fun main() {
     val data = read("/2023/day13.txt")
     val sections = data.split("\n\n")
     val maps = sections.map {
-        parseMapFromString(it)
+        CharGrid(it)
     }
 
     // Part 1
@@ -16,7 +16,7 @@ fun main() {
     println(maps.sumOf { findReflections(it, true, 1).sum() + findReflections(it, false, 1).sum() * 100 })
 }
 
-private fun findReflections(map: Map<Coordinate, Char>, transposed: Boolean, wantedDiffCount: Int): List<Int> {
+private fun findReflections(map: CharGrid, transposed: Boolean, wantedDiffCount: Int): List<Int> {
     val sizeA = if (transposed) map.sizeX else map.sizeY
     val sizeB = if (transposed) map.sizeY else map.sizeX
     val result = mutableListOf<Int>()
