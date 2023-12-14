@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode.year2023.day14
 
 import com.behindmedia.adventofcode.common.Coordinate
+import com.behindmedia.adventofcode.common.Grid
 import com.behindmedia.adventofcode.common.coordinateRange
 import com.behindmedia.adventofcode.common.parseMap
 import com.behindmedia.adventofcode.common.sizeY
@@ -22,8 +23,8 @@ fun main() {
     }
 }
 
-private fun processAllDirectionsFast(map: Map<Coordinate, Char>, totalIterations: Int = 1_000_000_000): Map<Coordinate, Char> {
-    val seen = mutableMapOf<Map<Coordinate, Char>, Int>()
+private fun processAllDirectionsFast(map: Grid, totalIterations: Int = 1_000_000_000): Grid {
+    val seen = mutableMapOf<Grid, Int>()
     val (initial, cycle) = processAllDirectionsRepeatedly(map) { iteration, current ->
         seen.put(current, iteration)?.let { existing ->
             existing to iteration - existing
@@ -34,7 +35,7 @@ private fun processAllDirectionsFast(map: Map<Coordinate, Char>, totalIterations
     return seen.entries.first { it.value == index }.key
 }
 
-fun <T>processAllDirectionsRepeatedly(map: Map<Coordinate, Char>, predicate: (Int, Map<Coordinate, Char>) -> T?): T {
+fun <T>processAllDirectionsRepeatedly(map: Grid, predicate: (Int, Grid) -> T?): T {
     var current = map
     var i = 0
     while (true) {
@@ -47,7 +48,7 @@ fun <T>processAllDirectionsRepeatedly(map: Map<Coordinate, Char>, predicate: (In
     }
 }
 
-private val Map<Coordinate, Char>.score: Int
+private val Grid.score: Int
     get() {
         val sizeY = this.sizeY
         return entries.fold(0) { score, (c, v) ->
@@ -59,7 +60,7 @@ private val Map<Coordinate, Char>.score: Int
         }
     }
 
-private fun processAllDirections(map: Map<Coordinate, Char>): Map<Coordinate, Char> {
+private fun processAllDirections(map: Grid): Grid {
     var current = map
     for (direction in listOf(Coordinate.up, Coordinate.left, Coordinate.down, Coordinate.right)) {
         current = process(current, direction)
@@ -67,7 +68,7 @@ private fun processAllDirections(map: Map<Coordinate, Char>): Map<Coordinate, Ch
     return current
 }
 
-private fun process(map: Map<Coordinate, Char>, direction: Coordinate): Map<Coordinate, Char> {
+private fun process(map: Grid, direction: Coordinate): Grid {
     val result = map.toMutableMap()
     val reverse = direction in listOf(Coordinate.down, Coordinate.right)
     val range = map.coordinateRange
