@@ -289,9 +289,18 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
         }
     }
 
-    private class CoordinateIterator(val minCoordinate: Coordinate, val maxCoordinate: Coordinate) :
+    private class CoordinateIterator(
+        val minCoordinate: Coordinate,
+        val maxCoordinate: Coordinate,
+        val reversed: Boolean
+    ) :
         Iterator<Coordinate> {
-        private var nextCoordinate: Coordinate? = if (minCoordinate <= maxCoordinate) minCoordinate else null
+        private var nextCoordinate: Coordinate? =
+            if (reversed) {
+                if (minCoordinate <= maxCoordinate) maxCoordinate else null
+            } else {
+                if (minCoordinate <= maxCoordinate) minCoordinate else null
+            }
 
         override fun hasNext(): Boolean {
             return nextCoordinate != null
@@ -300,16 +309,26 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
         override fun next(): Coordinate {
             val next = nextCoordinate
                 ?: throw IllegalStateException("Next called on iterator while there are no more elements to iterate over")
-            nextCoordinate = when {
-                next.x < maxCoordinate.x -> next.offset(1, 0)
-                next.y < maxCoordinate.y -> Coordinate(minCoordinate.x, next.y + 1)
-                else -> null
+            if (reversed) {
+                nextCoordinate = when {
+                    next.x > minCoordinate.x -> next.offset(-1, 0)
+                    next.y > minCoordinate.y -> Coordinate(maxCoordinate.x, next.y - 1)
+                    else -> null
+                }
+            } else {
+                nextCoordinate = when {
+                    next.x < maxCoordinate.x -> next.offset(1, 0)
+                    next.y < maxCoordinate.y -> Coordinate(minCoordinate.x, next.y + 1)
+                    else -> null
+                }
             }
             return next
         }
     }
 
-    override fun iterator(): Iterator<Coordinate> = CoordinateIterator(minMaxCoordinate.first, minMaxCoordinate.second)
+    override fun iterator(): Iterator<Coordinate> = CoordinateIterator(minMaxCoordinate.first, minMaxCoordinate.second, false)
+
+    fun reverseIterator(): Iterator<Coordinate> = CoordinateIterator(minMaxCoordinate.first, minMaxCoordinate.second, true)
 
     override fun toString(): String {
         return "$start..$endInclusive"
@@ -335,7 +354,10 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
     }
 
     fun inset(insets: Insets): CoordinateRange {
-        return CoordinateRange(start + Coordinate(insets.left, insets.top), endInclusive - Coordinate(insets.right, insets.bottom))
+        return CoordinateRange(
+            start + Coordinate(insets.left, insets.top),
+            endInclusive - Coordinate(insets.right, insets.bottom)
+        )
     }
 }
 
