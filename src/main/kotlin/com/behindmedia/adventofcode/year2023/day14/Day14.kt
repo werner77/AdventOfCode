@@ -18,19 +18,20 @@ fun main() {
 
     timing {
         // Part 2
-        val (initial, cycle, state) = findCycle(map)
-        val remaining = (1_000_000_000 - initial) % cycle
-        println(processAllDirectionsRepeatedly(state) { iteration, current -> current.takeIf { iteration == remaining }?.score })
+        println(processAllDirectionsFast(map).score)
     }
 }
 
-private fun findCycle(map: Map<Coordinate, Char>): Triple<Int, Int, Map<Coordinate, Char>> {
+private fun processAllDirectionsFast(map: Map<Coordinate, Char>, totalIterations: Int = 1_000_000_000): Map<Coordinate, Char> {
     val seen = mutableMapOf<Map<Coordinate, Char>, Int>()
-    return processAllDirectionsRepeatedly(map) { iteration, current ->
+    val (initial, cycle) = processAllDirectionsRepeatedly(map) { iteration, current ->
         seen.put(current, iteration)?.let { existing ->
-            Triple(existing, iteration - existing, current)
+            existing to iteration - existing
         }
     }
+    val remaining = (totalIterations - initial) % cycle
+    val index = initial + remaining
+    return seen.entries.first { it.value == index }.key
 }
 
 fun <T>processAllDirectionsRepeatedly(map: Map<Coordinate, Char>, predicate: (Int, Map<Coordinate, Char>) -> T?): T {
@@ -72,22 +73,22 @@ private fun process(map: Map<Coordinate, Char>, direction: Coordinate): Map<Coor
     val range = map.coordinateRange
     val iterator = if (reverse) range.reverseIterator() else range.iterator()
     while (iterator.hasNext()) {
-        val c = iterator.next()
-        if (result[c] == 'O') {
-            var candidate = c + direction
-            var swapCoordinate: Coordinate? = null
+        val source = iterator.next()
+        if (result[source] == 'O') {
+            var candidate = source + direction
+            var destination: Coordinate? = null
             while (candidate in range) {
                 if (result[candidate] == '.') {
                     // continue
-                    swapCoordinate = candidate
+                    destination = candidate
                 } else {
                     break
                 }
                 candidate += direction
             }
-            if (swapCoordinate != null) {
-                result[c] = '.'
-                result[swapCoordinate] = 'O'
+            if (destination != null) {
+                result[source] = '.'
+                result[destination] = 'O'
             }
         }
     }
