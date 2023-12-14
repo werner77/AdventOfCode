@@ -8,11 +8,11 @@ import kotlin.math.min
 private val emptyChar = '.'
 
 private val rocks = listOf(
-    CharMap("####", emptyChar).coordinates,
-    CharMap(".#.\n###\n.#.", emptyChar).coordinates,
-    CharMap("..#\n..#\n###", emptyChar).coordinates,
-    CharMap("#\n#\n#\n#", emptyChar).coordinates,
-    CharMap("##\n##", emptyChar).coordinates
+    CharGrid("####", emptyChar).coordinates,
+    CharGrid(".#.\n###\n.#.", emptyChar).coordinates,
+    CharGrid("..#\n..#\n###", emptyChar).coordinates,
+    CharGrid("#\n#\n#\n#", emptyChar).coordinates,
+    CharGrid("##\n##", emptyChar).coordinates
 ).map { Rock(it, Companion.origin) }
 
 private val minRepitition = rocks.sumOf { it.sizeY }
@@ -22,7 +22,7 @@ private val directionMap: Map<Char, Coordinate> = mapOf(
     '>' to Coordinate.right
 )
 
-private val CharMap.coordinates: List<Coordinate>
+private val CharGrid.coordinates: List<Coordinate>
     get() = this.filter { it.value != emptyChar }.map { it.key }
 
 private val Char.coordinate: Coordinate

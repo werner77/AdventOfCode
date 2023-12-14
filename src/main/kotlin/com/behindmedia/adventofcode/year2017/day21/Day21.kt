@@ -22,10 +22,10 @@ private val transforms = arrayOf<Transform>(
     { size, x, y -> Pair(size - 1 - y, size - 1 - x) },
 )
 
-private class Tile(private val data: CharMap) {
+private class Tile(private val data: CharGrid) {
     companion object {
         operator fun invoke(string: String): Tile {
-            return Tile(CharMap(string.split("/").joinToString("\n")))
+            return Tile(CharGrid(string.split("/").joinToString("\n")))
         }
     }
 
@@ -36,13 +36,13 @@ private class Tile(private val data: CharMap) {
         return data[coordinate]
     }
 
-    fun match(map: CharMap, startCoordinate: Coordinate, size: Int): Boolean {
+    fun match(map: CharGrid, startCoordinate: Coordinate, size: Int): Boolean {
         if (size != this.size) return false
         return transforms.any { match(map, startCoordinate, it) }
     }
 
     private fun match(
-        map: CharMap,
+        map: CharGrid,
         startCoordinate: Coordinate,
         transform: Transform
     ): Boolean {
@@ -82,13 +82,13 @@ fun main() {
     }
 }
 
-private fun enhance(rules: List<Rule>, iterationCount: Int): CharMap {
-    var map = CharMap(startTileString)
+private fun enhance(rules: List<Rule>, iterationCount: Int): CharGrid {
+    var map = CharGrid(startTileString)
     var size = map.sizeX
     var tileSize = size
     repeat(iterationCount) {
         val nextSize = if (tileSize == 2) 3 * size / 2 else 4 * size / 3
-        val nextMap = CharMap(nextSize)
+        val nextMap = MutableCharGrid(nextSize)
         val tileCount = size / tileSize
         for (x in 0 until tileCount) {
             for (y in 0 until tileCount) {

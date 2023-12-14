@@ -408,8 +408,6 @@ val <E> Map<Coordinate, E>.maxCoordinate: Coordinate
 val <E> Map<Coordinate, E>.coordinateRange: CoordinateRange
     get() = CoordinateRange(keys)
 
-typealias Grid = Map<Coordinate, Char>
-
 fun normalizedAngle(angle: Double): Double {
     var result = positiveAngle(angle)
     if (result > PI) {

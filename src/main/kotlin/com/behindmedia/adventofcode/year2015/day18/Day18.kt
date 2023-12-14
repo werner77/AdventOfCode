@@ -2,8 +2,8 @@ package com.behindmedia.adventofcode.year2015.day18
 
 import com.behindmedia.adventofcode.common.*
 
-private fun simulate(input: ValueMap<Char>, part2: Boolean): ValueMap<Char> {
-    return CharMap(input.sizeX, input.sizeY) { x, y ->
+private fun simulate(input: ValueGrid<Char>, part2: Boolean): ValueGrid<Char> {
+    return CharGrid(input.sizeX, input.sizeY) { x, y ->
         val coordinate = Coordinate(x, y)
         val neighbourOnCount = coordinate.allNeighbourSequence().count {
             input.getOrNull(it) == '#' || (part2 && input.isExtreme(it))
@@ -19,7 +19,7 @@ private fun simulate(input: ValueMap<Char>, part2: Boolean): ValueMap<Char> {
     }
 }
 
-private fun part1(data: ValueMap<Char>): Int {
+private fun part1(data: ValueGrid<Char>): Int {
     var map = data
     repeat(100) {
         map = simulate(map, false)
@@ -27,7 +27,7 @@ private fun part1(data: ValueMap<Char>): Int {
     return map.count { it.value == '#' }
 }
 
-private fun part2(data: ValueMap<Char>): Int {
+private fun part2(data: ValueGrid<Char>): Int {
     var map = data
     repeat(100) {
         map = simulate(map, true)
@@ -45,8 +45,8 @@ private val testInput = """
 """.trimIndent()
 
 fun main() {
-    val data: ValueMap<Char> = parse("/2015/day18.txt") { line ->
-        CharMap(line)
+    val data: ValueGrid<Char> = parse("/2015/day18.txt") { line ->
+        CharGrid(line)
     }
     require(data.size == 100 * 100)
     println(part1(data))

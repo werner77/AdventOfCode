@@ -35,8 +35,8 @@ fun main() {
     println(part2(data).sumOf { it.value })
 }
 
-private fun part1(data: List<Instruction>): CharMap {
-    val state = CharMap(1000) { _, _ -> '.' }
+private fun part1(data: List<Instruction>): CharGrid {
+    val state = MutableCharGrid(1000) { _, _ -> '.' }
     for (instr in data) {
         for (c in instr.range) {
             when (instr.action) {
@@ -55,8 +55,8 @@ private fun part1(data: List<Instruction>): CharMap {
     return state
 }
 
-private fun part2(data: List<Instruction>): ObjectMap<Long> {
-    val state = ObjectMap<Long>(squareSize = 1000) { _, _ -> 0L }
+private fun part2(data: List<Instruction>): ObjectGrid<Long> {
+    val state = MutableObjectGrid<Long>(squareSize = 1000) { _, _ -> 0L }
     for (instr in data) {
         for (c in instr.range) {
             when (instr.action) {

@@ -1,17 +1,12 @@
 package com.behindmedia.adventofcode.year2023.day14
 
+import com.behindmedia.adventofcode.common.CharGrid
 import com.behindmedia.adventofcode.common.Coordinate
-import com.behindmedia.adventofcode.common.Grid
-import com.behindmedia.adventofcode.common.coordinateRange
-import com.behindmedia.adventofcode.common.parseMap
-import com.behindmedia.adventofcode.common.sizeY
+import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
 
 fun main() {
-    val map = parseMap("/2023/day14.txt") { line ->
-        line
-    }
-
+    val map = CharGrid(read("/2023/day14.txt"))
     timing {
         // Part 1
         println(process(map, Coordinate.up).score)
@@ -23,8 +18,11 @@ fun main() {
     }
 }
 
-private fun processAllDirectionsFast(map: Grid, totalIterations: Int = 1_000_000_000): Grid {
-    val seen = mutableMapOf<Grid, Int>()
+private fun processAllDirectionsFast(
+    map: CharGrid,
+    totalIterations: Int = 1_000_000_000
+): CharGrid {
+    val seen = mutableMapOf<CharGrid, Int>()
     val (initial, cycle) = processAllDirectionsRepeatedly(map) { iteration, current ->
         seen.put(current, iteration)?.let { existing ->
             existing to iteration - existing
@@ -35,7 +33,10 @@ private fun processAllDirectionsFast(map: Grid, totalIterations: Int = 1_000_000
     return seen.entries.first { it.value == index }.key
 }
 
-fun <T>processAllDirectionsRepeatedly(map: Grid, predicate: (Int, Grid) -> T?): T {
+fun <T> processAllDirectionsRepeatedly(
+    map: CharGrid,
+    predicate: (Int, CharGrid) -> T?
+): T {
     var current = map
     var i = 0
     while (true) {
@@ -48,10 +49,10 @@ fun <T>processAllDirectionsRepeatedly(map: Grid, predicate: (Int, Grid) -> T?): 
     }
 }
 
-private val Grid.score: Int
+private val CharGrid.score: Int
     get() {
         val sizeY = this.sizeY
-        return entries.fold(0) { score, (c, v) ->
+        return fold(0) { score, (c, v) ->
             if (v == 'O') {
                 score + (sizeY - c.y)
             } else {
@@ -60,7 +61,7 @@ private val Grid.score: Int
         }
     }
 
-private fun processAllDirections(map: Grid): Grid {
+private fun processAllDirections(map: CharGrid): CharGrid {
     var current = map
     for (direction in listOf(Coordinate.up, Coordinate.left, Coordinate.down, Coordinate.right)) {
         current = process(current, direction)
@@ -68,8 +69,11 @@ private fun processAllDirections(map: Grid): Grid {
     return current
 }
 
-private fun process(map: Grid, direction: Coordinate): Grid {
-    val result = map.toMutableMap()
+private fun process(
+    map: CharGrid,
+    direction: Coordinate
+): CharGrid {
+    val result = map.mutableCopy()
     val reverse = direction in listOf(Coordinate.down, Coordinate.right)
     val range = map.coordinateRange
     val iterator = if (reverse) range.reverseIterator() else range.iterator()

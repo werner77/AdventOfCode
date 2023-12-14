@@ -338,39 +338,46 @@ fun <E> List<E>.removingAllOccurences(sublist: List<E>): List<E> {
  */
 class Reference<T>(var value: T)
 
-class FilteredIterable<E>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean) : Iterable<E> {
+class FilteredIterator<E: Any>(iterator: Iterator<E>, predicate: (E) -> Boolean) : CompactMappedIterator<E, E>(iterator, { if (predicate(it)) it else null })
 
-    private class FilteredIterator<E>(private val iterator: Iterator<E>, private val predicate: (E) -> Boolean) :
-        Iterator<E> {
+class MappedIterator<E: Any, T: Any>(iterator: Iterator<E>, mapper: (E) -> T) : CompactMappedIterator<E, T>(iterator, { mapper(it) })
 
-        private var nextElement: E? = null
+open class CompactMappedIterator<T: Any, R: Any>(private val iterator: Iterator<T>, private val mapper: (T) -> R?) :
+    Iterator<R> {
 
-        private fun initNextElement() {
-            if (nextElement == null) {
-                while (iterator.hasNext()) {
-                    val element = iterator.next()
-                    if (predicate(element)) {
-                        nextElement = element
-                        return
-                    }
-                }
-            }
-        }
+    private var nextElement: R? = null
 
-        override fun hasNext(): Boolean {
-            initNextElement()
-            return nextElement != null
-        }
-
-        override fun next(): E {
-            try {
-                initNextElement()
-                return nextElement ?: throw NoSuchElementException("No elements left")
-            } finally {
-                nextElement = null
+    private fun initNextElement() {
+        if (nextElement == null) {
+            while (iterator.hasNext()) {
+                val element = iterator.next()
+                val mapped = mapper(element) ?: continue
+                nextElement = mapped
+                return
             }
         }
     }
+
+    override fun hasNext(): Boolean {
+        initNextElement()
+        return nextElement != null
+    }
+
+    override fun next(): R {
+        try {
+            initNextElement()
+            return nextElement ?: throw NoSuchElementException("No elements left")
+        } finally {
+            nextElement = null
+        }
+    }
+}
+
+fun <T: Any, R: Any>Iterator<T>.mapped(mapper: (T) -> R) = CompactMappedIterator(this, mapper)
+fun <T: Any>Iterator<T>.filtered(predicate: (T) -> Boolean) = CompactMappedIterator(this) { if (predicate(it)) it else null }
+fun <T: Any, R: Any>Iterator<T>.compactMapped(mapper: (T) -> R?) = CompactMappedIterator(this, mapper)
+
+class FilteredIterable<E: Any>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean) : Iterable<E> {
 
     override fun iterator(): Iterator<E> {
         return FilteredIterator(iterable.iterator(), predicate)
