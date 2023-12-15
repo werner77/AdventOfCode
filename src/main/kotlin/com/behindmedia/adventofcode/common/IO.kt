@@ -110,6 +110,26 @@ fun <T> String.splitToSequenceByCharactersInString(delimiters: String, conversio
         .map { conversion.invoke(it) }
 }
 
+fun CharSequence.splitWithDelimiters(vararg delimiters: String): List<String> {
+    val result = mutableListOf<String>()
+    var i = 0
+    val current = StringBuilder()
+    outer@ while (i < length) {
+        for (d in delimiters) {
+            if (startsWith(d, i)) {
+                result += current.toString()
+                result += d
+                i += d.length
+                current.clear()
+                continue@outer
+            }
+        }
+        current.append(this[i++])
+    }
+    result += current.toString()
+    return result
+}
+
 fun <T>timing(block: () -> T) {
     val start = System.currentTimeMillis()
     try {

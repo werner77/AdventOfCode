@@ -2,16 +2,17 @@ package com.behindmedia.adventofcode.year2023.day15
 
 import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.read
+import com.behindmedia.adventofcode.common.splitNonEmptySequence
+import com.behindmedia.adventofcode.common.splitWithDelimiters
 
 fun main() {
-    val data = read("/2023/day15.txt").split(',', ' ', '\n').filter { it.isNotEmpty() }
+    val data = read("/2023/day15.txt").splitNonEmptySequence(",", " ", "\n").toList()
 
     // Part 1
-    println(data.sumOf { hash(it) })
+    println(data.sumOf { it.hash })
 
     // Part 2
-    val map = process(data)
-    println(focussingPower(map))
+    println(process(data).focussingPower)
 }
 
 private fun process(data: List<String>): Map<Long, Map<String, Long>> {
@@ -20,9 +21,9 @@ private fun process(data: List<String>): Map<Long, Map<String, Long>> {
             putValueImplicitly = true,
             defaultValue = { linkedMapOf() })
     ) { map, item ->
-        val (label, rest) = item.split('-', '=')
-        val boxNumber = hash(label)
-        if (item.indexOf('=') >= 0) {
+        val (label, delimiter, rest) = item.splitWithDelimiters("-", "=")
+        val boxNumber = label.hash
+        if (delimiter == "=") {
             val focalLength = rest.toLong()
             map[boxNumber][label] = focalLength
         } else {
@@ -33,14 +34,10 @@ private fun process(data: List<String>): Map<Long, Map<String, Long>> {
     return map
 }
 
-private fun hash(string: String): Long {
-    return string.fold(0L) { value, c ->
-        ((value + c.code.toLong()) * 17L) % 256L
-    }
-}
+private val String.hash: Long
+    get() = fold(0L) { hash, c -> ((hash + c.code.toLong()) * 17L) % 256L }
 
-private fun focussingPower(map: Map<Long, Map<String, Long>>): Long {
-    return map.entries.sumOf { (boxNumber, value) ->
-        value.values.withIndex().sumOf { (i, f) -> (1 + boxNumber) * (i + 1) * f }
+private val Map<Long, Map<String, Long>>.focussingPower: Long
+    get() = entries.sumOf { (boxNumber, contents) ->
+        contents.values.withIndex().sumOf { (i, f) -> (1 + boxNumber) * (i + 1) * f }
     }
-}
