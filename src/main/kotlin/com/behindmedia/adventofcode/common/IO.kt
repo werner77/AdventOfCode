@@ -98,36 +98,56 @@ fun String.splitNonEmptySequence(vararg delimiters: String): Sequence<String> {
     return splitNonEmptySequence(delimiters = delimiters) { it }
 }
 
+fun String.splitNonEmpty(vararg delimiters: String): List<String> {
+    return splitNonEmptySequence(*delimiters).toList()
+}
+
 fun <T> String.splitNonEmptySequence(vararg delimiters: String, conversion: (String) -> T): Sequence<T> {
     return splitToSequence(delimiters = delimiters)
         .filter { it.isNotEmpty() }
         .map { conversion.invoke(it) }
 }
 
-fun <T> String.splitToSequenceByCharactersInString(delimiters: String, conversion: (String) -> T): Sequence<T> {
+fun <T> String.splitNonEmpty(vararg delimiters: String, conversion: (String) -> T): List<T> {
+    return this.splitNonEmptySequence(*delimiters) { conversion.invoke(it) }.toList()
+}
+
+fun <T> String.splitNonEmptySequenceByCharactersInString(delimiters: String, conversion: (String) -> T): Sequence<T> {
     return splitToSequence(delimiters = delimiters.toCharArray())
         .filter { it.isNotEmpty() }
         .map { conversion.invoke(it) }
 }
 
-fun CharSequence.splitWithDelimiters(vararg delimiters: String): List<String> {
-    val result = mutableListOf<String>()
-    var i = 0
-    val current = StringBuilder()
-    outer@ while (i < length) {
-        for (d in delimiters) {
-            if (startsWith(d, i)) {
-                result += current.toString()
-                result += d
-                i += d.length
-                current.clear()
-                continue@outer
+fun CharSequence.splitWithDelimitersToSequence(vararg delimiters: String): Sequence<String> {
+    return sequence {
+        var i = 0
+        val current = StringBuilder()
+        outer@ while (i < length) {
+            for (d in delimiters) {
+                if (startsWith(d, i)) {
+                    yield(current.toString())
+                    yield(d)
+                    i += d.length
+                    current.clear()
+                    continue@outer
+                }
             }
+            current.append(this@splitWithDelimitersToSequence[i++])
         }
-        current.append(this[i++])
+        yield(current.toString())
     }
-    result += current.toString()
-    return result
+}
+
+fun CharSequence.splitWithDelimitersToNonEmptySequence(vararg delimiters: String): Sequence<String> {
+    return splitWithDelimitersToSequence(*delimiters).filter { it.isNotEmpty() }
+}
+
+fun CharSequence.splitWithDelimiters(vararg delimiters: String): List<String> {
+    return splitWithDelimitersToSequence(*delimiters).toList()
+}
+
+fun CharSequence.splitWithDelimitersNonEmpty(vararg delimiters: String): List<String> {
+    return splitWithDelimitersToNonEmptySequence(*delimiters).toList()
 }
 
 fun <T>timing(block: () -> T) {

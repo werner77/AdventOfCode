@@ -14,7 +14,7 @@ private data class Range(val start: Int, val end: Int) {
 
 fun main() {
     val data = parseLines("/2022/day4.txt") { line ->
-        val d = line.splitToSequenceByCharactersInString("- ,") { it.toInt() }.toList()
+        val d = line.splitNonEmptySequenceByCharactersInString("- ,") { it.toInt() }.toList()
         require(d.size == 4)
         Pair(Range(d[0], d[1]), Range(d[2], d[3]))
     }

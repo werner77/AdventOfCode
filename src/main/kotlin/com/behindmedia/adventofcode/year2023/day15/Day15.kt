@@ -2,11 +2,11 @@ package com.behindmedia.adventofcode.year2023.day15
 
 import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.read
-import com.behindmedia.adventofcode.common.splitNonEmptySequence
+import com.behindmedia.adventofcode.common.splitNonEmpty
 import com.behindmedia.adventofcode.common.splitWithDelimiters
 
 fun main() {
-    val data = read("/2023/day15.txt").splitNonEmptySequence(",", " ", "\n").toList()
+    val data = read("/2023/day15.txt").splitNonEmpty(",", " ", "\n")
 
     // Part 1
     println(data.sumOf { it.hash })
