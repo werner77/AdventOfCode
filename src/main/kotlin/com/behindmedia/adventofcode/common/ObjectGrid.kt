@@ -41,6 +41,8 @@ interface ValueGrid<T: Any>: Iterable<Map.Entry<Coordinate, T>> {
 
     fun mutableCopy(): MutableValueGrid<T>
 
+    fun containsKey(coordinate: Coordinate): Boolean = getOrNull(coordinate) != null
+
     fun isExtreme(coordinate: Coordinate): Boolean {
         return when (coordinate) {
             Coordinate.origin, Coordinate(0, sizeY - 1), Coordinate(sizeX - 1, 0), Coordinate(sizeX - 1, sizeY - 1) -> true

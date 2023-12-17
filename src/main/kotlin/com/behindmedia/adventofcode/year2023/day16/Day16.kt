@@ -5,15 +5,17 @@ import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.RotationDirection.Left
 import com.behindmedia.adventofcode.common.RotationDirection.Right
 import com.behindmedia.adventofcode.common.read
+import com.behindmedia.adventofcode.common.timing
 
 fun main() {
     val grid = CharGrid(read("/2023/day16.txt"))
+    timing {
+        // Part 1
+        println(process(Coordinate.origin to Coordinate.right, grid))
 
-    // Part 1
-    println(process(Coordinate.origin to Coordinate.right, grid))
-
-    // Part 2
-    println(candidateSequence(grid).maxOf { process(it, grid) })
+        // Part 2
+        println(candidateSequence(grid).maxOf { process(it, grid) })
+    }
 }
 
 private fun candidateSequence(grid: CharGrid): Sequence<Pair<Coordinate, Coordinate>> {
@@ -55,10 +57,10 @@ private fun process(start: Pair<Coordinate, Coordinate>, grid: CharGrid): Int {
         seen += current
         val nextDirections: List<Coordinate> = when (tile) {
             '.' -> listOf(direction)
-            '|' -> if (direction.isHorizontalDirection) listOf(Coordinate.up, Coordinate.down) else listOf(direction)
-            '-' -> if (direction.isVerticalDirection) listOf(Coordinate.left, Coordinate.right) else listOf(direction)
-            '/' -> if (direction.isHorizontalDirection) listOf(direction.rotate(Left)) else listOf(direction.rotate(Right))
-            '\\' -> if (direction.isVerticalDirection) listOf(direction.rotate(Left)) else listOf(direction.rotate(Right))
+            '|' -> if (direction.isHorizontal) listOf(Coordinate.up, Coordinate.down) else listOf(direction)
+            '-' -> if (direction.isVertical) listOf(Coordinate.left, Coordinate.right) else listOf(direction)
+            '/' -> if (direction.isHorizontal) listOf(direction.rotate(Left)) else listOf(direction.rotate(Right))
+            '\\' -> if (direction.isVertical) listOf(direction.rotate(Left)) else listOf(direction.rotate(Right))
             else -> error("Invalid tile")
         }
         nextDirections.forEach {

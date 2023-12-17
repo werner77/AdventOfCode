@@ -160,11 +160,11 @@ data class Coordinate(val x: Int, val y: Int) : Comparable<Coordinate> {
             if (it < 4) directNeighbours[it] else indirectNeighbours[it - 4]
         }
 
-    val isHorizontalDirection: Boolean
-        get() = this == Coordinate.left || this == Coordinate.right
+    val isHorizontal: Boolean
+        get() = this.y == 0
 
-    val isVerticalDirection: Boolean
-        get() = this == Coordinate.up || this == Coordinate.down
+    val isVertical: Boolean
+        get() = this.x == 0
 
     /**
      * Returns the angle between 0 and 2 * PI relative to the specified vector
