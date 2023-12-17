@@ -108,8 +108,8 @@ private fun findMoveCoordinate(current: Coordinate, map: Map<Coordinate, Char>, 
         reachable = { _, c -> map[c] == '.' && c !in actors },
         process = { path ->
             if (path.destination in candidateTargets) {
-                if (path.pathLength <= shortestLength) {
-                    shortestLength = path.pathLength.toInt()
+                if (path.length <= shortestLength) {
+                    shortestLength = path.length.toInt()
                     candidatePaths += path
                     null
                 } else {

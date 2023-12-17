@@ -287,7 +287,7 @@ class Day18 {
                         val existingEdge = foundPaths[nodePath.destination.node]
                         if (
                             existingEdge == null || // add non-existent paths
-                            nodePath.pathLength < existingEdge.pathLength  || // add shorter paths
+                            nodePath.length < existingEdge.length  || // add shorter paths
                             nodePath.destination.keys.isProperSubsetOf(existingEdge.destination.keys) // less keys needed
                         ) {
                             foundPaths[nodePath.destination.node] = nodePath
@@ -354,7 +354,7 @@ class Day18 {
 
                 // If this collection contains all the keys we were looking for: we're done!
                 if (completeKeyCollection in currentNodeCollection.keys) {
-                    return current.pathLength.toInt()
+                    return current.length.toInt()
                 }
 
                 nodeEvaluationCount++
@@ -366,7 +366,7 @@ class Day18 {
                     val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.destination.node),
                         currentNodeCollection.keys + edge.destination.node)
                     if (!settled.contains(neighbour)) {
-                        pending.update(neighbour, current.pathLength.toInt() + edge.pathLength.toInt())
+                        pending.update(neighbour, current.length.toInt() + edge.length.toInt())
                     }
                 }
             }

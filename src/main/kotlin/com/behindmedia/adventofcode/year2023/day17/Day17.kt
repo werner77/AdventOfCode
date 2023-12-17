@@ -20,7 +20,9 @@ fun main() {
                 listOf(direction.rotate(Left), direction.rotate(Right))
             }
         })
+    }
 
+    timing {
         // Part 2
         println(process(grid) { direction, count ->
             if (count < 4) {
@@ -37,20 +39,22 @@ fun main() {
 }
 
 private fun process(data: CharGrid, directions: (Coordinate, Int) -> List<Coordinate>): Int {
-    return shortestWeightedPath(from = Node(Coordinate.origin, null, 0),
-        neighbours = { path ->
-            val directionCount = path.destination.directionCount
-            val currentDirection = path.destination.direction
+    val source = Coordinate.origin
+    val target = Coordinate(data.maxX, data.maxY)
+    return shortestWeightedPath(from = Block(source, null, 0),
+        neighbours = { current ->
+            val directionCount = current.directionCount
+            val currentDirection = current.direction
             val coordinates = if (directionCount == 0 || currentDirection == null) {
-                path.destination.position.directNeighbours
+                current.position.directNeighbours
             } else {
                 directions(currentDirection, directionCount)
             }
             coordinates.mapNotNull { direction ->
-                val coordinate = path.destination.position + direction
+                val coordinate = current.position + direction
                 val value = data.getOrNull(coordinate)
                 if (value != null) {
-                    Node(
+                    Block(
                         coordinate,
                         direction,
                         if (direction == currentDirection) directionCount + 1 else 1
@@ -60,9 +64,13 @@ private fun process(data: CharGrid, directions: (Coordinate, Int) -> List<Coordi
                 }
             }
         },
+        minLengthToTarget = {
+            // A* heuristic
+            it.position.manhattenDistance(target)
+        },
         process = { path ->
-            if (path.destination.position == Coordinate(data.maxX, data.maxY)) path.pathLength else null
+            if (path.destination.position == target) path.length else null
         }) ?: error("could not find path")
 }
 
-data class Node(val position: Coordinate, val direction: Coordinate?, val directionCount: Int)
+private data class Block(val position: Coordinate, val direction: Coordinate?, val directionCount: Int)

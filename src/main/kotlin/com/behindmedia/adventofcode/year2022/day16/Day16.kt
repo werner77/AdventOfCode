@@ -138,7 +138,7 @@ private fun findShortestPaths(from: Valve, map: Map<String, Valve>, includeNodes
         },
         process = { path ->
             if (includeNodes.contains(path.destination)) {
-                result += Pair(path.destination, path.pathLength.toInt())
+                result += Pair(path.destination, path.length.toInt())
             }
             if (result.size == includeNodes.size) {
                 result

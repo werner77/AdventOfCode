@@ -155,7 +155,7 @@ class Day20 {
                 map[it.coordinate]?.isReachable(it.level, recursiveMode) ?: false
             },
             process = { nodePath ->
-                if (nodePath.destination == leveledEnd) nodePath.pathLength else null
+                if (nodePath.destination == leveledEnd) nodePath.length else null
             }
         )?.toInt() ?: throw IllegalStateException("End not found")
     }

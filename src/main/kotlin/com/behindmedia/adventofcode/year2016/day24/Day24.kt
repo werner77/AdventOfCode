@@ -27,10 +27,10 @@ fun main() {
     val startNode = Node(coordinate = startCoordinate, items = setOf('0'))
 
     // Part 1
-    println(findMinimumPath(startNode, map, targets, null).pathLength)
+    println(findMinimumPath(startNode, map, targets, null).length)
 
     // Part 2
-    println(findMinimumPath(startNode, map, targets, startCoordinate).pathLength)
+    println(findMinimumPath(startNode, map, targets, startCoordinate).length)
 }
 
 private fun findMinimumPath(

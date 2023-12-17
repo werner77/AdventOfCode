@@ -4,11 +4,14 @@ import kotlin.math.abs
 import java.util.ArrayDeque
 import java.util.PriorityQueue
 
-class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : Comparable<Path<N>> {
+/**
+ * minLength to target is an optional heuristic to use A* instead of Dijkstra
+ */
+class Path<N> @JvmOverloads constructor(val destination: N, val length: Int, val parent: Path<N>?, val minLengthToTarget: Int = 0) : Comparable<Path<N>> {
     val nodeCount: Int by lazy { if (parent == null) 1 else parent.nodeCount + 1 }
 
     override fun compareTo(other: Path<N>): Int {
-        return this.pathLength.compareTo(other.pathLength)
+        return (this.length + minLengthToTarget).compareTo(other.length + other.minLengthToTarget)
     }
 
     operator fun contains(node: N): Boolean {
@@ -97,7 +100,7 @@ inline fun <reified N, T> shortestPath(
         for (neighbour in neighbours(current)) {
             if (neighbour in visited) continue
             if (reachable(current, neighbour)) {
-                pending.add(Path(neighbour, current.pathLength + 1, current))
+                pending.add(Path(neighbour, current.length + 1, current))
             }
         }
     }
@@ -108,7 +111,8 @@ inline fun <reified N, T> shortestPath(
  */
 inline fun <N, T> shortestWeightedPath(
     from: N,
-    neighbours: (Path<N>) -> Collection<Pair<N, Int>>,
+    neighbours: (N) -> Collection<Pair<N, Int>>,
+    minLengthToTarget: (N) -> Int = { _ -> 0 },
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()
@@ -122,9 +126,9 @@ inline fun <N, T> shortestWeightedPath(
         }
         val currentNode = current.destination
         settled.add(currentNode)
-        for ((neighbour, neighbourWeight) in neighbours(current)) {
-            val newDistance = current.pathLength + neighbourWeight
-            pending.add(Path(neighbour, newDistance, current))
+        for ((neighbour, neighbourWeight) in neighbours(current.destination)) {
+            val newDistance = current.length + neighbourWeight
+            pending.add(Path(neighbour, newDistance, current, minLengthToTarget.invoke(neighbour)))
         }
     }
     return null

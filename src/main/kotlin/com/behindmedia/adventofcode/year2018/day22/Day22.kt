@@ -81,7 +81,7 @@ private fun part2(target: Coordinate, depth: Long) {
         seen += currentPath.destination
 
         val (currentCoordinate, currentTool) = currentPath.destination
-        val currentLength = currentPath.pathLength
+        val currentLength = currentPath.length
         val currentErosionLevel = map.getErosionLevel(currentCoordinate, target, depth)
 
         if (currentCoordinate == target) {

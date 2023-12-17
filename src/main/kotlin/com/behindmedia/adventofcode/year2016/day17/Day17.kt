@@ -60,6 +60,6 @@ fun main() {
     println(possiblePaths.first().destination.directions)
 
     // Part2
-    println(possiblePaths.last().pathLength)
+    println(possiblePaths.last().length)
 }
 

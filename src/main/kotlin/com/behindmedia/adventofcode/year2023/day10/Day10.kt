@@ -17,7 +17,7 @@ fun main() {
     timing {
         // Part 1
         // The path does not contain the start, so we need to add 1
-        println((1 + path.pathLength) / 2)
+        println((1 + path.length) / 2)
 
         // Part 2
         println(countEnclosed(map = grid, enclosingPath = path))
@@ -127,7 +127,7 @@ private fun checkValidRegion(
                     valid = false
                 }
             } else {
-                pending += Path(neighbour, path.pathLength + 1, path)
+                pending += Path(neighbour, path.length + 1, path)
             }
         }
     }
@@ -157,7 +157,7 @@ private fun findEnclosingPath(
         val nextDirection = nextValue.nextDirection(direction = direction) ?: continue
         val nextPositionDirection = PositionDirectionTuple(neighbour, nextDirection)
         if (nextPositionDirection in visited) continue
-        val nextPath = Path(nextPositionDirection, path.pathLength + 1, path)
+        val nextPath = Path(nextPositionDirection, path.length + 1, path)
         pending += nextPath
     }
     error("Could not find path")

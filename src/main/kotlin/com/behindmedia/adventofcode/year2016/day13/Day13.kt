@@ -31,7 +31,7 @@ private fun shortestPath(start: Coordinate, dest: Coordinate): Int {
         neighbours = { it.destination.directNeighbours },
         reachable = { _, it -> isAccessible(it) },
         process = {
-            if (it.destination == dest) it.pathLength else null
+            if (it.destination == dest) it.length else null
         })?.toInt() ?: error("Could not find path")
 }
 
@@ -41,7 +41,7 @@ private fun countLocations(start: Coordinate, maxLength: Int): Int {
         neighbours = { it.destination.directNeighbours },
         reachable = { _, it -> isAccessible(it) },
         process = {
-            if (it.pathLength > maxLength) {
+            if (it.length > maxLength) {
                 count
             } else {
                 count++

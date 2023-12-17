@@ -73,7 +73,7 @@ fun main() {
             (map[coordinate] ?: '#') != '#'
         },
         process = {
-            val distance = it.pathLength / 2
+            val distance = it.length / 2
             maxDistance = max(maxDistance, distance)
             if (distance >= 1000 && map[it.destination] == '.') {
                 roomCount++

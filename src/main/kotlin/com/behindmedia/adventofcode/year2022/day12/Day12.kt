@@ -38,7 +38,7 @@ private fun solve(map: Map<Coordinate, Char>, destination: Coordinate, startCoor
                 if (path.destination == destination) path else null
             }
         ) ?: continue
-        val pathLength = path.pathLength
+        val pathLength = path.length
         shortest = min(shortest, pathLength)
     }
     println(shortest)

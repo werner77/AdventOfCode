@@ -53,7 +53,7 @@ private fun findPaths(
                     "end"
                 ) && currentTraversed.size == currentTraversedSet.size)
             ) {
-                pending.addFirst(Path(neighbour, currentPath.pathLength + 1, currentPath))
+                pending.addFirst(Path(neighbour, currentPath.length + 1, currentPath))
             }
         }
     }
