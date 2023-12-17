@@ -67,7 +67,8 @@ fun solve(map: CharGrid, roomLevelCount: Int): Int {
     val initialState = State(map.toMap().filter { it.value - 'A' in 0 until 4 }.mapValues { Amphipod(it.value) })
     return shortestWeightedPath(
         from = initialState,
-        neighbours = { state ->
+        neighbours = { path ->
+            val state = path.destination
             list {
                 for (entry in state) {
                     map.forEachValidDestination(entry, state, roomLevelCount) {

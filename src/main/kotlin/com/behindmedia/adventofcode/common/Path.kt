@@ -5,7 +5,7 @@ import java.util.ArrayDeque
 import java.util.PriorityQueue
 
 class Path<N>(val destination: N, val pathLength: Int, val parent: Path<N>?) : Comparable<Path<N>> {
-    val nodeCount: Int = if (parent == null) 1 else parent.nodeCount + 1
+    val nodeCount: Int by lazy { if (parent == null) 1 else parent.nodeCount + 1 }
 
     override fun compareTo(other: Path<N>): Int {
         return this.pathLength.compareTo(other.pathLength)
@@ -108,7 +108,7 @@ inline fun <reified N, T> shortestPath(
  */
 inline fun <N, T> shortestWeightedPath(
     from: N,
-    neighbours: (N) -> Collection<Pair<N, Int>>,
+    neighbours: (Path<N>) -> Collection<Pair<N, Int>>,
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()
@@ -122,7 +122,7 @@ inline fun <N, T> shortestWeightedPath(
         }
         val currentNode = current.destination
         settled.add(currentNode)
-        for ((neighbour, neighbourWeight) in neighbours(currentNode)) {
+        for ((neighbour, neighbourWeight) in neighbours(current)) {
             val newDistance = current.pathLength + neighbourWeight
             pending.add(Path(neighbour, newDistance, current))
         }

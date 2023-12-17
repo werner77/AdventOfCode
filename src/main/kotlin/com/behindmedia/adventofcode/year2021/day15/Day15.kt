@@ -9,8 +9,8 @@ private fun findMinCostPath(
 ): Int {
     return shortestWeightedPath(
         from = start,
-        neighbours = { c ->
-            c.directNeighbours.mapNotNull { n ->
+        neighbours = { path ->
+            path.destination.directNeighbours.mapNotNull { n ->
                 map[n]?.let { Pair(n, it) }
             }
         },
