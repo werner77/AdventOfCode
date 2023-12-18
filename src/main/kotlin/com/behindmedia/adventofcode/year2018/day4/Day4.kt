@@ -3,6 +3,7 @@ package com.behindmedia.adventofcode.year2018.day4
 import com.behindmedia.adventofcode.common.parseLines
 import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 
 /*

@@ -61,7 +61,7 @@ val Path<Coordinate>.completeDirections: Collection<Coordinate>
     }
 
 
-val List<Point2D<*>>.doubleEnclosedSurfaceArea: Long
+val List<Point2D<*, *>>.doubleEnclosedSurfaceArea: Long
     get() {
         var result = 0L
         for (i in 1..this.size) {
@@ -70,7 +70,7 @@ val List<Point2D<*>>.doubleEnclosedSurfaceArea: Long
         return abs(result)
     }
 
-fun List<Point2D<*>>.insidePointCount(boundaryPointCount: Long = this.size.toLong()): Long {
+fun List<Point2D<*, *>>.insidePointCount(boundaryPointCount: Long = this.size.toLong()): Long {
     val area = doubleEnclosedSurfaceArea
     return (area - boundaryPointCount) / 2L + 1L
 }
@@ -135,4 +135,30 @@ inline fun <N: Any, T> shortestWeightedPath(
         }
     }
     return null
+}
+
+/**
+ * Breadth first search to find the shortest path to all reachable coordinates in a single sweep
+ */
+inline fun <T> Coordinate.reachableCoordinates(reachable: (Coordinate) -> Boolean, process: (CoordinatePath) -> T?): T? {
+    val list = ArrayDeque<CoordinatePath>()
+    val visited = mutableSetOf<Coordinate>()
+    list.add(CoordinatePath(this, 0))
+    var start = true
+    while (true) {
+        val current = list.pollFirst() ?: return null
+        if (start) {
+            start = false
+        } else {
+            process(current)?.let {
+                return it
+            }
+        }
+        visited.add(current.coordinate)
+        current.coordinate.directNeighbourSequence().forEach { neighbour ->
+            if (!visited.contains(neighbour) && reachable(neighbour)) {
+                list.add(CoordinatePath(neighbour, current.pathLength + 1))
+            }
+        }
+    }
 }

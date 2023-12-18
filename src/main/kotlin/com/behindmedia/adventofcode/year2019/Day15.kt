@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2019
 
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.range
+import com.behindmedia.adventofcode.common.reachableCoordinates
 
 class Day15 {
 
@@ -19,7 +20,7 @@ class Day15 {
 
         companion object {
             fun from(direction: Coordinate): Command {
-                return values().find { it.coordinate == direction } ?:
+                return entries.find { it.coordinate == direction } ?:
                     throw IllegalArgumentException("Invalid direction: $direction")
             }
         }

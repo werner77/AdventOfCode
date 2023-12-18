@@ -1,13 +1,11 @@
 package com.behindmedia.adventofcode.common
 
 import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.sqrt
 
 /**
  * Describes a two-dimensional coordinate or vector.
  */
-data class LongCoordinate(override val x: Long, override val y: Long) : Comparable<LongCoordinate>, Point2D<Long> {
+data class LongCoordinate(override val x: Long, override val y: Long) : Comparable<LongCoordinate>, Point2D<Long, LongCoordinate> {
 
     companion object {
         val origin = LongCoordinate(0, 0)
@@ -34,48 +32,35 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
         )
     }
 
-    fun offset(xOffset: Long, yOffset: Long): LongCoordinate {
+    override fun offset(xOffset: Long, yOffset: Long): LongCoordinate {
         return LongCoordinate(x + xOffset, y + yOffset)
-    }
-
-    fun offset(vector: LongCoordinate): LongCoordinate {
-        return offset(vector.x, vector.y)
     }
 
     /**
      * Returns the diff with the supplied coordinate as a new coordinate (representing the vector)
      */
-    fun vector(to: LongCoordinate): LongCoordinate {
+    override fun vector(to: LongCoordinate): LongCoordinate {
         return LongCoordinate(to.x - this.x, to.y - this.y)
     }
 
     /**
      * Returns the Manhatten distance to the specified coordinate
      */
-    fun manhattenDistance(to: LongCoordinate): Long {
+    override fun manhattenDistance(to: LongCoordinate): Long {
         return abs(x - to.x) + abs(y - to.y)
-    }
-
-    /**
-     * Returns the shortest Euclidean distance to the specified coordinate
-     */
-    fun distance(to: LongCoordinate): Double {
-        val deltaX = (x - to.x).toDouble()
-        val deltaY = (y - to.y).toDouble()
-        return sqrt(deltaX * deltaX + deltaY * deltaY)
     }
 
     /**
      * The invers
      */
-    fun inverted(): LongCoordinate {
+    override fun inverted(): LongCoordinate {
         return LongCoordinate(-x, -y)
     }
 
     /**
      * Normalizes the coordinate by dividing both x and y by their greatest common divisor
      */
-    fun normalized(): LongCoordinate {
+    override fun normalized(): LongCoordinate {
         val factor = greatestCommonDivisor(abs(this.x), abs(this.y))
         return LongCoordinate(this.x / factor, this.y / factor)
     }
@@ -83,7 +68,7 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
     /**
      * Rotates this coordinate (representing a vector) using the specified rotation direction
      */
-    fun rotate(direction: RotationDirection): LongCoordinate {
+    override fun rotate(direction: RotationDirection): LongCoordinate {
         return when (direction) {
             RotationDirection.Left -> LongCoordinate(this.y, -this.x)
             RotationDirection.Right -> LongCoordinate(-this.y, this.x)
@@ -93,14 +78,14 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
     /**
      * Optionally rotates this coordinate (representing a vector). Does nothing if the supplied direction is null.
      */
-    fun optionalRotate(direction: RotationDirection?): LongCoordinate {
+    override fun optionalRotate(direction: RotationDirection?): LongCoordinate {
         return when (direction) {
             null -> this
             else -> rotate(direction)
         }
     }
 
-    fun directNeighbourSequence(): Sequence<LongCoordinate> {
+    override fun directNeighbourSequence(): Sequence<LongCoordinate> {
         return sequence {
             repeat(4) {
                 yield(this@LongCoordinate + directNeighbourDirections[it])
@@ -108,7 +93,7 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
         }
     }
 
-    fun indirectNeighbourSequence(): Sequence<LongCoordinate> {
+    override fun indirectNeighbourSequence(): Sequence<LongCoordinate> {
         return sequence {
             repeat(4) {
                 yield(this@LongCoordinate + indirectNeighbourDirections[it])
@@ -116,7 +101,7 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
         }
     }
 
-    fun allNeighbourSequence(): Sequence<LongCoordinate> {
+    override fun allNeighbourSequence(): Sequence<LongCoordinate> {
         return sequence {
             repeat(8) {
                 yield(this@LongCoordinate + allNeighbourDirections[it])
@@ -127,7 +112,7 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
     /**
      * Returns the direct neighbours of this coordinate
      */
-    val directNeighbours: List<LongCoordinate>
+    override val directNeighbours: List<LongCoordinate>
         get() {
             return List(4) {
                 this + directNeighbourDirections[it]
@@ -137,93 +122,29 @@ data class LongCoordinate(override val x: Long, override val y: Long) : Comparab
     /**
      * Returns the indirect neighbours of this coordinate, defined as the diagonal neighbours
      */
-    val indirectNeighbours: List<LongCoordinate>
+    override val indirectNeighbours: List<LongCoordinate>
         get() {
             return List(4) {
                 this + indirectNeighbourDirections[it]
             }
         }
 
-    val allNeighbours: List<LongCoordinate>
+    override val allNeighbours: List<LongCoordinate>
         get() = List(8) {
-            if (it < 4) directNeighbours[it] else indirectNeighbours[it - 4]
+            this + allNeighbours[it]
         }
 
-    val isHorizontal: Boolean
-        get() = this.y == 0L
+    override val isHorizontal: Boolean
+        get() = this.y == 0L && this.x != 0L
 
-    val isVertical: Boolean
-        get() = this.x == 0L
+    override val isVertical: Boolean
+        get() = this.x == 0L && this.y != 0L
 
-    /**
-     * Returns the angle between 0 and 2 * PI relative to the specified vector
-     */
-    fun positiveAngle(to: LongCoordinate): Double = positiveAngle(angle(to))
-
-    /**
-     * Returns the angle between -PI and PI relative to the specified vector
-     */
-    fun normalizedAngle(to: LongCoordinate): Double = normalizedAngle(angle(to))
-
-    fun angle(to: LongCoordinate): Double {
-        val a = to.x.toDouble()
-        val b = to.y.toDouble()
-        val c = this.x.toDouble()
-        val d = this.y.toDouble()
-
-        val atanA = atan2(a, b)
-        val atanB = atan2(c, d)
-
-        return (atanA - atanB)
-    }
-
-    /**
-     * Returns the angle between 0 and 2 * PI relative to the specified vector
-     */
-    fun positiveAngle(to: Coordinate): Double = positiveAngle(angle(to))
-
-    /**
-     * Returns the angle between -PI and PI relative to the specified vector
-     */
-    fun normalizedAngle(to: Coordinate): Double = normalizedAngle(angle(to))
-
-    fun angle(to: Coordinate): Double {
-        val a = to.x.toDouble()
-        val b = to.y.toDouble()
-        val c = this.x.toDouble()
-        val d = this.y.toDouble()
-
-        val atanA = atan2(a, b)
-        val atanB = atan2(c, d)
-
-        return (atanA - atanB)
-    }
-
-    operator fun get(index: Int): Long {
-        return when (index) {
-            0 -> x
-            1 -> y
-            else -> throw IllegalArgumentException("Invalid index supplied")
-        }
-    }
-
-    operator fun plus(other: LongCoordinate): LongCoordinate {
-        return offset(other)
-    }
-
-    operator fun unaryMinus(): LongCoordinate {
-        return inverted()
-    }
-
-    operator fun minus(other: LongCoordinate): LongCoordinate {
-        return offset(other.inverted())
-    }
-
-    operator fun times(other: LongCoordinate): LongCoordinate {
+    override operator fun times(other: LongCoordinate): LongCoordinate {
         return LongCoordinate(this.x * other.x, this.y * other.y)
     }
 
-    operator fun times(scalar: Long): LongCoordinate {
+    override operator fun times(scalar: Long): LongCoordinate {
         return LongCoordinate(this.x * scalar, this.y * scalar)
     }
 

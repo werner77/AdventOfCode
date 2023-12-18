@@ -166,12 +166,6 @@ private fun findEnclosingPath(
 // Pair of position and direction
 data class PositionDirectionTuple(val position: Coordinate, val direction: Coordinate)
 
-private val Coordinate.isVertical: Boolean
-    get() = this.y != 0 && this.x == 0
-
-private val Coordinate.isHorizontal: Boolean
-    get() = this.y == 0 && this.x != 0
-
 // Returns the direction which is valid after entering with the specified direction
 private fun Char.nextDirection(direction: Coordinate): Coordinate? {
     return when (this) {

@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.year2017.day19
 
 import com.behindmedia.adventofcode.common.*
-import kotlin.math.*
 
 fun main() {
     val map = parseLines("/2017/day19.txt") { line ->
