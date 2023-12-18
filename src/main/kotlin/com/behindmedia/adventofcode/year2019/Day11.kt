@@ -13,7 +13,7 @@ class Day11 {
 
         companion object {
             fun from(rawValue: Long): Color {
-                return values().find { it.rawValue == rawValue } ?: throw IllegalArgumentException("Unknown color value: $rawValue")
+                return entries.find { it.rawValue == rawValue } ?: throw IllegalArgumentException("Unknown color value: $rawValue")
             }
         }
     }
