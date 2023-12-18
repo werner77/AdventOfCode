@@ -483,3 +483,17 @@ value class SafeInt(val value: Int): Comparable<SafeInt> {
 
 fun Int.safe(): SafeInt = SafeInt(this)
 fun Long.safe(): SafeLong = SafeLong(this)
+
+fun normalizedAngle(angle: Double): Double {
+    var result = positiveAngle(angle)
+    if (result > PI) {
+        result -= 2 * PI
+    }
+    return result
+}
+
+fun positiveAngle(angle: Double): Double {
+    var result = angle % (2 * PI)
+    if (result < 0) result += 2 * PI
+    return result
+}

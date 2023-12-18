@@ -7,7 +7,12 @@ import java.util.PriorityQueue
 /**
  * minLength to target is an optional heuristic to use A* instead of Dijkstra
  */
-class Path<N> @JvmOverloads constructor(val destination: N, val length: Int, val parent: Path<N>?, val minLengthToTarget: Int = 0) : Comparable<Path<N>> {
+class Path<N: Any> @JvmOverloads constructor(
+    val destination: N,
+    val length: Int,
+    val parent: Path<N>?,
+    val minLengthToTarget: Int = 0
+) : Comparable<Path<N>> {
     val nodeCount: Int by lazy { if (parent == null) 1 else parent.nodeCount + 1 }
 
     override fun compareTo(other: Path<N>): Int {
@@ -56,21 +61,19 @@ val Path<Coordinate>.completeDirections: Collection<Coordinate>
     }
 
 
-val List<Coordinate>.doubleEnclosedSurfaceArea: Long
+val List<Point2D<*>>.doubleEnclosedSurfaceArea: Long
     get() {
         var result = 0L
         for (i in 1..this.size) {
-            result += this[i % this.size].y * (this[(i - 1) % this.size].x - this[(i + 1) % this.size].x)
+            result += this[i % this.size].y.toLong() * (this[(i - 1) % this.size].x.toLong() - this[(i + 1) % this.size].x.toLong())
         }
         return abs(result)
     }
 
-val List<Coordinate>.insidePointCount: Int
-    get() {
-        val area = doubleEnclosedSurfaceArea
-        val boundaryPointCount = this.size
-        return (area.toInt() - boundaryPointCount) / 2 + 1
-    }
+fun List<Point2D<*>>.insidePointCount(boundaryPointCount: Long = this.size.toLong()): Long {
+    val area = doubleEnclosedSurfaceArea
+    return (area - boundaryPointCount) / 2L + 1L
+}
 
 class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparable<CoordinatePath> {
     override fun compareTo(other: CoordinatePath): Int {
@@ -81,7 +84,7 @@ class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparab
 /**
  * Breadth first search algorithm to find the shortest paths between unweighted nodes.
  */
-inline fun <reified N, T> shortestPath(
+inline fun <reified N: Any, T> shortestPath(
     from: N,
     neighbours: (Path<N>) -> Collection<N>,
     reachable: (Path<N>, N) -> Boolean = { _, _ -> true },
@@ -109,7 +112,7 @@ inline fun <reified N, T> shortestPath(
 /**
  * Dijkstra's algorithm to find the shortest path between weighted nodes.
  */
-inline fun <N, T> shortestWeightedPath(
+inline fun <N: Any, T> shortestWeightedPath(
     from: N,
     neighbours: (N) -> Collection<Pair<N, Int>>,
     minLengthToTarget: (N) -> Int = { _ -> 0 },

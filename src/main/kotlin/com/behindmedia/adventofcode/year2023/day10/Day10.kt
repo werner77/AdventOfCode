@@ -23,7 +23,7 @@ fun main() {
         println(countEnclosed(map = grid, enclosingPath = path))
 
         // Part 2, simple :-), using the Shoelace formula and Picks theorem
-        println(path.allNodes.map { it.position }.insidePointCount)
+        println(path.allNodes.map { it.position }.insidePointCount())
     }
 }
 
