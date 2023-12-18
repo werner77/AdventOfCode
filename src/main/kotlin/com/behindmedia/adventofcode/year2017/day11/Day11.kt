@@ -19,7 +19,7 @@ fun main() {
 
     val start = Coordinate3D.origin
     var current = start
-    var farthest = 0
+    var farthest = 0L
 
     for (direction in data) {
         current += direction

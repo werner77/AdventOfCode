@@ -5,7 +5,7 @@ import com.behindmedia.adventofcode.common.*
 fun main() {
     val data = parseLines("/2022/day18.txt") { line ->
         val (x, y, z) = line.split(",")
-        Coordinate3D(x.toInt(), y.toInt(), z.toInt())
+        Coordinate3D(x.toLong(), y.toLong(), z.toLong())
     }.toSet()
     timing {
         part1(data)

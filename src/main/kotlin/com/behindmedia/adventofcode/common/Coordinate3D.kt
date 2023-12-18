@@ -5,9 +5,9 @@ import kotlin.math.abs
 /**
  * Describes a three-dimensional coordinate or vector
  */
-data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordinate3D> {
+data class Coordinate3D(val x: Long, val y: Long, val z: Long) : Comparable<Coordinate3D> {
 
-    constructor(components: List<Int>) : this(components[0], components[1], components[2])
+    constructor(components: List<Long>) : this(components[0], components[1], components[2])
 
     companion object {
         val origin = Coordinate3D(0, 0, 0)
@@ -23,13 +23,13 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
 
         init {
             val values = mutableListOf<Coordinate3D>()
-            for (x in listOf(-1, 1)) {
+            for (x in listOf(-1L, 1L)) {
                 values += Coordinate3D(x, 0, 0)
             }
-            for (y in listOf(-1, 1)) {
+            for (y in listOf(-1L, 1L)) {
                 values += Coordinate3D(0, y, 0)
             }
-            for (z in listOf(-1, 1)) {
+            for (z in listOf(-1L, 1L)) {
                 values += Coordinate3D(0, 0, z)
             }
             allDirections = values
@@ -40,11 +40,11 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
         return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)
     }
 
-    fun offset(xOffset: Int, yOffset: Int, zOffset: Int): Coordinate3D {
+    fun offset(xOffset: Long, yOffset: Long, zOffset: Long): Coordinate3D {
         return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
-    fun manhattenDistance(other: Coordinate3D): Int {
+    fun manhattenDistance(other: Coordinate3D): Long {
         return abs(this.x - other.x) + abs(this.y - other.y) + abs(this.z - other.z)
     }
 
@@ -60,7 +60,7 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
         return offset(-other.x, -other.y, -other.z)
     }
 
-    operator fun get(index: Int): Int {
+    operator fun get(index: Int): Long {
         return when (index) {
             0 -> x
             1 -> y
@@ -82,31 +82,31 @@ data class Coordinate3D(val x: Int, val y: Int, val z: Int) : Comparable<Coordin
     }
 }
 
-val Collection<Coordinate3D>.minX: Int
+val Collection<Coordinate3D>.minX: Long
     get() = this.minOf { it.x }
 
-val Collection<Coordinate3D>.minY: Int
+val Collection<Coordinate3D>.minY: Long
     get() = this.minOf { it.y }
 
-val Collection<Coordinate3D>.minZ: Int
+val Collection<Coordinate3D>.minZ: Long
     get() = this.minOf { it.z }
 
-val Collection<Coordinate3D>.maxX: Int
+val Collection<Coordinate3D>.maxX: Long
     get() = this.maxOf { it.x }
 
-val Collection<Coordinate3D>.maxY: Int
+val Collection<Coordinate3D>.maxY: Long
     get() = this.maxOf { it.y }
 
-val Collection<Coordinate3D>.maxZ: Int
+val Collection<Coordinate3D>.maxZ: Long
     get() = this.maxOf { it.z }
 
-val Collection<Coordinate3D>.sizeX: Int
+val Collection<Coordinate3D>.sizeX: Long
     get() = maxX + 1
 
-val Collection<Coordinate3D>.sizeY: Int
+val Collection<Coordinate3D>.sizeY: Long
     get() = maxY + 1
 
-val Collection<Coordinate3D>.sizeZ: Int
+val Collection<Coordinate3D>.sizeZ: Long
     get() = maxZ + 1
 
 val Collection<Coordinate3D>.minCoordinate: Coordinate3D
@@ -127,7 +127,7 @@ fun Collection<Coordinate3D>.range(): CoordinateRange3D = CoordinateRange3D(this
 class CoordinateRange3D(private val minMaxCoordinate: Pair<Coordinate3D, Coordinate3D>) : Iterable<Coordinate3D>,
     ClosedRange<Coordinate3D> {
 
-    constructor(minCoordinate: Coordinate3D, xSize: Int, ySize: Int, zSize: Int) : this(
+    constructor(minCoordinate: Coordinate3D, xSize: Long, ySize: Long, zSize: Long) : this(
         Pair(
             minCoordinate,
             minCoordinate + Coordinate3D(xSize - 1, ySize - 1, zSize - 1)
@@ -139,12 +139,12 @@ class CoordinateRange3D(private val minMaxCoordinate: Pair<Coordinate3D, Coordin
 
     companion object {
         private fun Collection<Coordinate3D>.minMaxCoordinate(): Pair<Coordinate3D, Coordinate3D> {
-            var minX = Integer.MAX_VALUE
-            var minY = Integer.MAX_VALUE
-            var minZ = Integer.MAX_VALUE
-            var maxX = Integer.MIN_VALUE
-            var maxY = Integer.MIN_VALUE
-            var maxZ = Integer.MIN_VALUE
+            var minX = Long.MAX_VALUE
+            var minY = Long.MAX_VALUE
+            var minZ = Long.MAX_VALUE
+            var maxX = Long.MIN_VALUE
+            var maxY = Long.MIN_VALUE
+            var maxZ = Long.MIN_VALUE
             for (coordinate in this) {
                 minX = kotlin.math.min(minX, coordinate.x)
                 minY = kotlin.math.min(minY, coordinate.y)

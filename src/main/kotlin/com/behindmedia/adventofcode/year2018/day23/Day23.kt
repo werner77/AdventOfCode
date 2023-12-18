@@ -12,7 +12,7 @@ fun main() {
     val regex = """pos=<(-?\d+),(-?\d+),(-?\d+)>, r=(\d+)""".toRegex()
     val data = parseLines("/2018/day23.txt") { line ->
         regex.matchEntire(line)?.destructured?.let { (x, y, z, r) ->
-            Nanobot(Coordinate3D(x.toInt(), y.toInt(), z.toInt()), r.toInt())
+            Nanobot(Coordinate3D(x.toLong(), y.toLong(), z.toLong()), r.toInt())
         } ?: error("Invalid line $line")
     }
     println(part1(data))
@@ -34,14 +34,14 @@ private class BoxEvaluation(val box: Box, val count: Int): Comparable<BoxEvaluat
     }
 }
 
-private data class Box(val origin: Coordinate3D, val length: Int) {
+private data class Box(val origin: Coordinate3D, val length: Long) {
 
     init {
-        assert(length > 0 && (length == 1 || length % 2 == 0))
+        assert(length > 0 && (length == 1L || length % 2L == 0L))
     }
 
-    fun manhattenDistance(from: Coordinate3D): Int {
-        var distance = 0
+    fun manhattenDistance(from: Coordinate3D): Long {
+        var distance = 0L
         for (component in 0..2) {
             val minValue = origin[component]
             val maxValue = origin[component] + length - 1
@@ -60,7 +60,7 @@ private data class Box(val origin: Coordinate3D, val length: Int) {
     }
 
     fun split(): List<Box> {
-        if (length == 1) {
+        if (length == 1L) {
             throw IllegalStateException("Cannot split a box of length 1")
         }
 
@@ -83,26 +83,26 @@ private data class Box(val origin: Coordinate3D, val length: Int) {
 
     val nearestCornerToOrigin: Coordinate3D
         get() {
-            val components = MutableList(3) { 0 }
+            val components = MutableList(3) { 0L }
             for (index in 0..2) {
-                components[index] = if (abs(origin[index]) < abs(origin[index] + length - 1))
-                    origin[index] else origin[index] + length - 1
+                components[index] = if (abs(origin[index]) < abs(origin[index] + length - 1L))
+                    origin[index] else origin[index] + length - 1L
             }
             return Coordinate3D(components)
         }
 
-    val distanceToOrigin: Int
+    val distanceToOrigin: Long
         get() = Coordinate3D.origin.manhattenDistance(this.nearestCornerToOrigin)
 }
 
 private fun encompassingBox(data: List<Nanobot>): Box {
-    var length = 0
-    val originComponents = mutableListOf(0, 0, 0)
+    var length = 0L
+    val originComponents = mutableListOf(0L, 0L, 0L)
     for (component in 0..2) {
         val minValue = data.minOfOrNull { it.coordinate[component] } ?: throw IllegalStateException("No entry present")
         val maxValue = data.maxOfOrNull { it.coordinate[component] } ?: throw IllegalStateException("No entry present")
         val range = maxValue - minValue
-        var power2Range = 1
+        var power2Range = 1L
         while (power2Range <= range) power2Range *= 2
         length = max(length, power2Range)
         originComponents[component] = minValue
@@ -125,7 +125,7 @@ private fun findBestPoint(data: List<Nanobot>): Coordinate3D {
     while (pending.isNotEmpty()) {
         val current = pending.poll() ?: throw IllegalStateException("Pending should not be empty")
         if (bestEvaluation != null && current.count < bestEvaluation.count) continue
-        if (current.box.length == 1) {
+        if (current.box.length == 1L) {
             // Store as final evaluation, single point
             if (bestEvaluation == null || bestEvaluation < current) {
                 bestEvaluation = current

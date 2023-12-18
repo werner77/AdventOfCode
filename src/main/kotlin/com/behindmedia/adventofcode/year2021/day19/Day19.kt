@@ -111,7 +111,7 @@ private fun parseScannerMap(text: String): MutableMap<Int, Scanner> {
         val lines = part.split("\n").map { it.trim() }.filter { it.isNotBlank() }
         val scannerId = lines[0].split(" ").mapNotNull { it.toIntOrNull() }.single()
         val coordinates = (1 until lines.size).fold(mutableSetOf<Coordinate3D>()) { list, value ->
-            val components = lines[value].split(",").map { it.toInt() }
+            val components = lines[value].split(",").map { it.toLong() }
             list += Coordinate3D(components[0], components[1], components[2])
             list
         }
@@ -145,7 +145,7 @@ fun main() {
         println(allBeacons.size)
 
         // Part 2
-        var maxDist = Int.MIN_VALUE
+        var maxDist = Long.MIN_VALUE
         permutateUnique(allScanners, 2) { (c1, c2) ->
             maxDist = max(maxDist, c1.manhattenDistance(c2))
             null

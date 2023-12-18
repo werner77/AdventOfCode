@@ -13,7 +13,7 @@ class Day12Test {
             val components = it.split("[^\\-0-9]".toRegex())
                 .filter { s -> s.isNotEmpty() }
             assert(components.size == 3)
-            Coordinate3D(components[0].toInt(), components[1].toInt(), components[2].toInt())
+            Coordinate3D(components[0].toLong(), components[1].toLong(), components[2].toLong())
         }
 
         val velocities = List<Coordinate3D>(coordinates.size) {

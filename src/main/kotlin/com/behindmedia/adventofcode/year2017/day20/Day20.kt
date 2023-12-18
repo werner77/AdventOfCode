@@ -35,7 +35,7 @@ fun main() {
     var id = 0
     val data = parseLines("/2017/day20.txt") { line ->
         val c = line.splitNonEmptySequence(",", " ", "<", ">", "=", "p", "v", "a").map { it.toInt() }.toList()
-        Particle(id++, Coordinate3D(c[0], c[1], c[2]), Coordinate3D(c[3], c[4], c[5]), Coordinate3D(c[6], c[7], c[8]))
+        Particle(id++, Coordinate3D(c[0].toLong(), c[1].toLong(), c[2].toLong()), Coordinate3D(c[3].toLong(), c[4].toLong(), c[5].toLong()), Coordinate3D(c[6].toLong(), c[7].toLong(), c[8].toLong()))
     }
 
     val min = data.minByOrNull { it.accelaration.manhattenDistance(Coordinate3D.origin) } ?: error("No min found")

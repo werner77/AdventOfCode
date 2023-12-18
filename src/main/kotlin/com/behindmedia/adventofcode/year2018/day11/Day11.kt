@@ -24,7 +24,7 @@ private fun part2(serialNumber: Int) {
                 val sum = sumForBlock(x, y, k, prefixSums)
                 if (sum > maxSum) {
                     maxSum = sum
-                    maxRegion = Coordinate3D(x, y, k)
+                    maxRegion = Coordinate3D(x.toLong(), y.toLong(), k.toLong())
                 }
             }
         }

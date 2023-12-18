@@ -130,12 +130,12 @@ operator fun Matrix.times(other: Matrix): Matrix {
 }
 
 fun Coordinate3D.toMatrix(): Matrix {
-    return matrixOf(4, 1, this.x, this.y, this.z, 1)
+    return matrixOf(4, 1, this.x.toInt(), this.y.toInt(), this.z.toInt(), 1)
 }
 
 fun Matrix.toCoordinate3D(): Coordinate3D {
     if (this.size != 4 || this[0].size != 1) error("Invalid matrix size")
-    return Coordinate3D(this[0][0], this[1][0], this[2][0])
+    return Coordinate3D(this[0][0].toLong(), this[1][0].toLong(), this[2][0].toLong())
 }
 
 private fun multiply(matrix1: Matrix, matrix2: Matrix): Matrix {

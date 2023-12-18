@@ -6,23 +6,23 @@ import kotlin.math.abs
 
 class Day12 {
 
-    data class ComponentState(val positions: List<Int>, val velocities: List<Int>)
+    data class ComponentState(val positions: List<Long>, val velocities: List<Long>)
 
-    private fun Coordinate3D.absSumOfComponents(): Int {
+    private fun Coordinate3D.absSumOfComponents(): Long {
         return abs(x) + abs(y) + abs(z)
     }
 
     private fun applyGravity(coordinates: List<Coordinate3D>, velocities: MutableList<Coordinate3D>) {
         for (i in coordinates.indices) {
             for (j in i + 1 until coordinates.size) {
-                val delta = IntArray(3)
+                val delta = LongArray(3)
                 for (k in 0 until 3) {
                     val pos1 = coordinates[i][k]
                     val pos2 = coordinates[j][k]
                     delta[k] = when {
-                        pos1 < pos2 -> 1
-                        pos1 > pos2 -> -1
-                        else -> 0
+                        pos1 < pos2 -> 1L
+                        pos1 > pos2 -> -1L
+                        else -> 0L
                     }
                 }
                 velocities[i] = velocities[i].offset(delta[0], delta[1], delta[2])
@@ -42,7 +42,7 @@ class Day12 {
      */
     fun getTotalEnergy(initialCoordinates: List<Coordinate3D>,
                        initialVelocities: List<Coordinate3D>,
-                       iterationCount: Int = 1000): Int {
+                       iterationCount: Int = 1000): Long {
 
         assert(initialCoordinates.size == initialVelocities.size)
 
@@ -54,7 +54,7 @@ class Day12 {
             applyVelocity(coordinates, velocities)
         }
 
-        var totalEnergy = 0
+        var totalEnergy = 0L
         for (i in initialCoordinates.indices) {
             totalEnergy += coordinates[i].absSumOfComponents() * velocities[i].absSumOfComponents()
         }
