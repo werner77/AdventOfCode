@@ -6,47 +6,33 @@ import com.behindmedia.adventofcode.common.splitWithDelimiters
 import kotlin.math.max
 import kotlin.math.min
 
-private data class Condition(val conditional: String, val operator: String, val conditionValue: Int) {
-    fun evaluate(part: Part): Boolean {
-        val value = part[conditional]
-        return when (operator) {
-            "<" -> value < conditionValue
-            ">" -> value > conditionValue
-            else -> error("Invalid operator: $operator")
-        }
+private typealias Part = Map<String, Int>
+private typealias PartRange = Map<String, IntRange>
+private val PartRange.totalSize: Long
+    get() = values.productOf { range ->
+        max(0, range.last - range.first + 1).toLong()
     }
 
+private data class Condition(val conditional: String, val operator: String, val conditionValue: Int) {
     /**
      * Returns the matching range and remaining range after applying the condition.
      * The remaining range may be applied to subsequent rules in a workflow.
      */
     fun evaluate(partRange: PartRange): Pair<PartRange, PartRange> {
-        val range = partRange[conditional]
+        val range = partRange[conditional] ?: error("No value for $conditional")
         val (matchingRange, remainingRange) = when (operator) {
             "<" ->
                 range.start..min(conditionValue - 1, range.endInclusive) to
                         max(range.start, conditionValue)..range.endInclusive
+
             ">" -> max(conditionValue + 1, range.start)..range.endInclusive to
                     range.start..min(range.endInclusive, conditionValue)
+
             else -> error("Invalid operator: $operator")
         }
-        return PartRange(partRange.ranges + (conditional to matchingRange)) to
-                PartRange(partRange.ranges + (conditional to remainingRange))
+        return partRange + (conditional to matchingRange) to
+                partRange + (conditional to remainingRange)
     }
-}
-
-data class PartRange(val ranges: Map<String, IntRange>) {
-    operator fun get(name: String): IntRange = ranges[name] ?: error("Invalid name: $name")
-
-    /**
-     * Total size of this part range
-     */
-    val totalSize: Long
-        get() {
-            return ranges.values.productOf { range ->
-                max(0, range.last - range.first + 1).toLong()
-            }
-        }
 }
 
 private data class Rule(val target: String, val condition: Condition?) {
@@ -69,19 +55,7 @@ private data class Rule(val target: String, val condition: Condition?) {
         }
     }
 
-    fun evaluate(part: Part): String? {
-        val condition = this.condition
-        return if (condition != null && condition.evaluate(part)) {
-            target
-        } else if (condition == null) {
-            target
-        } else {
-            null
-        }
-    }
-
     fun evaluate(part: PartRange): Pair<Pair<String, PartRange>, PartRange> {
-        val condition = this.condition
         return if (condition != null) {
             val (targetRange, remainingRange) = condition.evaluate(part)
             (target to targetRange) to remainingRange
@@ -100,10 +74,6 @@ private data class Workflow(val name: String, val rules: List<Rule>) {
         }
     }
 
-    fun evaluate(part: Part): String {
-        return rules.firstNotNullOfOrNull { it.evaluate(part) } ?: error("Could not evaluate workflow: $name")
-    }
-
     fun evaluate(partRange: PartRange): List<Pair<String, PartRange>> {
         val result = mutableListOf<Pair<String, PartRange>>()
         var currentRange = partRange
@@ -116,24 +86,17 @@ private data class Workflow(val name: String, val rules: List<Rule>) {
     }
 }
 
-data class Part(val values: Map<String, Int>) {
-    operator fun get(name: String): Int = values[name] ?: error("Invalid name: $name")
-
-    companion object {
-        operator fun invoke(string: String): Part {
-            val values = string.trim('{', '}').split(",").associate {
-                val (key, value) = it.split("=")
-                key to value.toInt()
-            }
-            return Part(values)
-        }
+private fun parsePart(string: String): Part {
+    return string.trim('{', '}').split(",").associate {
+        val (key, value) = it.split("=")
+        key to value.toInt()
     }
 }
 
 fun main() {
     val (workflowsString, partsString) = read("/2023/day19.txt").split("\n\n")
     val workflows = workflowsString.split("\n").filter { it.isNotBlank() }.map { Workflow(it) }.associateBy { it.name }
-    val parts = partsString.split("\n").filter { it.isNotBlank() }.map { Part(it) }
+    val parts = partsString.split("\n").filter { it.isNotBlank() }.map { parsePart(it) }
 
     // Part 1
     println(part1(parts, workflows))
@@ -146,30 +109,17 @@ private fun part1(
     parts: List<Part>,
     workflows: Map<String, Workflow>
 ): Int {
-    var ans = 0
-    for (part in parts) {
-        var name = "in"
-        while (true) {
-            val workflow = workflows[name] ?: error("Could not find workflow: $name")
-            when (val outcome = workflow.evaluate(part)) {
-                "A" -> {
-                    ans += part.values.values.sum()
-                    break
-                }
-                "R" -> {
-                    break
-                }
-                else -> {
-                    name = outcome
-                }
-            }
-        }
-    }
-    return ans
+    return parts.sumOf { if (process(it.mapValues { (_, v) -> v..v }, workflows) > 0L) it.values.sum() else 0 }
 }
 
 private fun part2(workflows: Map<String, Workflow>): Long {
-    val partRange = PartRange(mapOf("x" to 1..4000, "a" to 1..4000, "m" to 1..4000, "s" to 1..4000))
+    return process(mapOf("x" to 1..4000, "a" to 1..4000, "m" to 1..4000, "s" to 1..4000), workflows)
+}
+
+private fun process(
+    partRange: Map<String, IntRange>,
+    workflows: Map<String, Workflow>
+): Long {
     val pending = ArrayDeque<Pair<String, PartRange>>()
     pending += "in" to partRange
     var totalAccepted = 0L
