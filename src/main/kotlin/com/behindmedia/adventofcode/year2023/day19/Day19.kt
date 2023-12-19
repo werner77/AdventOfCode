@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.year2023.day19
 
+import com.behindmedia.adventofcode.common.productOf
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.splitWithDelimiters
 import kotlin.math.max
@@ -15,9 +16,13 @@ private data class Condition(val conditional: String, val operator: String, val 
         }
     }
 
+    /**
+     * Returns the matching range and remaining range after applying the condition.
+     * The remaining range may be applied to subsequent rules in a workflow.
+     */
     fun evaluate(partRange: PartRange): Pair<PartRange, PartRange> {
         val range = partRange[conditional]
-        val (targetRange, remainingRange) = when (operator) {
+        val (matchingRange, remainingRange) = when (operator) {
             "<" ->
                 range.start..min(conditionValue - 1, range.endInclusive) to
                         max(range.start, conditionValue)..range.endInclusive
@@ -25,17 +30,21 @@ private data class Condition(val conditional: String, val operator: String, val 
                     range.start..min(range.endInclusive, conditionValue)
             else -> error("Invalid operator: $operator")
         }
-        return PartRange(partRange.ranges + (conditional to targetRange)) to
+        return PartRange(partRange.ranges + (conditional to matchingRange)) to
                 PartRange(partRange.ranges + (conditional to remainingRange))
     }
 }
 
 data class PartRange(val ranges: Map<String, IntRange>) {
     operator fun get(name: String): IntRange = ranges[name] ?: error("Invalid name: $name")
+
+    /**
+     * Total size of this part range
+     */
     val totalSize: Long
         get() {
-            return ranges.values.fold(1L) { value, range ->
-                value * max(0, range.last - range.first + 1)
+            return ranges.values.productOf { range ->
+                max(0, range.last - range.first + 1).toLong()
             }
         }
 }
@@ -45,13 +54,13 @@ private data class Rule(val target: String, val condition: Condition?) {
         operator fun invoke(string: String): Rule {
             return if (string.contains(":")) {
                 val (conditionString, target) = string.split(":")
-                val (conditional, condition, conditionTarget) = conditionString.splitWithDelimiters("<", ">")
+                val (conditional, operator, conditionValue) = conditionString.splitWithDelimiters("<", ">")
                 Rule(
                     target = target,
                     condition = Condition(
                         conditional = conditional,
-                        operator = condition,
-                        conditionValue = conditionTarget.toInt()
+                        operator = operator,
+                        conditionValue = conditionValue.toInt()
                     )
                 )
             } else {
@@ -86,7 +95,7 @@ private data class Workflow(val name: String, val rules: List<Rule>) {
     companion object {
         operator fun invoke(string: String): Workflow {
             val (name, rulesString) = string.split("{", "}").filter { it.isNotBlank() }
-            val rules = rulesString.split(",").map { Rule.invoke(it) }
+            val rules = rulesString.split(",").map { Rule(it) }
             return Workflow(name, rules)
         }
     }
@@ -99,9 +108,9 @@ private data class Workflow(val name: String, val rules: List<Rule>) {
         val result = mutableListOf<Pair<String, PartRange>>()
         var currentRange = partRange
         for (rule in rules) {
-            val (pair, range) = rule.evaluate(currentRange)
+            val (pair, remainingRange) = rule.evaluate(currentRange)
             result += pair
-            currentRange = range
+            currentRange = remainingRange
         }
         return result
     }
