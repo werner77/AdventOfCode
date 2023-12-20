@@ -1,6 +1,6 @@
 package com.behindmedia.adventofcode.year2023.day20
 
-import com.behindmedia.adventofcode.common.leastCommonMultiple
+import com.behindmedia.adventofcode.common.chineseRemainder
 import com.behindmedia.adventofcode.common.parseLines
 import com.behindmedia.adventofcode.year2023.day20.Module.Broadcast
 import com.behindmedia.adventofcode.year2023.day20.Module.Conjunction
@@ -106,22 +106,26 @@ private fun part1(modules: Map<String, Module>): Long {
 private fun part2(modules: Map<String, Module>): Long {
     var iteration = 0L
     val targetModule = modules.values.single { it.destinations == listOf("rx") } as Conjunction
-    val seenTargetStates = mutableMapOf<String, Long>()
-    while (seenTargetStates.size != targetModule.states.size) {
+    val initialIterations = mutableMapOf<String, Long>()
+    val cycleIterations = mutableMapOf<String, Long>()
+    while (initialIterations.size != targetModule.states.size || cycleIterations.size != targetModule.states.size) {
         iteration++
         process(modules) { module, _ ->
             if (module === targetModule) {
-                for ((k, v) in module.states) {
-                    if (seenTargetStates[k] == null && v) {
-                        seenTargetStates[k] = iteration
+                for ((name, pulse) in module.states) {
+                    if (pulse) {
+                        val initialIteration = initialIterations[name]
+                        if (initialIteration == null) {
+                            initialIterations[name] = iteration
+                        } else if (cycleIterations[name] == null && iteration != initialIteration) {
+                            cycleIterations[name] = iteration - initialIteration
+                        }
                     }
                 }
             }
         }
     }
-    return seenTargetStates.values.fold(1L) { lcm, value ->
-        leastCommonMultiple(lcm, value)
-    }
+    return chineseRemainder(targetModule.states.keys.map { initialIterations[it]!! to cycleIterations[it]!! })
 }
 
 private fun process(modules: Map<String, Module>, debug: Boolean = false, onProcess: (Module?, Boolean) -> Unit) {
