@@ -8,6 +8,7 @@ fun main() {
     val grid = CharGrid(read("/2023/day21.txt"))
 
     // Part 1
+    println("=====================================")
     println("Part 1: ")
     println(process(grid, 64))
 
@@ -20,6 +21,9 @@ fun main() {
     val target = 26501365
     val n = target / size
     val m = target % size
+    println()
+    println("Looking for quadratic formula y = ax^2 + bx + c, where steps = $m + $size * x")
+    println()
     val x = listOf(0L, 1L, 2L)
     val y = x.map {
         process(grid, (m + it * size).toInt())
@@ -27,17 +31,17 @@ fun main() {
     for (i in 0 until 3) {
         println(getEquation(x[i], y[i]))
     }
-
+    println()
     println("<=>")
-
+    println()
     val c = y[0]
     val a = (y[2] - 2L * y[1] + c) / 2L
     val b = y[1] - a - c
     println("y = ${a}x^2 + ${b}x + $c")
     println("x = ${n}")
-
+    println()
     println("<=>")
-
+    println()
     val ans = a * n * n + b * n + c
     println("y = $ans")
     println("=====================================")
