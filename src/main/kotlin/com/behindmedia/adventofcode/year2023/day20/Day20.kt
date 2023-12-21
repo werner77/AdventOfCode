@@ -125,7 +125,7 @@ private fun part2(modules: Map<String, Module>): Long {
             }
         }
     }
-    return chineseRemainder(targetModule.states.keys.map { initialIterations[it]!! to cycleIterations[it]!! })
+    return chineseRemainder(targetModule.states.keys.map { initialIterations[it]!! to cycleIterations[it]!! })?.first ?: error("No solution found")
 }
 
 private fun process(modules: Map<String, Module>, debug: Boolean = false, onProcess: (Module?, Boolean) -> Unit) {

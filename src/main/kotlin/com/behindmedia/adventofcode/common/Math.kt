@@ -56,21 +56,24 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
  *
  * E.g. chineseRemainder((3,4), (5,6), (2,5)) == 47
  */
-fun chineseRemainder(values: List<Pair<Long, Long>>): Long {
+fun chineseRemainder(values: List<Pair<Long, Long>>): Pair<Long, Long>? {
     if (values.isEmpty()) {
-        return 0L
+        return null
     }
-    var result = values[0].first
-    var lcm = values[0].second
-    for (i in 1 until values.size) {
+    var (result, lcm) = values[0]
+    outer@ for (i in 1 until values.size) {
         val (base, modulo) = values[i]
         val target = base % modulo
-        while (result % modulo != target) {
+        for (j in 0L until modulo) {
+            if (result % modulo == target) {
+                lcm = leastCommonMultiple(lcm, modulo)
+                continue@outer
+            }
             result += lcm
         }
-        lcm = leastCommonMultiple(lcm, modulo)
+        return null
     }
-    return result
+    return result to lcm
 }
 
 private val md = MessageDigest.getInstance("MD5")
