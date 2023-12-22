@@ -29,9 +29,8 @@ fun main() {
         Brick(brickIndex, Coordinate3D(x1, y1, z1), Coordinate3D(x2, y2, z2))
     }.sortedWith(comparator).associateBy { it.index }
 
-    val map = mutableMapOf<Coordinate3D, Int>()
-    for (brick in bricks.values) {
-        map.settle(brick)
+    val map = bricks.values.fold(mutableMapOf<Coordinate3D, Int>()) { m, b ->
+        m.apply { settle(b) }
     }
 
     // Look in the z direction if any of the other bricks touches it
