@@ -22,7 +22,7 @@ fun main() {
     val n = target / size
     val m = target % size
     println()
-    println("Looking for quadratic formula y = ax^2 + bx + c, where steps = $m + $size * x")
+    println("Looking for quadratic formula y = ax^2 + bx + c, where x = (steps - $m) / $size")
     println()
     val x = listOf(0L, 1L, 2L)
     val y = x.map {

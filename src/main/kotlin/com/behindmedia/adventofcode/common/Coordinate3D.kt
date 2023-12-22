@@ -19,6 +19,10 @@ data class Coordinate3D(val x: Long, val y: Long, val z: Long) : Comparable<Coor
         val northWest = Coordinate3D(0, 1, -1)
         val components = listOf(0, 1, 2)
 
+        val xIdentity = Coordinate3D(1, 0, 0)
+        val yIdentity = Coordinate3D(0, 1, 0)
+        val zIdentity = Coordinate3D(0, 0, 1)
+
         val allDirections: List<Coordinate3D>
 
         init {
@@ -58,6 +62,10 @@ data class Coordinate3D(val x: Long, val y: Long, val z: Long) : Comparable<Coor
 
     operator fun minus(other: Coordinate3D): Coordinate3D {
         return offset(-other.x, -other.y, -other.z)
+    }
+
+    operator fun times(scalar: Long): Coordinate3D {
+        return Coordinate3D(scalar * x, scalar * y, scalar * z)
     }
 
     operator fun get(index: Int): Long {
@@ -179,7 +187,8 @@ class CoordinateRange3D(private val minMaxCoordinate: Pair<Coordinate3D, Coordin
         }
     }
 
-    override fun iterator(): Iterator<Coordinate3D> = CoordinateIterator(minMaxCoordinate.first, minMaxCoordinate.second)
+    override fun iterator(): Iterator<Coordinate3D> =
+        CoordinateIterator(minMaxCoordinate.first, minMaxCoordinate.second)
 
     override fun toString(): String {
         return "$start..$endInclusive"

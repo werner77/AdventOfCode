@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.year2023.day6
 
+import com.behindmedia.adventofcode.common.findQuadraticRoots
 import com.behindmedia.adventofcode.common.productOf
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.splitNonEmptySequence
@@ -41,17 +42,7 @@ fun main() {
 }
 
 private fun solveEquation(a: Long, b: Long, c: Long): List<Double> {
-    val d = b * b - 4 * a * c
-    return if (d >= 0L) {
-        val denominator = 2.0 * a
-        if (d == 0L) {
-            listOf(-b / denominator)
-        } else {
-            listOf((-b + sqrt(d.toDouble())) / denominator, (-b - sqrt(d.toDouble())) / denominator)
-        }
-    } else {
-        emptyList()
-    }
+    return findQuadraticRoots(a, b, c)
 }
 
 private fun distTravelled(time: Long, waitTime: Long) = waitTime * (time - waitTime)

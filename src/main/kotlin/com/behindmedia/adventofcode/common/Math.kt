@@ -120,7 +120,7 @@ fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
 fun <E> Map<Coordinate, E>.printMap(default: E, includeBorder: Boolean = false) {
     var range = this.keys.range()
     if (includeBorder) {
-       range = range.inset(Insets.square(-1))
+        range = range.inset(Insets.square(-1))
     }
     for (c in range) {
         print(this[c] ?: default)
@@ -130,7 +130,7 @@ fun <E> Map<Coordinate, E>.printMap(default: E, includeBorder: Boolean = false) 
     }
 }
 
-fun <E> Map<Coordinate, E>.printMapToString(default: E) : String {
+fun <E> Map<Coordinate, E>.printMapToString(default: E): String {
     val range = this.keys.range()
     val buffer = StringBuilder()
     for (c in range) {
@@ -176,7 +176,7 @@ fun binarySearch(
             if (inverted) {
                 begin = mid + 1
             } else {
-                end = mid -1
+                end = mid - 1
             }
         }
     }
@@ -205,7 +205,7 @@ fun binarySearch(
             if (inverted) {
                 begin = mid + 1
             } else {
-                end = mid -1
+                end = mid - 1
             }
         }
     }
@@ -213,7 +213,7 @@ fun binarySearch(
 }
 
 
-fun <C: Comparable<C>> topologicalSort(
+fun <C : Comparable<C>> topologicalSort(
     incomingEdges: Map<C, Collection<C>>
 ): List<C> {
     return topologicalSort(incomingEdges = incomingEdges, comparator = Comparator.comparing(Function.identity()))
@@ -241,7 +241,7 @@ fun <C> topologicalSort(
         result += next
         // Remove next from the incoming edges
         val iterator = remainingEdges.iterator()
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             val (c, e) = iterator.next()
             e.remove(next)
             if (e.isEmpty()) {
@@ -380,7 +380,7 @@ class Primes(maxNumber: Int) {
 }
 
 @JvmInline
-value class SafeLong(val value: Long): Comparable<SafeLong> {
+value class SafeLong(val value: Long) : Comparable<SafeLong> {
     operator fun unaryPlus(): SafeLong {
         return SafeLong(value)
     }
@@ -448,7 +448,7 @@ private inline fun checkOverflow(test: () -> Boolean) {
 }
 
 @JvmInline
-value class SafeInt(val value: Int): Comparable<SafeInt> {
+value class SafeInt(val value: Int) : Comparable<SafeInt> {
     operator fun unaryPlus(): SafeInt {
         return SafeInt(value)
     }
@@ -526,4 +526,18 @@ fun positiveAngle(angle: Double): Double {
     var result = angle % (2 * PI)
     if (result < 0) result += 2 * PI
     return result
+}
+
+fun findQuadraticRoots(a: Long, b: Long, c: Long): List<Double> {
+    val d = b * b - 4 * a * c
+    return if (d >= 0L) {
+        val denominator = 2.0 * a
+        if (d == 0L) {
+            listOf(-b / denominator)
+        } else {
+            listOf((-b + sqrt(d.toDouble())) / denominator, (-b - sqrt(d.toDouble())) / denominator)
+        }
+    } else {
+        emptyList()
+    }
 }

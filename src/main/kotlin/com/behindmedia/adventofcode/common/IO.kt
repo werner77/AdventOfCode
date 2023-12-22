@@ -17,6 +17,13 @@ fun <T>parseLines(resource: String, parser: (String) -> T) : List<T> {
     }
 }
 
+fun <T>parseLinesWithIndex(resource: String, parser: (Int, String) -> T) : List<T> {
+    var index = 0
+    return parseLines(resource) {
+        parser(index++, it)
+    }
+}
+
 fun <T>parseValidLines(resource: String, parser: (String) -> T?) : List<T> {
     val reader = readerForResource(resource)
     return reader.use {
