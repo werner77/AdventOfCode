@@ -5,8 +5,18 @@ import com.behindmedia.adventofcode.common.CoordinateRange3D
 import com.behindmedia.adventofcode.common.DefaultMap
 import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.parseLinesWithIndex
+import com.behindmedia.adventofcode.common.timing
 
-data class Brick(val index: Int, val minCoordinate: Coordinate3D, val maxCoordinate: Coordinate3D) {
+data class Brick(val index: Int, val minCoordinate: Coordinate3D, val maxCoordinate: Coordinate3D): Comparable<Brick> {
+    companion object {
+        private val comparator = Comparator<Brick> { first, second ->
+            first.minCoordinate.z.compareTo(second.minCoordinate.z)
+        }.thenComparing { first, second ->
+            first.maxCoordinate.z.compareTo(second.maxCoordinate.z)
+        }
+    }
+    override fun compareTo(other: Brick): Int = comparator.compare(this, other)
+
     val range: CoordinateRange3D
         get() = CoordinateRange3D(minCoordinate, maxCoordinate)
     val minZ: Long
@@ -17,45 +27,42 @@ data class Brick(val index: Int, val minCoordinate: Coordinate3D, val maxCoordin
 }
 
 fun main() {
-    val comparator: Comparator<Brick> = Comparator<Brick> { first, second ->
-        first.minCoordinate.z.compareTo(second.minCoordinate.z)
-    }.thenComparing { first, second ->
-        first.maxCoordinate.z.compareTo(second.maxCoordinate.z)
-    }
-    val bricks = parseLinesWithIndex("/2023/day22.txt") { brickIndex, line ->
-        val (left, right) = line.split("~")
-        val (x1, y1, z1) = left.split(",").map { it.toLong() }
-        val (x2, y2, z2) = right.split(",").map { it.toLong() }
-        Brick(brickIndex, Coordinate3D(x1, y1, z1), Coordinate3D(x2, y2, z2))
-    }.sortedWith(comparator).associateBy { it.index }
+    timing {
+        val bricks = parseLinesWithIndex("/2023/day22.txt") { brickIndex, line ->
+            val (left, right) = line.split("~")
+            val (x1, y1, z1) = left.split(",").map { it.toLong() }
+            val (x2, y2, z2) = right.split(",").map { it.toLong() }
+            Brick(brickIndex, Coordinate3D(x1, y1, z1), Coordinate3D(x2, y2, z2))
+        }.sorted().associateBy { it.index }
 
-    val map = bricks.values.fold(mutableMapOf<Coordinate3D, Int>()) { m, b ->
-        m.apply { settle(b) }
-    }
-
-    // Look in the z direction if any of the other bricks touches it
-    val above = defaultMutableMapOf<Int, MutableSet<Int>>(putValueImplicitly = true) { mutableSetOf() }
-    val below = defaultMutableMapOf<Int, MutableSet<Int>>(putValueImplicitly = true) { mutableSetOf() }
-    for ((coordinate, index) in map) {
-        // look at coordinate above and below
-        map[coordinate + Coordinate3D.zIdentity].takeIf { it != index }?.let {
-            above[index] += it
+        val map = bricks.values.fold(mutableMapOf<Coordinate3D, Int>()) { m, b ->
+            m.apply { settle(b) }
         }
-        map[coordinate - Coordinate3D.zIdentity].takeIf { it != index }?.let {
-            below[index] += it
+
+        // Look in the z direction if any of the other bricks touches it
+        val above = defaultMutableMapOf<Int, MutableSet<Int>>(putValueImplicitly = true) { mutableSetOf() }
+        val below = defaultMutableMapOf<Int, MutableSet<Int>>(putValueImplicitly = true) { mutableSetOf() }
+        for ((coordinate, index) in map) {
+            // look at coordinate above and below
+            map[coordinate + Coordinate3D.zIdentity].takeIf { it != index }?.let {
+                above[index] += it
+            }
+            map[coordinate - Coordinate3D.zIdentity].takeIf { it != index }?.let {
+                below[index] += it
+            }
         }
-    }
 
-    // Part 1
-    // Get the tiles on which at least one other tile is fully dependent
-    val cannotRemove = bricks.keys.fold(mutableSetOf<Int>()) { set, index ->
-        below[index].singleOrNull()?.let { set += it }
-        set
-    }
-    println(bricks.size - cannotRemove.size)
+        // Part 1
+        // Get the tiles on which at least one other tile is fully dependent
+        val cannotRemove = bricks.keys.fold(mutableSetOf<Int>()) { set, index ->
+            below[index].singleOrNull()?.let { set += it }
+            set
+        }
+        println(bricks.size - cannotRemove.size)
 
-    // Part 2
-    println(bricks.keys.sumOf { countFallen(it, below, above) })
+        // Part 2
+        println(bricks.keys.sumOf { countFallen(it, below, above) })
+    }
 }
 
 private fun countFallen(index: Int, below: DefaultMap<Int, out Set<Int>>, above: DefaultMap<Int, out Set<Int>>): Int {
