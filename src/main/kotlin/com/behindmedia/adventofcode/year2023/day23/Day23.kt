@@ -30,12 +30,14 @@ private fun solution(grid: CharGrid, start: Coordinate, finish: Coordinate, stri
         vertices.withIndex().fold(defaultMutableMapOf { error("No value") }) { map, (index, coordinate) ->
             map.apply { put(coordinate, index) }
         }
-    val graph: DefaultMap<Int, List<Pair<Int, Int>>> =
-        vertices.fold(defaultMutableMapOf { error("No value") }) { map, coordinate ->
-            map.apply {
-                put(vertexMap[coordinate], edges[coordinate]!!.map { (c, length) -> vertexMap[c] to length })
-            }
+    val vertexList = vertices.toList()
+    val graph = Array(vertices.size) { vertex ->
+        val e = edges[vertexList[vertex]] ?: error("No edge present for vertex: $vertex")
+        Array(e.size) {
+            val (c, length) = e[it]
+            vertexMap[c] to length
         }
+    }
     // Process the connections with a dfs to find the max path
     return findMaxSteps(graph, vertexMap[start], vertexMap[finish], BooleanArray(vertices.size))
 }
@@ -91,7 +93,7 @@ private fun findEdges(
 }
 
 private fun findMaxSteps(
-    graph: Map<Int, List<Pair<Int, Int>>>,
+    graph: Array<Array<Pair<Int, Int>>>,
     current: Int,
     to: Int,
     seen: BooleanArray
@@ -105,7 +107,7 @@ private fun findMaxSteps(
     }
     seen[current] = true
     var maxSteps = -1
-    for ((neighbour, length) in graph[current]!!) {
+    for ((neighbour, length) in graph[current]) {
         val steps = findMaxSteps(graph, neighbour, to, seen)
         if (steps >= 0) {
             maxSteps = max(maxSteps, steps + length)
