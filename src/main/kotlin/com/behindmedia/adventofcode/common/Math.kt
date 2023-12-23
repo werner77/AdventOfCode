@@ -49,6 +49,22 @@ fun leastCommonMultiple(a: Long, b: Long): Long {
     }
 }
 
+fun LongRange.intersection(other: LongRange): LongRange? {
+    return if (other.first <= this.first) {
+        if (other.last >= this.last) {
+            this
+        } else {
+            this.first..other.last
+        }
+    } else {
+        if (this.last <= other.last) {
+            other.first..this.last
+        } else {
+            other
+        }
+    }.takeIf { !it.isEmpty() }
+}
+
 /**
  * Takes a list of base/modulo combinations and returns the lowest number for which the states coincide such that:
  *
