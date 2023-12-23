@@ -2,6 +2,8 @@ package com.behindmedia.adventofcode.year2023.day23
 
 import com.behindmedia.adventofcode.common.CharGrid
 import com.behindmedia.adventofcode.common.Coordinate
+import com.behindmedia.adventofcode.common.DefaultMap
+import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
 import kotlin.math.max
@@ -24,8 +26,18 @@ private fun solution(grid: CharGrid, start: Coordinate, finish: Coordinate, stri
     // Determine start and finish point
     val vertices = findVertices(grid, start, finish)
     val edges = findEdges(grid, vertices, strict)
+    val vertexMap: DefaultMap<Coordinate, Int> =
+        vertices.withIndex().fold(defaultMutableMapOf { error("No value") }) { map, (index, coordinate) ->
+            map.apply { put(coordinate, index) }
+        }
+    val graph: DefaultMap<Int, List<Pair<Int, Int>>> =
+        vertices.fold(defaultMutableMapOf { error("No value") }) { map, coordinate ->
+            map.apply {
+                put(vertexMap[coordinate], edges[coordinate]!!.map { (c, length) -> vertexMap[c] to length })
+            }
+        }
     // Process the connections with a dfs to find the max path
-    return findMaxSteps(edges, start, finish, mutableSetOf())
+    return findMaxSteps(graph, vertexMap[start], vertexMap[finish], BooleanArray(vertices.size))
 }
 
 private fun findVertices(grid: CharGrid, start: Coordinate, finish: Coordinate): Set<Coordinate> {
@@ -34,7 +46,7 @@ private fun findVertices(grid: CharGrid, start: Coordinate, finish: Coordinate):
     nodes += finish
     val pending = ArrayDeque<Coordinate>()
     pending += start
-    val seen = mutableSetOf<Coordinate>()
+    val seen = hashSetOf<Coordinate>()
     while (pending.isNotEmpty()) {
         val current = pending.removeFirst()
         if (current in seen) continue
@@ -59,7 +71,7 @@ private fun findEdges(
         result[vertex] = currentEdges
         val pending = ArrayDeque<Pair<Coordinate, Int>>()
         pending += vertex to 0
-        val seen = mutableSetOf<Coordinate>()
+        val seen = hashSetOf<Coordinate>()
         while (pending.isNotEmpty()) {
             val (pos, length) = pending.removeFirst()
             if (pos != vertex && pos in vertices) {
@@ -79,25 +91,27 @@ private fun findEdges(
 }
 
 private fun findMaxSteps(
-    graph: Map<Coordinate, List<Pair<Coordinate, Int>>>,
-    current: Coordinate,
-    to: Coordinate,
-    seen: MutableSet<Coordinate>
+    graph: Map<Int, List<Pair<Int, Int>>>,
+    current: Int,
+    to: Int,
+    seen: BooleanArray
 ): Int {
     if (current == to) {
         // Found destination
         return 0
-    } else if (current in seen) {
+    } else if (seen[current]) {
         // Cannot reach same coordinate twice
         return -1
     }
-    seen += current
+    seen[current] = true
     var maxSteps = -1
     for ((neighbour, length) in graph[current]!!) {
-        val steps = findMaxSteps(graph, neighbour, to, seen).takeIf { it >= 0 } ?: continue
-        maxSteps = max(maxSteps, steps + length)
+        val steps = findMaxSteps(graph, neighbour, to, seen)
+        if (steps >= 0) {
+            maxSteps = max(maxSteps, steps + length)
+        }
     }
-    seen -= current
+    seen[current] = false
     return maxSteps
 }
 
