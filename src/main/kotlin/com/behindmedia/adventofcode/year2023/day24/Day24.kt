@@ -3,6 +3,7 @@ package com.behindmedia.adventofcode.year2023.day24
 import com.behindmedia.adventofcode.common.Coordinate3D
 import com.behindmedia.adventofcode.common.LongCoordinate
 import com.behindmedia.adventofcode.common.parseLines
+import com.behindmedia.adventofcode.common.timing
 import kotlin.math.min
 import kotlin.math.sign
 import java.math.BigInteger
@@ -15,36 +16,47 @@ fun main() {
         Stone(Coordinate3D(x, y, z), Coordinate3D(vx, vy, vz))
     }
 
-    // Part 1
-    val validRange = 200000000000000L..400000000000000L
-    var ans = 0L
-    processPairs(stones, 2) { intersection ->
-        if (intersection != null && intersection.x in validRange && intersection.y in validRange) {
-            ans++
+    timing {
+        // Part 1
+        val validRange = 200000000000000L..400000000000000L
+        var ans = 0L
+        processPairs(stones, 2) { intersection ->
+            if (intersection != null && intersection.x in validRange && intersection.y in validRange) {
+                ans++
+            }
+            true
         }
-        true
+        println(ans)
+
+        // Part 2
+
+        // Project to z-axis
+        val result1 = findRockPositionAndVelocity(stones = stones, component = 2) ?: error("Could not find result")
+
+        // Project to x-axis
+        val result2 = findRockPositionAndVelocity(stones = stones, component = 0) ?: error("Could not find result")
+
+        // Project to y-axis
+        val result3 = findRockPositionAndVelocity(stones = stones, component = 1) ?: error("Could not find result")
+
+        val (x1, y1) = result1.first
+        val (y2, z1) = result2.first
+        val (x2, z2) = result3.first
+        val (vx1, vy1) = result1.second
+        val (vy2, vz1) = result2.second
+        val (vx2, vz2) = result3.second
+
+        require(y1 == y2 && x1 == x2 && z1 == z2) {
+            "Expected positions to match"
+        }
+        require(vy1 == vy2 && vx1 == vx2 && vz1 == vz2) {
+            "Expected velocities to match"
+        }
+
+        println("Found rock position and velocity: $x1,$y1,$z1 @ $vx1,$vy1,$vz1")
+
+        println(x1 + y1 + z1)
     }
-    println(ans)
-
-    // Part 2
-
-    // Project to z-axis
-    val result1 = findRockPositionAndVelocity(stones = stones, component = 2) ?: error("Could not find result")
-
-    // Project to x-axis
-    val result2 = findRockPositionAndVelocity(stones = stones, component = 0) ?: error("Could not find result")
-
-    // Project to y-axis
-    val result3 = findRockPositionAndVelocity(stones = stones, component = 1) ?: error("Could not find result")
-
-    val (x1, y1) = result1.first
-    val (y2, z1) = result2.first
-    val (x2, z2) = result3.first
-
-    require(y1 == y2 && x1 == x2 && z1 == z2) {
-        "Expected positions to match"
-    }
-    println(x1 + y1 + z1)
 }
 
 private fun solve(first: ProjectedStone, second: ProjectedStone): LongCoordinate? {
