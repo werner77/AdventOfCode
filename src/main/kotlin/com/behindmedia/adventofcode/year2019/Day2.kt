@@ -1,6 +1,6 @@
 package com.behindmedia.adventofcode.year2019
 
-import com.behindmedia.adventofcode.common.permutate
+import com.behindmedia.adventofcode.common.permute
 import com.behindmedia.adventofcode.common.toLongList
 
 class Day2 {
@@ -30,7 +30,7 @@ class Day2 {
     }
 
     fun findNounAndVerb(opcodes: List<Int>, expectedResult: Int = 19690720): Int? {
-        return permutate(2, 0..99) {
+        return permute(2, 0..99) {
             val noun = it[0]
             val verb = it[1]
             val result = execute(opcodes, Pair(noun, verb))

@@ -30,7 +30,7 @@ private fun calculateTotalHappiness(arrangements: List<String>, happinessMap: Ma
 
 private fun findMaxHappiness(persons: Set<String>, happinessMap: Map<Pair<String, String>, Int>): Int {
     var maxValue = Int.MIN_VALUE
-    permutateUnique(persons) {
+    persons.permute {
         maxValue = max(maxValue, calculateTotalHappiness(it, happinessMap))
         null
     }

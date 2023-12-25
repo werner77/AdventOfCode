@@ -145,7 +145,7 @@ inline fun <T> Iterable<T>.productOf(selector: (T) -> Double): Double {
     return product
 }
 
-fun <T> List<T>.forEachPair(unique: Boolean = false, block: (T, T) -> Unit) {
+inline fun <T> List<T>.forEachPair(unique: Boolean = false, block: (T, T) -> Unit) {
     for (i in 0 until this.size) {
         val startIndex = if (unique) i + 1 else 0
         for (j in startIndex until this.size) {
@@ -155,7 +155,7 @@ fun <T> List<T>.forEachPair(unique: Boolean = false, block: (T, T) -> Unit) {
     }
 }
 
-fun <T> List<T>.forEachPairIndexed(unique: Boolean = false, block: (IndexedValue<T>, IndexedValue<T>) -> Unit) {
+inline fun <T> List<T>.forEachPairIndexed(unique: Boolean = false, block: (IndexedValue<T>, IndexedValue<T>) -> Unit) {
     for (i in 0 until this.size) {
         val startIndex = if (unique) i + 1 else 0
         for (j in startIndex until this.size) {
@@ -165,28 +165,24 @@ fun <T> List<T>.forEachPairIndexed(unique: Boolean = false, block: (IndexedValue
     }
 }
 
-/**
- * Permutates all possible combinations in values without duplicates and calls the perform closure for each such permutation
- * until a non-null result is returned
- */
-fun <T, R> permutateUnique(values: Collection<T>, maxSize: Int = values.size, perform: (List<T>) -> R?): R? {
+fun <T: Any, R: Any> Collection<T>.permute(maxSize: Int = this.size, unique: Boolean = true, perform: (List<T>) -> R?): R? {
     // Use an ArrayDeque to avoid having to reallocate a new collection each time
     // We cycle through the values remaining with removeFirst and addLast.
-    fun <T> permutate(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
+    fun <T> permute(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
         if (valuesLeft.isEmpty() || list.size == maxSize) return perform(list)
-        for (i in valuesLeft.indices) {
-            val value = valuesLeft.removeFirst()
+        for (v in valuesLeft) {
+            val value = if (unique) valuesLeft.removeFirst() else v
             try {
                 list.add(value)
-                return permutate(list, valuesLeft, perform) ?: continue
+                return permute(list, valuesLeft, perform) ?: continue
             } finally {
                 list.removeLast()
-                valuesLeft.addLast(value)
+                if (unique) valuesLeft.addLast(value)
             }
         }
         return null
     }
-    return permutate(ArrayList(values.size), ArrayDeque(values), perform)
+    return permute(ArrayList(this.size), ArrayDeque(this), perform)
 }
 
 /**
@@ -194,15 +190,15 @@ fun <T, R> permutateUnique(values: Collection<T>, maxSize: Int = values.size, pe
  *
  * It performs the specified closure for each permutation. If the closure returns a non-null value, the function immediately returns.
  */
-fun <T> permutate(count: Int, range: IntRange, perform: (IntArray) -> T?): T? {
-    fun <T> permutate(list: IntArray, index: Int, range: IntRange, perform: (IntArray) -> T?): T? {
+fun <T> permute(count: Int, range: IntRange, perform: (IntArray) -> T?): T? {
+    fun <T> permute(list: IntArray, index: Int, range: IntRange, perform: (IntArray) -> T?): T? {
         if (index >= list.size) {
             return perform(list)
         }
 
         for (value in range.first..range.last) {
             list[index] = value
-            val ret = permutate(list, index + 1, range, perform)
+            val ret = permute(list, index + 1, range, perform)
             if (ret != null) {
                 return ret
             }
@@ -210,14 +206,14 @@ fun <T> permutate(count: Int, range: IntRange, perform: (IntArray) -> T?): T? {
         return null
     }
     val list = IntArray(count) { 0 }
-    return permutate(list, 0, range, perform)
+    return permute(list, 0, range, perform)
 }
 
-fun <T> permutate(
+fun <T> permute(
     ranges: List<IntRange>,
     perform: (IntArray) -> T?
 ): T? {
-    fun permutate(
+    fun permute(
         ranges: List<IntRange>,
         dimension: Int,
         values: IntArray,
@@ -228,13 +224,13 @@ fun <T> permutate(
         }
         for (i in ranges[dimension].first..ranges[dimension].last) {
             values[dimension] = i
-            permutate(ranges, dimension + 1, values, perform)?.let {
+            permute(ranges, dimension + 1, values, perform)?.let {
                 if (it != Unit) return it
             }
         }
         return null
     }
-    return permutate(ranges, 0, IntArray(ranges.size), perform)
+    return permute(ranges, 0, IntArray(ranges.size), perform)
 }
 
 /**

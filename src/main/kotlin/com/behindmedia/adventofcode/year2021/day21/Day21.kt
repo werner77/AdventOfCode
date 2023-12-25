@@ -20,7 +20,7 @@ private data class Player(val pos: Int, val score: Int) {
     }
 
     inline fun playDirac(crossinline perform: (Player) -> Unit) {
-        permutate(3, 1..3) {
+        permute(3, 1..3) {
             perform(increment(it.sum()))
             null
         }

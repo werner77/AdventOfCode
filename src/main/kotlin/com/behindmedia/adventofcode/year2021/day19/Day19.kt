@@ -44,7 +44,7 @@ private class Orientation(private val mapping: IntArray, private val sign: IntAr
         val all: List<Orientation> = mutableListOf<Orientation>().apply {
             // We generate the mappings of component (x, y, z) = (0, 1, 2) to another component. For each permutation we
             // can have +1 and -1 for each value.
-            permutateUnique(setOf(0, 1, 2)) {
+            setOf(0, 1, 2).permute {
                 // For each
                 for (x in listOf(-1, 1)) for (y in listOf(-1, 1)) for (z in listOf(-1, 1)) {
                     this += Orientation(it.toList(), listOf(x, y, z))
@@ -146,7 +146,7 @@ fun main() {
 
         // Part 2
         var maxDist = Long.MIN_VALUE
-        permutateUnique(allScanners, 2) { (c1, c2) ->
+        allScanners.permute(maxSize = 2) { (c1, c2) ->
             maxDist = max(maxDist, c1.manhattenDistance(c2))
             null
         }

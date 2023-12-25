@@ -48,7 +48,7 @@ private fun WireMapping.decode(output: List<String>): Int {
 
 private fun decode(scrambled: Pair<List<String>, List<String>>): Int {
     val (input, output) = scrambled
-    return permutateUnique(wires) { mapping ->
+    return wires.permute { mapping ->
         // Validate the mapping
         if (mapping.validate(input)) {
             // If correct decode

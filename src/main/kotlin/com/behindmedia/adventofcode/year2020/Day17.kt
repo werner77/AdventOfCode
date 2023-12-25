@@ -1,7 +1,7 @@
 package com.behindmedia.adventofcode.year2020
 
 import com.behindmedia.adventofcode.common.parseMap
-import com.behindmedia.adventofcode.common.permutate
+import com.behindmedia.adventofcode.common.permute
 
 class Day17 {
 
@@ -31,7 +31,7 @@ class Day17 {
         repeat(times) {
             val counts = mutableMapOf<HyperCoordinate, Int>()
             for (coordinate in currentActiveCoordinates) {
-                permutate(permutationRanges) {
+                permute(permutationRanges) {
                     val c = coordinate + it
                     if (c != coordinate) {
                         counts[c] = (counts[c] ?: 0) + 1

@@ -1,5 +1,5 @@
 package com.behindmedia.adventofcode.year2019
-import com.behindmedia.adventofcode.common.permutate
+import com.behindmedia.adventofcode.common.permute
 import com.behindmedia.adventofcode.common.toLongList
 import kotlin.math.max
 
@@ -49,7 +49,7 @@ class Day7 {
 
     fun optimize(state: List<Int>): Int {
         var maxOutput = Integer.MIN_VALUE
-        permutate(5, 0..4) {
+        permute(5, 0..4) {
             if (it.toSet().size == 5) {
                 val output = execute(state, it.toList())
                 maxOutput = max(output, maxOutput)
@@ -61,7 +61,7 @@ class Day7 {
 
     fun optimizeWithFeedback(state: List<Int>): Int {
         var maxOutput = Integer.MIN_VALUE
-        permutate(5, 5..9) {
+        permute(5, 5..9) {
             if (it.toSet().size == 5) {
                 val output = executeWithFeedback(state, it.toList())
                 maxOutput = max(output, maxOutput)
