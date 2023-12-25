@@ -1,15 +1,10 @@
 package com.behindmedia.adventofcode.year2023.day24
 
-import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.Coordinate3D
 import com.behindmedia.adventofcode.common.LongCoordinate
-import com.behindmedia.adventofcode.common.SafeLong
 import com.behindmedia.adventofcode.common.parseLines
-import com.behindmedia.adventofcode.common.safe
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToLong
+import kotlin.math.sign
 import java.math.BigInteger
 
 fun main() {
@@ -21,117 +16,135 @@ fun main() {
     }
 
     // Part 1
-    val range = 200000000000000L.toDouble()..400000000000000L.toDouble()
+    val validRange = 200000000000000L..400000000000000L
     var ans = 0L
-    for (i in 0 until stones.size) {
-        for (j in i + 1 until stones.size) {
-            val (x, y) = solve(stones[i], stones[j]) ?: continue
-            if (x !in range || y !in range) continue
-            if (listOf(stones[i], stones[j]).any {(y - it.position.y) / it.velocity.y < 0.0 }) continue
+    processPairs(stones, 2) { intersection ->
+        if (intersection != null && intersection.x in validRange && intersection.y in validRange) {
             ans++
         }
+        true
     }
     println(ans)
 
-    // Part 2, credits to Roman Elizarov
-    val x = checkTimes(stones.map { it.position.x }, stones.map { it.velocity.x })
-    val y = checkTimes(stones.map { it.position.y }, stones.map { it.velocity.y })
-    val z = checkTimes(stones.map { it.position.z }, stones.map { it.velocity.z })
-    println(x + y + z)
+    // Part 2
+
+    // Project to z-axis
+    val result1 = findRockPositionAndVelocity(stones = stones, component = 2) ?: error("Could not find result")
+
+    // Project to x-axis
+    val result2 = findRockPositionAndVelocity(stones = stones, component = 0) ?: error("Could not find result")
+
+    // Project to y-axis
+    val result3 = findRockPositionAndVelocity(stones = stones, component = 1) ?: error("Could not find result")
+
+    val (x1, y1) = result1.first
+    val (y2, z1) = result2.first
+    val (x2, z2) = result3.first
+
+    require(y1 == y2 && x1 == x2 && z1 == z2) {
+        "Expected positions to match"
+    }
+    println(x1 + y1 + z1)
 }
 
-private fun solve(first: Stone, second: Stone): Pair<Double, Double>? {
+private fun solve(first: ProjectedStone, second: ProjectedStone): LongCoordinate? {
     return solve(first.a, first.b, first.c, second.a, second.b, second.c)
 }
 
-private fun solve(a1: BigInteger, b1: BigInteger, c1: BigInteger, a2: BigInteger, b2: BigInteger, c2: BigInteger): Pair<Double, Double>? {
+// Solve two linear equations for x and y
+// Equations of the form: ax + by = c
+private fun solve(a1: BigInteger, b1: BigInteger, c1: BigInteger, a2: BigInteger, b2: BigInteger, c2: BigInteger): LongCoordinate? {
     val d = b2 * a1 - b1 * a2
     if (d == BigInteger.ZERO) return null
-    val x = (b2 * c1 - b1 * c2).toDouble() / d.toDouble()
-    val y = (c2 * a1 - c1 * a2).toDouble() / d.toDouble()
-    return x to y
+    val x = (b2 * c1 - b1 * c2) / d
+    val y = (c2 * a1 - c1 * a2) / d
+    return LongCoordinate(x.toLong(), y.toLong())
 }
 
-private data class Stone(val position: Coordinate3D, val velocity: Coordinate3D) {
+/**
+ * Stone projected unto some axis (basically eliminating the projected axis, being x, y or z).
+ */
+private data class ProjectedStone(val position: LongCoordinate, val velocity: LongCoordinate) {
     val a: BigInteger = velocity.y.toBigInteger()
     val b: BigInteger = -velocity.x.toBigInteger()
     val c: BigInteger = (velocity.y.toBigInteger() * position.x.toBigInteger() - velocity.x.toBigInteger() * position.y.toBigInteger())
 
-    fun addingVelocity(delta: Coordinate3D): Stone {
+    /**
+     * Adds the specified velocity to this projected stone
+     */
+    fun addingVelocity(delta: LongCoordinate): ProjectedStone {
         return copy(velocity = velocity + delta)
     }
 
     override fun toString(): String = "$position @ $velocity"
 }
 
-private data class Range(val pi: LongRange, val velocity: Long)
-
-private fun checkTimes(ps: List<Long>, vs: List<Long>): Long {
-    val n = ps.size
-    check(vs.size == n)
-
-    val minV = -1000L
-    val maxV = 1000L
-    val minP = 0L
-    val maxP = 1_000_000_000_000_000L
-    check(minV < vs.min() && maxV > vs.max())
-    check(minP < ps.min() && maxP > ps.max())
-    val vss = vs.zip(ps).groupBy { it.first }.mapValues { e -> e.value.map { it.second }.toSet() }
-    val rs = ArrayList<Range>()
-
-    vloop@ for (v in minV..maxV) {
-        val p1 = vs.withIndex().filter { v < it.value }.maxOfOrNull { ps[it.index] } ?: minP
-        val p2 = vs.withIndex().filter { v > it.value }.minOfOrNull { ps[it.index] } ?: maxP
-        if (p1 > p2) continue
-        var pmod = BigInteger.ONE
-        var prem = BigInteger.ZERO
-        var p1r = p1
-        var p2r = p2
-        for (i in 0..<n) {
-            val pi = ps[i]
-            val vi = vs[i]
-            if (v == vi) {
-                val p0 = vss[v]?.singleOrNull() ?: continue@vloop
-                if (p0 !in p1r..p2r) continue@vloop
-                p1r = p0
-                p2r = p0
-                continue
-            }
-            // t_meet = (p - pi) / (vi - v)
-            val d = abs(vi - v).toBigInteger()
-            val r = pi.mod(d)
-            val pmod2 = lcm(pmod, d)
-            var prem2 = prem
-            while (prem2 < pmod2) {
-                if (prem2.remainder(d) == r) break
-                prem2 += pmod
-                if (prem2 >= pmod2) continue@vloop
-                if (prem2 > p2r.toBigInteger()) continue@vloop
-            }
-            pmod = pmod2
-            prem = prem2
-            val p1n = modRoundUp(p1r, pmod, prem)
-            val p2n = modRoundDn(p2r, pmod, prem)
-            if (p1n > p2n) continue@vloop
-            check(p1n >= p1r.toBigInteger())
-            check(p2n <= p2r.toBigInteger())
-            p1r = p1n.toLong()
-            p2r = p2n.toLong()
+private data class Stone(val position: Coordinate3D, val velocity: Coordinate3D) {
+    fun projected(component: Int): ProjectedStone {
+        // Take all components except the specified component
+        return when (component) {
+            0 -> ProjectedStone(position = LongCoordinate(position.y, position.z), velocity = LongCoordinate(velocity.y, velocity.z))
+            1 -> ProjectedStone(position = LongCoordinate(position.x, position.z), velocity = LongCoordinate(velocity.x, velocity.z))
+            2 -> ProjectedStone(position = LongCoordinate(position.x, position.y), velocity = LongCoordinate(velocity.x, velocity.y))
+            else -> error("Invalid component: $component")
         }
-        rs += Range(p1r..p2r, v)
     }
-    return rs.single().pi.first
+
+    override fun toString(): String = "$position @ $velocity"
 }
 
-private tailrec fun gcd(x: BigInteger, y: BigInteger): BigInteger = if (y == BigInteger.ZERO) x else gcd(y, x % y)
-private fun lcm(x: BigInteger, y: BigInteger) = x * y / gcd(x, y)
-private fun BigInteger.floorDiv(d: BigInteger): BigInteger =
-    if (this >= BigInteger.ZERO) divide(d) else -(-this + d - BigInteger.ONE).divide(d)
+/**
+ * Processes all pairs of stones by projecting them unto the specified component (0 == x, 1 == y, 2 == z).
+ *
+ * Optionally a delta velocity is applied to each stone.
+ *
+ * If the processing block returns false this function immediately exits
+ */
+private fun processPairs(stones: List<Stone>, projectedComponent: Int, deltaSpeed: LongCoordinate = LongCoordinate.origin, process: (LongCoordinate?) -> Boolean) {
+    for (i in 0 until stones.size) {
+        for (j in i + 1 until stones.size) {
+            val firstStone = stones[i].projected(projectedComponent).addingVelocity(deltaSpeed)
+            val secondStone = stones[j].projected(projectedComponent).addingVelocity(deltaSpeed)
+            val intersection = solve(firstStone, secondStone)?.takeIf { p ->
+                listOf(firstStone, secondStone).all { (p.y - it.position.y).sign == it.velocity.y.sign }
+            }
+            if (!process(intersection)) return
+        }
+    }
+}
 
-private fun Long.floorDiv(d: BigInteger): BigInteger = toBigInteger().floorDiv(d)
-private fun Long.mod(d: BigInteger): BigInteger = toBigInteger().mod(d)
-private fun modRoundUp(x: Long, m: BigInteger, r: BigInteger): BigInteger =
-    (x.floorDiv(m) + if (x.mod(m) <= r) BigInteger.ZERO else BigInteger.ONE) * m + r
-
-private fun modRoundDn(x: Long, m: BigInteger, r: BigInteger): BigInteger =
-    (x.floorDiv(m) - if (x.mod(m) >= r) BigInteger.ZERO else BigInteger.ONE) * m + r
+/**
+ * Searches for multiple intersection position using the specified projected component (x, y or z-axis).
+ *
+ * Brute forces over combinations of vx, vy to find a possible solution.
+ *
+ * The key insight is that a minus delta velocity can be applied to any stone and assume the rock to remain stationary (speed zero).
+ * Because the rock has to collide with every stone, the stone paths should all have an intersection (which is the position of the rock).
+ *
+ * Returns a pair of position to velocity of the rock found for the projection, or null if no solution could be found.
+ */
+private fun findRockPositionAndVelocity(stones: List<Stone>, component: Int): Pair<LongCoordinate, LongCoordinate>? {
+    val maxValue = 400L
+    val minResultCount = 5
+    for (vx in -maxValue..maxValue) {
+        for (vy in -maxValue..maxValue) {
+            val deltaV = LongCoordinate(vx, vy)
+            val matchingPositions = mutableSetOf<LongCoordinate>()
+            var resultCount = 0
+            processPairs(stones, component, deltaV) { intersection ->
+                if (intersection != null) {
+                    matchingPositions += intersection
+                    resultCount++
+                    resultCount < minResultCount
+                } else {
+                    false
+                }
+            }
+            // We need exactly 1 position with at least minResultCount matches
+            if (matchingPositions.size == 1 && resultCount >= min(minResultCount, stones.size / 2)) {
+                return matchingPositions.single() to -deltaV
+            }
+        }
+    }
+    return null
+}

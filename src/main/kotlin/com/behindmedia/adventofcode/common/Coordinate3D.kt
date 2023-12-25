@@ -40,6 +40,9 @@ data class Coordinate3D(val x: Long, val y: Long, val z: Long) : Comparable<Coor
         }
     }
 
+    val components: List<Long>
+        get() = listOf(this[0], this[1], this[2])
+
     fun offset(vector: Coordinate3D): Coordinate3D {
         return Coordinate3D(x + vector.x, y + vector.y, z + vector.z)
     }
