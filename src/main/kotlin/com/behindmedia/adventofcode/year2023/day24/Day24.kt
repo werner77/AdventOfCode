@@ -1,10 +1,15 @@
 package com.behindmedia.adventofcode.year2023.day24
 
+import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.Coordinate3D
+import com.behindmedia.adventofcode.common.LongCoordinate
+import com.behindmedia.adventofcode.common.SafeLong
 import com.behindmedia.adventofcode.common.parseLines
+import com.behindmedia.adventofcode.common.safe
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToLong
 import java.math.BigInteger
 
 fun main() {
@@ -15,14 +20,15 @@ fun main() {
         Stone(Coordinate3D(x, y, z), Coordinate3D(vx, vy, vz))
     }
 
-    // Part 1, binary search
+    // Part 1
     val range = 200000000000000L.toDouble()..400000000000000L.toDouble()
     var ans = 0L
     for (i in 0 until stones.size) {
         for (j in i + 1 until stones.size) {
-            if (findBox(range to range, stones[i], stones[j], 0.1) != null) {
-                ans++
-            }
+            val (x, y) = solve(stones[i], stones[j]) ?: continue
+            if (x !in range || y !in range) continue
+            if (listOf(stones[i], stones[j]).any {(y - it.position.y) / it.velocity.y < 0.0 }) continue
+            ans++
         }
     }
     println(ans)
@@ -34,78 +40,27 @@ fun main() {
     println(x + y + z)
 }
 
-private fun findBox(
-    box: Pair<ClosedFloatingPointRange<Double>, ClosedFloatingPointRange<Double>>,
-    first: Stone,
-    second: Stone,
-    precision: Double
-): Pair<Double, Double>? {
-    val (xRange, yRange) = box
-
-    if (xRange.isEmpty() || yRange.isEmpty()) return null
-
-    if (!isValidBox(box, first, second)) return null
-
-    if (xRange.endInclusive - xRange.start < precision) {
-        return ((xRange.start + xRange.endInclusive) / 2.0 to (yRange.start + yRange.endInclusive) / 2.0)
-    }
-
-    // Divide current box in 4 boxes
-    val midX = (xRange.start + xRange.endInclusive) / 2
-    val midY = (yRange.start + yRange.endInclusive) / 2
-
-    val xRange1 = xRange.start..midX
-    val xRange2 = midX..xRange.endInclusive
-    val yRange1 = yRange.start..midY
-    val yRange2 = midY..yRange.endInclusive
-
-    for (xr in listOf(xRange1, xRange2)) {
-        for (yr in listOf(yRange1, yRange2)) {
-            return findBox(xr to yr, first, second, precision) ?: continue
-        }
-    }
-    return null
+private fun solve(first: Stone, second: Stone): Pair<Double, Double>? {
+    return solve(first.a, first.b, first.c, second.a, second.b, second.c)
 }
 
-/**
- * If both lines cross through the box it is valid
- */
-private fun isValidBox(
-    box: Pair<ClosedFloatingPointRange<Double>, ClosedFloatingPointRange<Double>>,
-    first: Stone,
-    second: Stone
-): Boolean {
-    val firstValid = isWithinInFuture(box, first.position, first.velocity)
-    val secondValid = isWithinInFuture(box, second.position, second.velocity)
-    return firstValid && secondValid
-}
-
-private fun isWithinInFuture(
-    box: Pair<ClosedFloatingPointRange<Double>, ClosedFloatingPointRange<Double>>,
-    pos: Coordinate3D,
-    velocity: Coordinate3D
-): Boolean {
-    val xRangeWithin = timeRangeWithin(pos.x, velocity.x, box.first)
-    val yRangeWithin = timeRangeWithin(pos.y, velocity.y, box.second)
-    val intersectionRange = xRangeWithin.intersection(yRangeWithin)
-    return !intersectionRange.isEmpty() && intersectionRange.endInclusive >= 0.0
-}
-
-private fun ClosedFloatingPointRange<Double>.intersection(other: ClosedFloatingPointRange<Double>): ClosedFloatingPointRange<Double> {
-    return max(this.start, other.start)..min(this.endInclusive, other.endInclusive)
-}
-
-private fun timeRangeWithin(
-    position: Long,
-    velocity: Long,
-    range: ClosedFloatingPointRange<Double>
-): ClosedFloatingPointRange<Double> {
-    val t1 = (range.start - position) / velocity.toDouble()
-    val t2 = (range.endInclusive - position) / velocity.toDouble()
-    return min(t1, t2)..max(t1, t2)
+private fun solve(a1: BigInteger, b1: BigInteger, c1: BigInteger, a2: BigInteger, b2: BigInteger, c2: BigInteger): Pair<Double, Double>? {
+    val d = b2 * a1 - b1 * a2
+    if (d == BigInteger.ZERO) return null
+    val x = (b2 * c1 - b1 * c2).toDouble() / d.toDouble()
+    val y = (c2 * a1 - c1 * a2).toDouble() / d.toDouble()
+    return x to y
 }
 
 private data class Stone(val position: Coordinate3D, val velocity: Coordinate3D) {
+    val a: BigInteger = velocity.y.toBigInteger()
+    val b: BigInteger = -velocity.x.toBigInteger()
+    val c: BigInteger = (velocity.y.toBigInteger() * position.x.toBigInteger() - velocity.x.toBigInteger() * position.y.toBigInteger())
+
+    fun addingVelocity(delta: Coordinate3D): Stone {
+        return copy(velocity = velocity + delta)
+    }
+
     override fun toString(): String = "$position @ $velocity"
 }
 
