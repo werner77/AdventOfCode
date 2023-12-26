@@ -25,6 +25,7 @@ class Day6 {
         var first = true
         parseLines(input) {
             if (it.isBlank()) {
+                println(answers.size)
                 sum += answers.size
                 first = true
                 answers.clear()
@@ -33,10 +34,11 @@ class Day6 {
                     answers.addAll(it.toList())
                     first = false
                 } else {
-                    answers.retainAll(it.toList())
+                    answers.retainAll(it.toSet())
                 }
             }
         }
+        println(answers.size)
         sum += answers.size
         return sum
     }
