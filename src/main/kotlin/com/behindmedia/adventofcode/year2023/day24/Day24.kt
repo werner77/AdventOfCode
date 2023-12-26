@@ -18,45 +18,23 @@ fun main() {
 
     timing {
         // Part 1
-        val validRange = 200000000000000L..400000000000000L
-        var ans = 0L
-        processPairs(stones, 2) { intersection ->
-            if (intersection != null && intersection.x in validRange && intersection.y in validRange) {
-                ans++
-            }
-            true
-        }
-        println(ans)
+        part1(stones)
 
         // Part 2
-
-        // Project to z-axis
-        val result1 = findRockPositionAndVelocity(stones = stones, component = 2) ?: error("Could not find result")
-
-        // Project to x-axis
-        val result2 = findRockPositionAndVelocity(stones = stones, component = 0) ?: error("Could not find result")
-
-        // Project to y-axis
-        val result3 = findRockPositionAndVelocity(stones = stones, component = 1) ?: error("Could not find result")
-
-        val (x1, y1) = result1.first
-        val (y2, z1) = result2.first
-        val (x2, z2) = result3.first
-        val (vx1, vy1) = result1.second
-        val (vy2, vz1) = result2.second
-        val (vx2, vz2) = result3.second
-
-        require(y1 == y2 && x1 == x2 && z1 == z2) {
-            "Expected positions to match"
-        }
-        require(vy1 == vy2 && vx1 == vx2 && vz1 == vz2) {
-            "Expected velocities to match"
-        }
-
-        println("Found rock position and velocity: $x1,$y1,$z1 @ $vx1,$vy1,$vz1")
-
-        println(x1 + y1 + z1)
+        part2(stones)
     }
+}
+
+private fun part1(stones: List<Stone>) {
+    val validRange = 200000000000000L..400000000000000L
+    var ans = 0L
+    processPairs(stones, 2) { intersection ->
+        if (intersection != null && intersection.x in validRange && intersection.y in validRange) {
+            ans++
+        }
+        true
+    }
+    println(ans)
 }
 
 private fun solve(first: ProjectedStone, second: ProjectedStone): LongCoordinate? {
@@ -66,6 +44,20 @@ private fun solve(first: ProjectedStone, second: ProjectedStone): LongCoordinate
 // Solve two linear equations for x and y
 // Equations of the form: ax + by = c
 private fun solve(a1: BigInteger, b1: BigInteger, c1: BigInteger, a2: BigInteger, b2: BigInteger, c2: BigInteger): LongCoordinate? {
+    // a1*x + b1*y = c1
+    // a2*x + b2*y = c2
+
+    // b2*a1*x + b2*b1*y = b2*c1
+    // b1*a2*x + b2*b1*y = b1*c2
+
+    // x(b2*a1 - b1*a2) = b2*c1 - b1*c2
+
+    // x = (b2*c1 - b1*c2) / (b2*a1 - b1*a2)
+
+    // let d = (b2*a1 - b1*a2)
+
+    // if d == 0: lines are parallel and there is no solution
+
     val d = b2 * a1 - b1 * a2
     if (d == BigInteger.ZERO) return null
     val x = (b2 * c1 - b1 * c2) / d
@@ -159,4 +151,33 @@ private fun findRockPositionAndVelocity(stones: List<Stone>, component: Int): Pa
         }
     }
     return null
+}
+
+private fun part2(stones: List<Stone>) {
+    // Project to z-axis
+    val result1 = findRockPositionAndVelocity(stones = stones, component = 2) ?: error("Could not find result")
+
+    // Project to x-axis
+    val result2 = findRockPositionAndVelocity(stones = stones, component = 0) ?: error("Could not find result")
+
+    // Project to y-axis
+    val result3 = findRockPositionAndVelocity(stones = stones, component = 1) ?: error("Could not find result")
+
+    val (x1, y1) = result1.first
+    val (y2, z1) = result2.first
+    val (x2, z2) = result3.first
+    val (vx1, vy1) = result1.second
+    val (vy2, vz1) = result2.second
+    val (vx2, vz2) = result3.second
+
+    require(y1 == y2 && x1 == x2 && z1 == z2) {
+        "Expected positions to match"
+    }
+    require(vy1 == vy2 && vx1 == vx2 && vz1 == vz2) {
+        "Expected velocities to match"
+    }
+
+    println("Found rock position and velocity: $x1,$y1,$z1 @ $vx1,$vy1,$vz1")
+
+    println(x1 + y1 + z1)
 }
