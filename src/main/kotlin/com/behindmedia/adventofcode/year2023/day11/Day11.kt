@@ -2,10 +2,7 @@ package com.behindmedia.adventofcode.year2023.day11
 
 import com.behindmedia.adventofcode.common.CharGrid
 import com.behindmedia.adventofcode.common.Coordinate
-import com.behindmedia.adventofcode.common.forEachPair
-import com.behindmedia.adventofcode.common.maxX
-import com.behindmedia.adventofcode.common.maxY
-import com.behindmedia.adventofcode.common.parseMap
+import com.behindmedia.adventofcode.common.processPairs
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
 
@@ -31,7 +28,7 @@ private fun process(
     }.toSortedSet()
     val galaxies = map.filter { (_, value) -> value == '#' }.map { it.key }
     var sum: Long = 0
-    galaxies.forEachPair(unique = true) { start, end ->
+    galaxies.processPairs { start, end ->
         val modifiedStart = Coordinate(
             x = start.x + emptyCols.headSet(start.x).size * (multiplier - 1),
             y = start.y + emptyRows.headSet(start.y).size * (multiplier - 1)
@@ -42,6 +39,7 @@ private fun process(
         )
         val distance = modifiedStart.manhattenDistance(modifiedEnd)
         sum += distance.toLong()
+        null
     }
     return sum
 }

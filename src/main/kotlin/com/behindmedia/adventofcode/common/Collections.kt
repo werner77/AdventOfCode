@@ -145,24 +145,26 @@ inline fun <T> Iterable<T>.productOf(selector: (T) -> Double): Double {
     return product
 }
 
-inline fun <T> List<T>.forEachPair(unique: Boolean = false, block: (T, T) -> Unit) {
+inline fun <T: Any, R: Any> List<T>.processPairs(unique: Boolean = true, block: (T, T) -> R?): R? {
     for (i in 0 until this.size) {
         val startIndex = if (unique) i + 1 else 0
         for (j in startIndex until this.size) {
             if (i == j) continue
-            block.invoke(this[i], this[j])
+            return block.invoke(this[i], this[j]) ?: continue
         }
     }
+    return null
 }
 
-inline fun <T> List<T>.forEachPairIndexed(unique: Boolean = false, block: (IndexedValue<T>, IndexedValue<T>) -> Unit) {
+inline fun <T: Any, R: Any> List<T>.processPairsIndexed(unique: Boolean = true, block: (IndexedValue<T>, IndexedValue<T>) -> R?): R? {
     for (i in 0 until this.size) {
         val startIndex = if (unique) i + 1 else 0
         for (j in startIndex until this.size) {
             if (i == j) continue
-            block.invoke(IndexedValue(i, this[i]), IndexedValue(j, this[j]))
+            return block.invoke(IndexedValue(i, this[i]), IndexedValue(j, this[j])) ?: continue
         }
     }
+    return null
 }
 
 fun <T: Any, R: Any> Collection<T>.permute(maxSize: Int = this.size, unique: Boolean = true, perform: (List<T>) -> R?): R? {
