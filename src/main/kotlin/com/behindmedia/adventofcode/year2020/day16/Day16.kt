@@ -2,6 +2,7 @@ package com.behindmedia.adventofcode.year2020.day16
 
 import com.behindmedia.adventofcode.common.defaultMutableMapOf
 import com.behindmedia.adventofcode.common.read
+import com.behindmedia.adventofcode.common.timing
 
 private fun parseRange(string: String): IntRange {
     val (min, max) = string.split("-").map { it.toInt() }
@@ -40,8 +41,6 @@ fun main() {
     println(total)
 
     // Part 2
-
-    // Map of index to name of entry
     println(part2(ourTicket, requirements, validTickets))
 }
 
