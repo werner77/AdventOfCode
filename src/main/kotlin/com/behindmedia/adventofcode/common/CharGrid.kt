@@ -11,7 +11,7 @@ open class CharGrid(final override val sizeX: Int, final override val sizeY: Int
         const val defaultChar = ' '
 
         operator fun invoke(string: String, emptyChar: Char = defaultChar): CharGrid {
-            val lines = string.trim().split("\n")
+            val lines = string.trim('\n').split("\n")
             val sizeY = lines.size
             val sizeX = lines.getOrNull(0)?.length ?: 0
             return CharGrid(sizeX, sizeY) { x, y ->

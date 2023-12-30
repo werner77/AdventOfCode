@@ -52,14 +52,14 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
         override fun next(): Coordinate {
             val next = nextCoordinate
                 ?: throw IllegalStateException("Next called on iterator while there are no more elements to iterate over")
-            if (reversed) {
-                nextCoordinate = when {
+            nextCoordinate = if (reversed) {
+                when {
                     next.x > minCoordinate.x -> next.offset(-1, 0)
                     next.y > minCoordinate.y -> Coordinate(maxCoordinate.x, next.y - 1)
                     else -> null
                 }
             } else {
-                nextCoordinate = when {
+                when {
                     next.x < maxCoordinate.x -> next.offset(1, 0)
                     next.y < maxCoordinate.y -> Coordinate(minCoordinate.x, next.y + 1)
                     else -> null

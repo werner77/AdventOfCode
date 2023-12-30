@@ -1,20 +1,24 @@
 package com.behindmedia.adventofcode.year2020.day19
 
 import com.behindmedia.adventofcode.common.read
+import com.behindmedia.adventofcode.common.timing
 import com.behindmedia.adventofcode.year2020.day19.Rule.Container
 import com.behindmedia.adventofcode.year2020.day19.Rule.Literal
+
 sealed class Rule {
-    abstract fun matches(string: String, position: Int, rules: Map<Int, Rule>): Set<Int>
+    abstract fun matches(string: String, position: Int, rules: Map<Int, Rule>): Collection<Int>
+
     fun matchEntire(string: String, rules: Map<Int, Rule>): Boolean {
         return string.length in matches(string, 0, rules)
     }
+
     data class Container(val id: Int, val options: List<List<Int>>): Rule() {
-        override fun matches(string: String, position: Int, rules: Map<Int, Rule>): Set<Int> {
-            val result = mutableSetOf<Int>()
+        override fun matches(string: String, position: Int, rules: Map<Int, Rule>): Collection<Int> {
+            val result = mutableListOf<Int>()
             for (option in options) {
-                var positions = mutableSetOf(position)
+                var positions = listOf(position)
                 for (ruleId in option) {
-                    val nextPositions = mutableSetOf<Int>()
+                    val nextPositions = mutableListOf<Int>()
                     for (current in positions) {
                         val rule = rules[ruleId] ?: error("Could not find rule for ruleID: $ruleId")
                         val matches = rule.matches(string, current, rules)
@@ -27,12 +31,13 @@ sealed class Rule {
             return result
         }
     }
+
     data class Literal(val id: Int, val value: String): Rule() {
-        override fun matches(string: String, position: Int, rules: Map<Int, Rule>): Set<Int> {
+        override fun matches(string: String, position: Int, rules: Map<Int, Rule>): Collection<Int> {
             return if (string.startsWith(prefix = value, startIndex = position)) {
-                setOf(position + value.length)
+                listOf(position + value.length)
             } else {
-                emptySet()
+                emptyList()
             }
         }
     }
@@ -57,17 +62,17 @@ private fun parse(text: String): Pair<Map<Int, Rule>, List<String>> {
 }
 
 fun main() {
-    val (rules, lines) = parse(read("/2020/day19.txt"))
-
+    val (rules, words) = parse(read("/2020/day19.txt"))
     val rule = rules[0] ?: error("Rule zero not found")
+    timing {
+        // Part 1
+        println(words.count { rule.matchEntire(it, rules) })
 
-    // Part 1
-    println(lines.count { rule.matchEntire(it, rules) })
-
-    // Part 2
-    val modifiedRules = rules + listOf(
-        8 to Container(id = 8, options = listOf(listOf(42), listOf(42, 8))),
-        11 to Container(id = 11, options = listOf(listOf(42, 31), listOf(42, 11, 31)))
-    )
-    println(lines.count { rule.matchEntire(it, modifiedRules) })
+        // Part 2
+        val modifiedRules = rules + listOf(
+            8 to Container(id = 8, options = listOf(listOf(42), listOf(42, 8))),
+            11 to Container(id = 11, options = listOf(listOf(42, 31), listOf(42, 11, 31)))
+        )
+        println(words.count { rule.matchEntire(it, modifiedRules) })
+    }
 }
