@@ -1,8 +1,6 @@
 package com.behindmedia.adventofcode.year2020.day23
 
 import com.behindmedia.adventofcode.common.read
-import kotlin.math.max
-import kotlin.math.min
 
 private class Cup(val value: Int) {
     var next: Cup? = null
