@@ -1,5 +1,6 @@
 package com.behindmedia.adventofcode.common;
 
+import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,7 @@ import java.util.*;
  *
  * @author Nathan Fiedler
  */
-public class FibonacciHeap<T> {
+public final class FibonacciHeap<T> {
 
     /**
      * Implements a node of the Fibonacci heap. It holds the information necessary for maintaining the
@@ -156,40 +157,50 @@ public class FibonacciHeap<T> {
     private final Map<T, FibonacciHeapNode<T>> existingNodes = new HashMap<>();
 
     @Nullable
-    public Path<T> poll() {
+    public Pair<T, Integer> removeFirstOrNull() {
         FibonacciHeapNode<T> minNode = removeMin();
         if (minNode != null) {
             existingNodes.remove(minNode.data);
-            return new Path<T>(minNode.data, minNode.key, null);
+            return new Pair<>(minNode.data, minNode.key);
         }
         return null;
     }
 
-    /**
-     * Inserts the node if it does not exists, else updates its priority using the supplied key.
-     * If the existing key is already < than the supplied key this operation does nothing.
-     */
-    public void update(@NotNull Path<T> path) {
-        update(path.getDestination(), (int) path.getLength());
+    @NotNull
+    public Pair<T, Integer> removeFirst() {
+        var result = removeFirstOrNull();
+        if (result == null) {
+            throw new NoSuchElementException("Heap is empty");
+        }
+        return result;
     }
 
-    public void update(@NotNull T node, int pathLength) {
+    public void update(@NotNull T node, int weight) {
         FibonacciHeapNode<T> existingNode = existingNodes.get(node);
         if (existingNode == null) {
             FibonacciHeapNode<T> newNode = new FibonacciHeapNode<>(node);
-            insert(newNode, pathLength);
+            insert(newNode, weight);
             existingNodes.put(node, newNode);
-        } else if (pathLength < existingNode.key) {
-            decreaseKey(existingNode, pathLength);
+        } else if (weight < existingNode.key) {
+            decreaseKey(existingNode, weight);
         }
     }
 
     @Nullable
-    public Path<T> first() {
+    public Pair<T, Integer> firstOrNull() {
         if (minNode != null) {
-            return new Path<T>(minNode.data, minNode.key, null);
+            return new Pair<>(minNode.data, minNode.key);
         }
         return null;
+    }
+
+    @NotNull
+    public Pair<T, Integer>first() {
+        var result = firstOrNull();
+        if (result == null) {
+            throw new NoSuchElementException("Heap is empty");
+        }
+        return result;
     }
 
     // clear

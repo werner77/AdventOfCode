@@ -347,14 +347,11 @@ class Day18 {
 
             while (true) {
                 // If the queue is empty: break out of the loop
-                val current = pending.poll() ?: break
-
-                // Process the node collection with the lowest path length
-                val currentNodeCollection = current.destination
+                val (currentNodeCollection, length) = pending.removeFirstOrNull() ?: break
 
                 // If this collection contains all the keys we were looking for: we're done!
                 if (completeKeyCollection in currentNodeCollection.keys) {
-                    return current.length.toInt()
+                    return length
                 }
 
                 nodeEvaluationCount++
@@ -366,7 +363,7 @@ class Day18 {
                     val neighbour = KeyedNodeCollection(currentNodeCollection.nodes.replacingNode(nodeIndex, edge.destination.node),
                         currentNodeCollection.keys + edge.destination.node)
                     if (!settled.contains(neighbour)) {
-                        pending.update(neighbour, current.length.toInt() + edge.length.toInt())
+                        pending.update(neighbour, length + edge.length)
                     }
                 }
             }

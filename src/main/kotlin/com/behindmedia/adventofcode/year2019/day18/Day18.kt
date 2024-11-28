@@ -3,7 +3,6 @@ package com.behindmedia.adventofcode.year2019.day18
 import com.behindmedia.adventofcode.common.CharGrid
 import com.behindmedia.adventofcode.common.Coordinate
 import com.behindmedia.adventofcode.common.Path
-import com.behindmedia.adventofcode.common.plusAssign
 import com.behindmedia.adventofcode.common.read
 import com.behindmedia.adventofcode.common.timing
 import kotlin.math.abs
