@@ -26,6 +26,15 @@ open class CharGrid(final override val sizeX: Int, final override val sizeY: Int
         }
     }
 
+    fun getSubGrid(offset: Coordinate, sizeX: Int, sizeY: Int): CharGridView? {
+        if (offset.x < 0 || offset.y < 0) {
+            return null
+        } else if (offset.x + sizeX > this.sizeX || offset.y + sizeY > this.sizeY) {
+            return null
+        }
+        return CharGridView(this, offset, sizeX, sizeY)
+    }
+
     override operator fun get(coordinate: Coordinate): Char {
         return data[coordinate.y][coordinate.x]
     }
@@ -69,5 +78,27 @@ class MutableCharGrid(sizeX: Int, sizeY: Int, default: (Int, Int) -> Char = { _,
 
     override operator fun set(coordinate: Coordinate, value: Char) {
         data[coordinate.y][coordinate.x] = value
+    }
+}
+
+open class CharGridView(val grid: CharGrid, val offset: Coordinate, override val sizeX: Int, override val sizeY: Int): ValueGrid<Char> {
+    override fun copy(): CharGridView {
+        return CharGridView(grid, offset, sizeX, sizeY)
+    }
+
+    override fun mutableCopy(): MutableValueGrid<Char> {
+        return MutableCharGridView(grid.mutableCopy(), offset, sizeX, sizeY)
+    }
+
+    override fun getOrNull(coordinate: Coordinate): Char? {
+        return grid.getOrNull(offset + coordinate)
+    }
+}
+
+class MutableCharGridView(grid: MutableCharGrid, offset: Coordinate, sizeX: Int, sizeY: Int): CharGridView(grid, offset, sizeX, sizeY), MutableValueGrid<Char> {
+    private val mutableGrid = grid
+
+    override fun set(coordinate: Coordinate, value: Char) {
+        mutableGrid[offset + coordinate] = value
     }
 }
