@@ -5,47 +5,53 @@ import kotlin.math.*
 
 private data class Vector(val start: Coordinate, val direction: Coordinate)
 
-fun main() {
-    val grid = CharGrid.invoke(read("/2024/day4.txt"))
+fun main() = timing {
+    val grid = CharGrid(read("/2024/day4.txt"))
 
     // Part1
-    println(grid.countMatches("XMAS".length, ::match1))
+    println(part1(grid))
 
     // Part2
-    println(grid.countMatches("MAS".length, ::match2))
+    println(part2(grid))
 }
 
-private fun match1(grid: CharGridView): Int {
+private fun part1(grid: CharGrid): Int {
+    val string = "XMAS"
     val vectors: List<Vector> = listOf(
         Vector(Coordinate(0, 0), Coordinate.right), // Right
-        Vector(Coordinate(grid.maxX, 0), Coordinate.left), // Left
+        Vector(Coordinate(string.length - 1, 0), Coordinate.left), // Left
         Vector(Coordinate(0, 0), Coordinate.down), // Down
-        Vector(Coordinate(0, grid.maxY), Coordinate.up), // Up
-        Vector(Coordinate(grid.maxX, 0), Coordinate.downLeft), // DownLeft
+        Vector(Coordinate(0, string.length - 1), Coordinate.up), // Up
+        Vector(Coordinate(string.length - 1, 0), Coordinate.downLeft), // DownLeft
         Vector(Coordinate(0, 0), Coordinate.downRight), // DownRight
-        Vector(Coordinate(grid.maxX, grid.maxY), Coordinate.upLeft), // UpLeft
-        Vector(Coordinate(0, grid.maxY), Coordinate.upRight), // UpRight
+        Vector(Coordinate(string.length - 1, string.length - 1), Coordinate.upLeft), // UpLeft
+        Vector(Coordinate(0, string.length - 1), Coordinate.upRight), // UpRight
     )
-    return vectors.count { (start, direction) ->
-        grid.matches(string = "XMAS", start = start, direction = direction)
-    }
+    return grid.countMatches(string.length, { subGrid ->
+        vectors.count { (start, direction) ->
+            subGrid.matches(string = string, start = start, direction = direction)
+        }
+    })
 }
 
-private fun match2(grid: CharGridView): Int {
+private fun part2(grid: CharGrid): Int {
+    val string = "MAS"
     val vectors1: List<Vector> = listOf(
-        Vector(Coordinate(grid.maxX, 0), Coordinate.downLeft), // DownLeft
-        Vector(Coordinate(0, grid.maxY), Coordinate.upRight), // UpRight
+        Vector(Coordinate(string.length - 1, 0), Coordinate.downLeft), // DownLeft
+        Vector(Coordinate(0, string.length - 1), Coordinate.upRight), // UpRight
     )
     val vectors2: List<Vector> = listOf(
         Vector(Coordinate(0, 0), Coordinate.downRight), // DownRight
-        Vector(Coordinate(grid.maxX, grid.maxY), Coordinate.upLeft), // UpLeft
+        Vector(Coordinate(string.length - 1, string.length - 1), Coordinate.upLeft), // UpLeft
     )
-    val match = vectors1.any { (start, direction) ->
-        grid.matches(string = "MAS", start = start, direction = direction)
-    } && vectors2.any { (start, direction) ->
-        grid.matches(string = "MAS", start = start, direction = direction)
-    }
-    return if (match) 1 else 0
+    return grid.countMatches(string.length, { subGrid ->
+        val match = vectors1.any { (start, direction) ->
+            subGrid.matches(string = string, start = start, direction = direction)
+        } && vectors2.any { (start, direction) ->
+            subGrid.matches(string = string, start = start, direction = direction)
+        }
+        if (match) 1 else 0
+    })
 }
 
 private fun CharGrid.countMatches(size: Int, process: (CharGridView) -> Int): Int {

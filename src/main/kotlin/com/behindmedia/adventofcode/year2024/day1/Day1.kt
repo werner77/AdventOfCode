@@ -3,7 +3,7 @@ package com.behindmedia.adventofcode.year2024.day1
 import com.behindmedia.adventofcode.common.*
 import kotlin.math.*
 
-fun main() {
+fun main() = timing {
     val data = parseLines("/2024/day1.txt") { line ->
         val (i, j) = line.splitNonEmpty(" ").map { it.toInt() }
         i to j
