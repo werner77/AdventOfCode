@@ -5,8 +5,8 @@ import com.behindmedia.adventofcode.common.*
 fun main() = timing {
     val data = read("/2024/day5.txt")
     val (firstSection, secondSection) = data.split("\n\n")
-    val rules = firstSection.split("\n").map { line -> line.split("|").map { it.toInt() }.toRule() }
-    val pages = secondSection.split("\n").filter { it.isNotEmpty() }.map { line -> line.split(",").map { it.toInt() } }
+    val rules = firstSection.splitNonEmpty("\n").map { line -> line.splitNonEmpty("|").map { it.toInt() }.toRule() }
+    val pages = secondSection.splitNonEmpty("\n").map { line -> line.splitNonEmpty(",").map { it.toInt() } }
     val ruleMap = rules.groupBy { it.before }
 
     var result1 = 0
@@ -43,7 +43,7 @@ private fun makeValid(page: List<Int>, ruleMap: Map<Int, List<Rule>>): List<Int>
     val allItems = page.toMutableSet()
     val applicableRules = allItems.flatMap { ruleMap[it] ?: emptyList() }.filter { it.after in allItems}
     val order = applicableRules.topologicallySorted().withIndex().associateBy({ it.value }, { it.index })
-    return page.sortedBy { order[it] ?: Int.MIN_VALUE }
+    return page.sortedBy { order[it] ?: error("No order found") }
 }
 
 private data class Rule(val before: Int, val after: Int)
@@ -54,11 +54,10 @@ private fun List<Int>.toRule(): Rule {
 }
 
 private fun List<Rule>.topologicallySorted(): List<Int> {
-    val result = mutableListOf<Int>()
-    val dependencies = defaultMutableMapOf<Int, MutableSet<Int>> { mutableSetOf() }
+    val dependencies = defaultMutableMapOf<Int, MutableSet<Int>>(putValueImplicitly = true) { mutableSetOf() }
     val inDegrees = defaultMutableMapOf<Int, Int> { 0 }
     for (rule in this) {
-        if (dependencies.getOrPutDefault(rule.before).add(rule.after)) {
+        if (dependencies[rule.before].add(rule.after)) {
             inDegrees[rule.after]++
         }
     }
@@ -69,14 +68,13 @@ private fun List<Rule>.topologicallySorted(): List<Int> {
         }
     }
     require(pending.isNotEmpty()) { "Could not find a solution" }
-    val seen = mutableSetOf<Int>()
+    val seen = linkedSetOf<Int>()
     while (pending.isNotEmpty()) {
         val next = pending.removeFirst()
         if (seen.contains(next)) {
             continue
         }
         seen += next
-        result += next
         val deps = dependencies[next]
         for (dependency in deps) {
             val count = inDegrees[dependency] ?: 0
@@ -88,6 +86,6 @@ private fun List<Rule>.topologicallySorted(): List<Int> {
             }
         }
     }
-    return result
+    return seen.toList()
 }
 
