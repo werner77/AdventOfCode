@@ -5,17 +5,17 @@ import com.behindmedia.adventofcode.common.*
 fun main() = timing {
     val data = read("/2024/day5.txt")
     val (firstSection, secondSection) = data.split("\n\n")
-    val rules = firstSection.splitNonEmpty("\n").map { line -> line.splitNonEmpty("|").map { it.toInt() }.toRule() }
+    val rules = firstSection.splitNonEmpty("\n").map { line -> line.splitNonEmpty("|").map { it.toInt() }.let(Rule::invoke) }
     val pages = secondSection.splitNonEmpty("\n").map { line -> line.splitNonEmpty(",").map { it.toInt() } }
     val ruleMap = rules.groupBy { it.before }
 
     var result1 = 0
     var result2 = 0
     for (page in pages) {
-        if (isValid(page, ruleMap)) {
+        if (page.isValidPage(ruleMap)) {
             result1 += page[page.size / 2]
         } else {
-            val validPage = makeValid(page, ruleMap)
+            val validPage = page.makeValidPage(ruleMap)
             result2 += validPage[page.size / 2]
         }
     }
@@ -27,9 +27,9 @@ fun main() = timing {
     println(result2)
 }
 
-private fun isValid(page: List<Int>, ruleMap: Map<Int, List<Rule>>): Boolean {
+private fun List<Int>.isValidPage(ruleMap: Map<Int, List<Rule>>): Boolean {
     val seen = mutableSetOf<Int>()
-    for (n in page) {
+    for (n in this) {
         val rules = ruleMap[n] ?: emptyList()
         if (rules.any { seen.contains(it.after) }) {
             return false
@@ -39,21 +39,30 @@ private fun isValid(page: List<Int>, ruleMap: Map<Int, List<Rule>>): Boolean {
     return true
 }
 
-private fun makeValid(page: List<Int>, ruleMap: Map<Int, List<Rule>>): List<Int> {
-    val allItems = page.toMutableSet()
+private fun List<Int>.makeValidPage(ruleMap: Map<Int, List<Rule>>): List<Int> {
+    // Only select the applicable rules for this page: it is impossible to take all rules as they contain cycles!
+    val allItems = this.toSet()
     val applicableRules = allItems.flatMap { ruleMap[it] ?: emptyList() }.filter { it.after in allItems}
-    val order = applicableRules.topologicallySorted().withIndex().associateBy({ it.value }, { it.index })
-    return page.sortedBy { order[it] ?: error("No order found") }
+    val sortedPages = applicableRules.topologicallySortedPages()
+    require(sortedPages.size == this.size) {
+        "Expected all items to be present"
+    }
+    return sortedPages
 }
 
-private data class Rule(val before: Int, val after: Int)
-
-private fun List<Int>.toRule(): Rule {
-    val (i, j) = this
-    return Rule(i, j)
+private data class Rule(val before: Int, val after: Int) {
+    companion object {
+        operator fun invoke(items: List<Int>): Rule {
+            require(items.size == 2)
+            return Rule(items[0], items[1])
+        }
+    }
 }
 
-private fun List<Rule>.topologicallySorted(): List<Int> {
+/**
+ * Returns the topologically sorted pages under the conditions of these rules.
+ */
+private fun List<Rule>.topologicallySortedPages(): List<Int> {
     val dependencies = defaultMutableMapOf<Int, MutableSet<Int>>(putValueImplicitly = true) { mutableSetOf() }
     val inDegrees = defaultMutableMapOf<Int, Int> { 0 }
     for (rule in this) {
@@ -77,7 +86,7 @@ private fun List<Rule>.topologicallySorted(): List<Int> {
         seen += next
         val deps = dependencies[next]
         for (dependency in deps) {
-            val count = inDegrees[dependency] ?: 0
+            val count = inDegrees[dependency]
             if (count == 1) {
                 inDegrees.remove(dependency)
                 pending.add(dependency)
