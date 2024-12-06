@@ -1,0 +1,69 @@
+package com.behindmedia.adventofcode.year2024.day6
+
+import com.behindmedia.adventofcode.common.*
+
+fun main() = timing {
+    val grid = CharGrid(read("/2024/day6.txt"))
+    val start = grid.single { it.value == '^' }.key to Coordinate.up
+    println(part1(start, grid))
+    println(part2(start, grid))
+}
+
+private fun part1(
+    start: Pair<Coordinate, Coordinate>,
+    grid: CharGrid
+): Int {
+    var current = start
+    val seen = mutableSetOf<Coordinate>()
+    while (true) {
+        seen += current.first
+        current = grid.findNext(current) ?: break
+    }
+    return seen.size
+}
+
+private fun part2(
+    start: Pair<Coordinate, Coordinate>,
+    grid: CharGrid
+): Int {
+    var count = 0
+    for (obstruction in grid.coordinateRange) {
+        if (obstruction == start.first) {
+            continue
+        }
+        if (grid.recursionHappens(start, obstruction)) {
+            count++
+        }
+    }
+    return count
+}
+
+private fun CharGrid.findNext(
+    current: Pair<Coordinate, Coordinate>,
+    obstruction: Coordinate? = null
+): Pair<Coordinate, Coordinate>? {
+    var (position, direction) = current
+    repeat (4) {
+        val nextPosition = position + direction
+        val nextObject = this.getOrNull(nextPosition) ?: return null
+        if (nextObject == '#' || nextPosition == obstruction) {
+            // Turn right
+            direction = direction.rotate(RotationDirection.Right)
+        } else {
+            return nextPosition to direction
+        }
+    }
+    error("Stuck!")
+}
+
+private fun CharGrid.recursionHappens(start: Pair<Coordinate, Coordinate>, obstruction: Coordinate): Boolean {
+    val seen = mutableSetOf<Pair<Coordinate, Coordinate>>()
+    var current = start
+    while (true) {
+        if (!seen.add(current)) {
+            return true
+        }
+        current = findNext(current, obstruction) ?: break
+    }
+    return false
+}
