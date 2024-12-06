@@ -26,16 +26,13 @@ private fun part2(
     start: Pair<Coordinate, Coordinate>,
     grid: CharGrid
 ): Int {
-    var count = 0
-    for (obstruction in grid.coordinateRange) {
+    return grid.coordinateRange.countParallel { obstruction ->
         if (obstruction == start.first) {
-            continue
+            false
+        } else {
+            grid.recursionHappens(start, obstruction)
         }
-        if (grid.recursionHappens(start, obstruction)) {
-            count++
-        }
-    }
-    return count
+    }.toInt()
 }
 
 private fun CharGrid.findNext(
@@ -43,7 +40,7 @@ private fun CharGrid.findNext(
     obstruction: Coordinate? = null
 ): Pair<Coordinate, Coordinate>? {
     var (position, direction) = current
-    repeat (4) {
+    repeat(4) {
         val nextPosition = position + direction
         val nextObject = this.getOrNull(nextPosition) ?: return null
         if (nextObject == '#' || nextPosition == obstruction) {
@@ -60,10 +57,7 @@ private fun CharGrid.recursionHappens(start: Pair<Coordinate, Coordinate>, obstr
     val seen = mutableSetOf<Pair<Coordinate, Coordinate>>()
     var current = start
     while (true) {
-        if (!seen.add(current)) {
-            return true
-        }
-        current = findNext(current, obstruction) ?: break
+        if (!seen.add(current)) return true
+        current = findNext(current, obstruction) ?: return false
     }
-    return false
 }

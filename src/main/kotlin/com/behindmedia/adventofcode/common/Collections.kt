@@ -63,6 +63,11 @@ fun <T> Iterable<T>.productOfParallel(operation: (T) -> Long): Long =
 fun <T> Sequence<T>.productOfParallel(operation: (T) -> Long): Long =
     mapReduceParallel(1L, operation) { first, second -> first * second }
 
+fun <T> Iterable<T>.countParallel(operation: (T) -> Boolean): Long =
+    sumOfParallel { if (operation(it)) 1L else 0L }
+
+fun <T> Sequence<T>.countParallel(operation: (T) -> Boolean): Long =
+    sumOfParallel { if (operation(it)) 1L else 0L }
 
 fun <T, R> Sequence<T>.mapReduceParallel(initial: R, map: (T) -> R, reduce: (R, R) -> R): R {
     return runBlocking {
