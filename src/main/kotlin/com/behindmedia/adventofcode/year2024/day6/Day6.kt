@@ -5,28 +5,30 @@ import com.behindmedia.adventofcode.common.*
 fun main() = timing {
     val grid = CharGrid(read("/2024/day6.txt"))
     val start = grid.single { it.value == '^' }.key to Coordinate.up
-    println(part1(start, grid))
-    println(part2(start, grid))
+    val seen = part1(start, grid)
+    println(seen.size)
+    println(part2(start, grid, seen))
 }
 
 private fun part1(
     start: Pair<Coordinate, Coordinate>,
     grid: CharGrid
-): Int {
+): Collection<Coordinate> {
     var current = start
     val seen = mutableSetOf<Coordinate>()
     while (true) {
         seen += current.first
         current = grid.findNext(current) ?: break
     }
-    return seen.size
+    return seen
 }
 
 private fun part2(
     start: Pair<Coordinate, Coordinate>,
-    grid: CharGrid
+    grid: CharGrid,
+    candidates: Collection<Coordinate>
 ): Int {
-    return grid.coordinateRange.countParallel { obstruction ->
+    return candidates.countParallel { obstruction ->
         if (obstruction == start.first) {
             false
         } else {
