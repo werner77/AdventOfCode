@@ -18,6 +18,18 @@ fun <T> MutableCollection<T>.popFirst(): T? {
     return null
 }
 
+fun <T> MutableCollection<T>.popFirst(where: (T) -> Boolean): T? {
+    val iterator = this.iterator()
+    while (iterator.hasNext()) {
+        val value = iterator.next()
+        if (where(value)) {
+            iterator.remove()
+            return value
+        }
+    }
+    return null
+}
+
 /**
  * Convenience function to assert 0 or 1 elements in the collection
  */

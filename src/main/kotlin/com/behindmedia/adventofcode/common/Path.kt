@@ -75,7 +75,7 @@ fun List<Point2D<*, *>>.insidePointCount(boundaryPointCount: Long = this.size.to
     return (area - boundaryPointCount) / 2L + 1L
 }
 
-class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparable<CoordinatePath> {
+data class CoordinatePath(val coordinate: Coordinate, val pathLength: Int) : Comparable<CoordinatePath> {
     override fun compareTo(other: CoordinatePath): Int {
         return this.pathLength.compareTo(other.pathLength)
     }
