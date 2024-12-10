@@ -53,33 +53,34 @@ private fun part1(data: String): Long {
 
 private fun part2(data: String): Long {
     val gaps = TreeMap<Int, Int>()
-    val files = mutableMapOf<Int, Pair<Int, Int>>()
+    val files = mutableListOf<Pair<Int, Int>>()
     var pos = 0
     for ((i, c) in data.withIndex()) {
         val length = c.digitToInt()
         if (i % 2 == 0) {
             // File
-            val id = i / 2
-            files[id] = pos to length
+            files.add(pos to length)
         } else {
             // Gap
             gaps[pos] = length
         }
         pos += length
     }
-    val maxId = files.keys.max()
+    val maxId = files.size - 1
     for (id in maxId downTo 0) {
-        val (filePos, fileLength) = files[id] ?: error("No file with id $id found")
+        val (filePos, fileLength) = files[id]
 
         // Find first fitting position
-        for ((gapPos, gapLength) in gaps) {
+        val iterator = gaps.iterator()
+        while (iterator.hasNext()) {
+            val (gapPos, gapLength) = iterator.next()
             if (gapPos >= filePos) break
             if (gapLength < fileLength) continue
 
             files[id] = gapPos to fileLength
 
             // Remove gap
-            gaps.remove(gapPos)
+            iterator.remove()
             if (gapLength > fileLength) {
                 gaps[gapPos + fileLength] = gapLength - fileLength
             }
@@ -87,7 +88,7 @@ private fun part2(data: String): Long {
         }
     }
     var result = 0L
-    for ((id, info) in files) {
+    for ((id, info) in files.withIndex()) {
         val (p, l) = info
         for (i in p until p + l) {
             result += id.toLong() * i.toLong()
