@@ -2,7 +2,7 @@ package com.behindmedia.adventofcode.year2024.day10
 
 import com.behindmedia.adventofcode.common.*
 
-fun main() {
+fun main() = timing {
     val grid = CharGrid(read("/2024/day10.txt"))
 
     val trailHeads = grid.filter { it.value == '0' }.map { it.key }
