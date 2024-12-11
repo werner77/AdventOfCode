@@ -1,6 +1,20 @@
 package com.behindmedia.adventofcode.year2024.day11
 
 import com.behindmedia.adventofcode.common.*
+import java.lang.Math.pow
+import kotlin.math.*
+
+private val pow10 = LongArray(64) { pow(10.0, it.toDouble()).roundToLong() }
+
+private val Long.digitCount: Int
+    get() {
+        for (i in 0 until 64) {
+            if (pow10[i] > this) {
+                return i
+            }
+        }
+        error("No value found")
+    }
 
 fun main() = timing {
     val numbers = read("/2024/day11.txt").trim().splitNonEmpty(" ").map { it.toLong() }
@@ -24,14 +38,14 @@ private fun getSize(value: Long, iterationsLeft: Int, cache: MutableMap<Pair<Lon
     if (cachedValue != null) {
         return cachedValue
     } else {
-        val valueString = value.toString()
-        val valueLength = valueString.length
+        val digitCount = value.digitCount
         // We have to manually compute this value
         return if (value == 0L) {
             getSize(1L, iterationsLeft - 1, cache)
-        } else if (valueLength % 2 == 0) {
-            val left = valueString.substring(0, valueLength / 2).toLong()
-            val right = valueString.substring(valueLength / 2, valueLength).toLong()
+        } else if (digitCount % 2 == 0) {
+            val power = pow10[digitCount / 2]
+            val left = value / power
+            val right = value % power
             return getSize(left, iterationsLeft - 1, cache) +
                     getSize(right, iterationsLeft - 1, cache)
         } else {
