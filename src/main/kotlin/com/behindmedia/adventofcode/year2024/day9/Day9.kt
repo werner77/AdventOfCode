@@ -3,6 +3,10 @@ package com.behindmedia.adventofcode.year2024.day9
 import com.behindmedia.adventofcode.common.*
 import java.util.*
 
+private fun minFileId(size: Int): Int {
+    return 0
+}
+
 fun main() = timing {
     val data = read("/2024/day9.txt").trim()
     println(part1(data))
@@ -52,47 +56,41 @@ private fun part1(data: String): Long {
 }
 
 private fun part2(data: String): Long {
-    val gaps = TreeMap<Int, Int>()
-    val files = mutableListOf<Pair<Int, Int>>()
+    val fileCount = data.length / 2 + 1
+    val files = Array(fileCount) { 0 to 0 }
     var pos = 0
+    val gapQueues = Array<PriorityQueue<Pair<Int, Int>>>(9) { PriorityQueue(Comparator.comparing(Pair<Int, Int>::first)) }
     for ((i, c) in data.withIndex()) {
         val length = c.digitToInt()
         if (i % 2 == 0) {
             // File
-            files.add(pos to length)
-        } else {
+            files[i / 2] = pos to length
+        } else if (length > 0) {
             // Gap
-            gaps[pos] = length
+            for (gapSize in 1 .. length) {
+                gapQueues[gapSize - 1] += pos to length
+            }
         }
         pos += length
     }
-    val maxId = files.size - 1
-    for (id in maxId downTo 0) {
-        val (filePos, fileLength) = files[id]
-
-        // Find first fitting position
-        val iterator = gaps.iterator()
-        while (iterator.hasNext()) {
-            val (gapPos, gapLength) = iterator.next()
-            if (gapPos >= filePos) break
-            if (gapLength < fileLength) continue
-
-            files[id] = gapPos to fileLength
-
-            // Remove gap
-            iterator.remove()
-            if (gapLength > fileLength) {
-                gaps[gapPos + fileLength] = gapLength - fileLength
-            }
-            break
+    val seen = hashSetOf<Int>()
+    for (fileId in files.size - 1 downTo minFileId(files.size)) {
+        val (filePos, fileLength) = files[fileId]
+        val queue = gapQueues[fileLength - 1]
+        var gap: Pair<Int, Int>?
+        do {
+            gap = queue.poll()
+        } while(gap != null && !seen.add(gap.first))
+        val (gapPos, gapLength) = gap ?: continue
+        if (gapPos >= filePos) continue
+        files[fileId] = gapPos to fileLength
+        val newGapLength = gapLength - fileLength
+        for (i in 0 until newGapLength) {
+            gapQueues[i].add(gapPos + fileLength to newGapLength)
         }
     }
-    var result = 0L
-    for ((id, info) in files.withIndex()) {
+    return files.withIndex().sumOf { (id, info) ->
         val (p, l) = info
-        for (i in p until p + l) {
-            result += id.toLong() * i.toLong()
-        }
+        (p until p + l).sumOf { id.toLong() * it.toLong() }
     }
-    return result
 }
