@@ -11,12 +11,12 @@ fun main() = timing {
     println(trailHeads.sumOf { grid.findScore(it to '0', hashSetOf()) })
 
     // Part2
-    println(trailHeads.sumOf { grid.findScore(it to '0', dummySetOf()) })
+    println(trailHeads.sumOf { grid.findScore(it to '0', null) })
 }
 
-private fun CharGrid.findScore(current: Pair<Coordinate, Char>, seen: MutableSet<Coordinate>): Long {
+private fun CharGrid.findScore(current: Pair<Coordinate, Char>, seen: MutableSet<Coordinate>?): Long {
     val (coordinate, value) = current
-    if (!seen.add(coordinate)) {
+    if (seen != null && !seen.add(coordinate)) {
         return 0L
     } else if (value == '9') {
         return 1L
@@ -28,23 +28,4 @@ private fun CharGrid.findScore(current: Pair<Coordinate, Char>, seen: MutableSet
         score += findScore(neighbor to newValue, seen)
     }
     return score
-}
-
-private fun <E>dummySetOf(): MutableSet<E> = DummySet()
-
-private class DummySet<E>: AbstractMutableSet<E>() {
-    override fun add(element: E): Boolean {
-        return true
-    }
-
-    override val size: Int
-        get() = 0
-
-    override fun iterator(): MutableIterator<E> {
-        return object: MutableIterator<E> {
-            override fun hasNext(): Boolean = false
-            override fun next(): E = throw NoSuchElementException()
-            override fun remove() = throw NoSuchElementException()
-        }
-    }
 }

@@ -43,15 +43,21 @@ fun main() = timing {
 
 private fun solve(game: Game): Long? {
 
-    // a * x1 + b * x2 = x3
-    // a * y1 + b * y2 = y3
-
+    // 1) a * x1 + b * x2 = x3   where a = number of button presses on button1
+    // 2) a * y1 + b * y2 = y3         b = number of button presses on button2
+    //                           and   x1, y1 = direction of button1
+    //                                 x2, y2 = direction of button2
+    //                                 x3, y3 = location of prize
+    // <=> Multiply 1) by 'y2' and 2) by 'x2' to ensure the term with b is the same in both equations:
     // a * x1 * y2 + b * x2 * y2 = x3 * y2
     // a * x2 * y1 + b * x2 * y2 = x2 * y3
-
+    // <=> Subtract 2) from 1)
     // a * x1 * y2 - a * x2 * y1 = x3 * y2 - x2 * y3
-
-    // a = (x3 * y2 - x2 * y3) / (x1 * y2 - x2 * y1)
+    // <=> Get 'a' out of parentheses on left side
+    // a * (x1 * y2 - x2 * y1) = x3 * y2 - x2 * y3
+    // <=> Divide both sides by (x1 * y2 - x2 * y1), note that no solution exists if (x1 * y2 - x2 * y1) == 0 (equations are co-linear)
+    // a = (x3 * y2 - x2 * y3) / (x1 * y2 - x2 * y1) where remainder of this equation should be 0 for an integer solution
+    // <=> Fill in the result of 'a' in the equation for 'b', again the remainder of the division by x2 should be 0 for integer solutions
     // b = (x3 - a * x1) / x2
 
     val (button1, button2) = game.buttonDirections
@@ -64,6 +70,18 @@ private fun solve(game: Game): Long? {
     val y2 = button2.y
     val y3 = game.prizeLocation.y
 
+
+    // a * x1 + b * x2 = x3
+    // a * y1 + b * y2 = y3
+
+    // a * 1 + b * 2
+    // a * 1 + b * 2
+
+    // Ensure the divisors of the equation for a and b or not null
+    if (x1 * y2 - x2 * y1 == 0L || x2 == 0L) {
+        return null
+    }
+
     val remainderA = (x3 * y2 - x2 * y3) % (x1 * y2 - x2 * y1)
 
     if (remainderA != 0L) {
@@ -71,6 +89,7 @@ private fun solve(game: Game): Long? {
     }
 
     val a = (x3 * y2 - x2 * y3) / (x1 * y2 - x2 * y1)
+
     val remainderB = (x3 - a * x1) % x2
 
     if (remainderB != 0L) {
@@ -78,5 +97,6 @@ private fun solve(game: Game): Long? {
     }
 
     val b = (x3 - a * x1) / x2
+
     return a * 3L + b * 1L
 }

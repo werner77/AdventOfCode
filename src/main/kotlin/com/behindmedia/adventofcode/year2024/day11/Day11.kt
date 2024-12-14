@@ -2,11 +2,11 @@ package com.behindmedia.adventofcode.year2024.day11
 
 import com.behindmedia.adventofcode.common.*
 
-private val pow10 = LongArray(64) { 10L.pow(it) }
+private val pow10 = LongArray(19) { 10L.pow(it).also { value -> require(value >= 0L) } }
 
 private val Long.digitCount: Int
     get() {
-        for (i in 0 until 64) {
+        for (i in pow10.indices) {
             if (pow10[i] > this) {
                 return i
             }
