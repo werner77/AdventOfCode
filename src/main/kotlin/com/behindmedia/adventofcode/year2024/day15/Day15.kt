@@ -13,38 +13,27 @@ private fun Char.toCoordinate(): Coordinate? {
     }
 }
 
-val gui: TextWindow? = null
-//val gui: TextWindow? = TextWindow("AdventOfCode 2024 Day 15", 50, 100)
+private const val visualize = false
 
-fun main() {
+fun main() = timing {
     val string = read("/2024/day15.txt")
-
+    val gui: TextWindow? = if (visualize) TextWindow("AdventOfCode 2024 Day 15", 50, 100) else null
     val (mapString, directionsString) = string.splitNonEmpty("\n\n")
-    val originalGrid = CharGrid(mapString)
+    val grid = CharGrid(mapString)
     val directions = directionsString.mapNotNull { it.toCoordinate() }
 
-    println(part1(originalGrid, directions))
-    println(part2(originalGrid, directions))
+    // Part1
+    println(grid.mutableCopy().simulate(directions, gui))
+
+    // Part2
+    println(grid.expandedMutableCopy().simulate(directions, gui))
 }
 
-private fun part1(
-    originalGrid: CharGrid,
-    directions: List<Coordinate>
-): Int {
-    val grid = originalGrid.mutableCopy()
-    return grid.simulate(directions) { current, direction ->
-        grid.move1(current, direction)
-    }
-}
-
-private fun part2(
-    originalGrid: CharGrid,
-    directions: List<Coordinate>
-): Int {
-    val grid = MutableCharGrid(originalGrid.sizeX *2, originalGrid.sizeY) {  _, _ ->
+private fun CharGrid.expandedMutableCopy(): MutableCharGrid {
+    val grid = MutableCharGrid(sizeX * 2, sizeY) { _, _ ->
         '.'
     }
-    for ((c, item) in originalGrid) {
+    for ((c, item) in this) {
         val first = Coordinate(c.x * 2, c.y)
         val second = Coordinate(c.x * 2 + 1, c.y)
         when (item) {
@@ -52,83 +41,60 @@ private fun part2(
                 grid[first] = '.'
                 grid[second] = '.'
             }
+
             '@' -> {
                 grid[first] = '@'
                 grid[second] = '.'
             }
+
             '#' -> {
                 grid[first] = '#'
                 grid[second] = '#'
             }
+
             'O' -> {
                 grid[first] = '['
                 grid[second] = ']'
             }
+
             else -> {
                 error("Unexpected character: $item")
             }
         }
     }
-    return grid.simulate(directions) { current, direction ->
-        grid.move2(current, direction)
-    }
+    return grid
 }
 
-private fun CharGrid.simulate(directions: List<Coordinate>, move: (Coordinate, Coordinate) -> Boolean): Int {
-    val grid = this
-    var current = grid.single { it.value == '@' }.key
-    gui?.setText(grid.toString())
+private fun MutableCharGrid.simulate(directions: List<Coordinate>, gui: TextWindow?): Int {
+    var current = this.single { it.value == '@' }.key
+    gui?.setText(this.toString())
     for (d in directions) {
-        val moved = move(current, d)
+        val moved = this.move(current, d)
         if (gui != null) {
-            gui.setText(grid.toString())
+            gui.setText(this.toString())
             Thread.sleep(1000 / 25)
         }
         if (moved) {
             current += d
         }
     }
-    var result = 0
-    for ((c, item) in grid) {
-        if (item == '[' || item == 'O') {
-            result += 100 * c.y + c.x
-        }
-    }
-    return result
+    return this.checksum
 }
 
-private fun MutableCharGrid.move1(current: Coordinate, direction: Coordinate): Boolean {
-    val target = current + direction
-    val currentItem = this[current]
-    val moved = when (this[target]) {
-        '.' -> {
-            // Ok can move, recursion terminates
-            true
+private val CharGrid.checksum: Int
+    get() {
+        var result = 0
+        for ((c, item) in this) {
+            if (item == '[' || item == 'O') {
+                result += 100 * c.y + c.x
+            }
         }
-
-        'O' -> {
-            move1(target, direction)
-        }
-
-        '#' -> {
-            // Cannot move, Recursion terminates
-            false
-        }
-
-        else -> {
-            error("Unexpected item: ${this[target]}")
-        }
+        return result
     }
-    if (moved) {
-        this[target] = currentItem
-        this[current] = '.'
-    }
-    return moved
-}
 
-private fun MutableCharGrid.move2(current: Coordinate, direction: Coordinate): Boolean {
+private fun MutableCharGrid.move(current: Coordinate, direction: Coordinate): Boolean {
     val seen = mutableMapOf<Coordinate, Boolean>()
-    val moved = move2(current, direction, seen)
+    val moved = move(current, direction, seen)
     if (moved) {
         // Commit the move
         for (c in seen.keys) {
@@ -141,7 +107,11 @@ private fun MutableCharGrid.move2(current: Coordinate, direction: Coordinate): B
     return moved
 }
 
-private fun MutableCharGrid.move2(current: Coordinate, direction: Coordinate, seen: MutableMap<Coordinate, Boolean>): Boolean {
+private fun MutableCharGrid.move(
+    current: Coordinate,
+    direction: Coordinate,
+    seen: MutableMap<Coordinate, Boolean>
+): Boolean {
     return seen.getOrPut(current) {
         val target = current + direction
         when (this[target]) {
@@ -152,17 +122,21 @@ private fun MutableCharGrid.move2(current: Coordinate, direction: Coordinate, se
 
             '[' -> {
                 if (direction == Coordinate.left) {
-                    move2(target, direction, seen)
+                    move(target, direction, seen)
                 } else {
-                    move2(target, direction, seen) && move2(target + Coordinate.right, direction, seen)
+                    move(target, direction, seen) && move(target + Coordinate.right, direction, seen)
                 }
+            }
+
+            'O' -> {
+                move(target, direction, seen)
             }
 
             ']' -> {
                 if (direction == Coordinate.right) {
-                    move2(target, direction, seen)
+                    move(target, direction, seen)
                 } else {
-                    move2(target, direction, seen) && move2(target + Coordinate.left, direction, seen)
+                    move(target, direction, seen) && move(target + Coordinate.left, direction, seen)
                 }
             }
 
