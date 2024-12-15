@@ -34,18 +34,15 @@ private fun part2(data: List<Pair<Point, Point>>, sizeX: Int, sizeY: Int): Int {
     var t = 0
     var christmasTree: Pair<Int, List<Pair<Point, Point>>>? = null
     val current = data.toMutableList()
-    var minEntropy = current.entropy()
-    val seen = mutableSetOf<Long>()
-    while (true) {
+    var minEntropy = current.entropy
+    repeat(10_000) {
         current.move(sizeX, sizeY)
         t++
-        val entropy = current.entropy()
+        val entropy = current.entropy
         if (entropy < minEntropy) {
             minEntropy = entropy
+            current.print(sizeX, sizeY)
             christmasTree = t to current.toList()
-        }
-        if (!seen.add(entropy) && t > 10_000) {
-            break
         }
     }
     val (time, tree) = christmasTree ?: error("Tree not found")
@@ -53,16 +50,17 @@ private fun part2(data: List<Pair<Point, Point>>, sizeX: Int, sizeY: Int): Int {
     return time
 }
 
-private fun List<Pair<Point, Point>>.entropy(): Long {
-    var result = 0L
-    for (i in this.indices) {
-        for (j in i + 1 until this.size) {
-            val distance = this[i].first.manhattenDistance(this[j].first)
-            result += distance
+private val List<Pair<Point, Point>>.entropy
+    get(): Long {
+        var result = 0L
+        for (i in this.indices) {
+            for (j in i + 1 until this.size) {
+                val distance = this[i].first.manhattenDistance(this[j].first)
+                result += distance
+            }
         }
+        return result
     }
-    return result
-}
 
 private fun List<Pair<Point, Point>>.safetyFactor(sizeX: Int, sizeY: Int): Long {
     val quadrantCounts = MutableList(4) { 0L }
@@ -84,7 +82,7 @@ private fun MutableList<Pair<Point, Point>>.move(sizeX: Int, sizeY: Int) {
     for (i in this.indices) {
         val (c, v) = this[i]
         var c1 = c + v
-        if (c1.x >= sizeX ) {
+        if (c1.x >= sizeX) {
             // Wrap around
             c1 -= Point(sizeX, 0)
         } else if (c1.x < 0) {
@@ -100,7 +98,7 @@ private fun MutableList<Pair<Point, Point>>.move(sizeX: Int, sizeY: Int) {
 }
 
 private fun List<Pair<Point, Point>>.print(sizeX: Int, sizeY: Int) {
-    val grid = MutableCharGrid(sizeX, sizeY) {_, _ -> '.' }
+    val grid = MutableCharGrid(sizeX, sizeY) { _, _ -> '.' }
     for ((c, _) in this) {
         grid[c] = '#'
     }
