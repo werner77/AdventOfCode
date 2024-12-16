@@ -17,7 +17,6 @@ fun main() = timing {
     // Part1
     println(part1(data, sizeX, sizeY))
 
-
     // Part2
     println(part2(data, sizeX, sizeY))
 }
@@ -41,12 +40,11 @@ private fun part2(data: List<Pair<Point, Point>>, sizeX: Int, sizeY: Int): Int {
         val entropy = current.entropy
         if (entropy < minEntropy) {
             minEntropy = entropy
-            current.print(sizeX, sizeY)
             christmasTree = t to current.toList()
         }
     }
     val (time, tree) = christmasTree ?: error("Tree not found")
-    tree.print(sizeX, sizeY)
+    println(tree.asString(sizeX, sizeY))
     return time
 }
 
@@ -97,10 +95,10 @@ private fun MutableList<Pair<Point, Point>>.move(sizeX: Int, sizeY: Int) {
     }
 }
 
-private fun List<Pair<Point, Point>>.print(sizeX: Int, sizeY: Int) {
+private fun List<Pair<Point, Point>>.asString(sizeX: Int, sizeY: Int): String {
     val grid = MutableCharGrid(sizeX, sizeY) { _, _ -> '.' }
     for ((c, _) in this) {
         grid[c] = '#'
     }
-    println(grid)
+    return grid.toString()
 }

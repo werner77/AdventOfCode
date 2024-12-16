@@ -93,10 +93,11 @@ private val CharGrid.checksum: Int
     }
 
 private fun MutableCharGrid.move(current: Coordinate, direction: Coordinate): Boolean {
-    val seen = mutableMapOf<Coordinate, Boolean>()
+    // Use a linkedMap explicitly to ensure the insertion order is preserved.
+    val seen = linkedMapOf<Coordinate, Boolean>()
     val moved = move(current, direction, seen)
     if (moved) {
-        // Commit the move
+        // Commit the moves, the order should be the last encountered in the recursion first
         for (c in seen.keys) {
             val target = c + direction
             val currentItem = this[c]
