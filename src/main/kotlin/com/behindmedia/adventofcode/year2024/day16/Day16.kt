@@ -1,12 +1,11 @@
 package com.behindmedia.adventofcode.year2024.day16
 
-import com.behindmedia.adventofcode.common.CharGrid
-import com.behindmedia.adventofcode.common.Coordinate
-import com.behindmedia.adventofcode.common.Path
-import com.behindmedia.adventofcode.common.read
+import com.behindmedia.adventofcode.common.*
 import java.util.*
 
-fun main() {
+private typealias PositionDirection = Pair<Coordinate, Coordinate>
+
+fun main() = timing {
     val grid = CharGrid(read("/2024/day16.txt"))
     val bestPaths = findPaths(grid)
 
@@ -19,19 +18,23 @@ fun main() {
 
 private fun findPaths(
     grid: CharGrid
-): List<Path<Pair<Coordinate, Coordinate>>>  {
+): List<Path<PositionDirection>>  {
     val start = grid.single { it.value == 'S' }.key
     return findShortestWeightedPaths(from = start to Coordinate.right, neighbours = { (pos, dir) ->
-        pos.directNeighbours.mapNotNull { newPos ->
-            val item = grid.getOrNull(newPos)
-            if (item == null || item == '#') {
-                null
+        val result = ArrayList<Pair<PositionDirection, Int>>(4)
+        for (newDir in Coordinate.directNeighbourDirections) {
+            val newPos = pos + newDir
+            if (grid[newPos] == '#') continue
+            val weight = if (newDir == dir) {
+               1
+            } else if (newDir.isVertical != dir.isVertical) {
+                1001
             } else {
-                val newDir = newPos - pos
-                val weight = if (newDir == dir) 1 else 1001
-                (newPos to newDir) to weight
+                2001
             }
+            result += (newPos to newDir) to weight
         }
+        result
     }, process = { path ->
         val (pos, _) = path.destination
         grid[pos] == 'E'
@@ -48,10 +51,11 @@ private fun <N: Any> findShortestWeightedPaths(
 ): List<Path<N>> {
     val pending = PriorityQueue<Path<N>>()
     pending.add(Path(from, 0, null))
-    val settled = mutableMapOf<N, Int>()
+    val settled = hashMapOf<N, Int>()
     val paths = mutableListOf<Path<N>>()
     while (true) {
         val current = pending.poll() ?: break
+        if (paths.isNotEmpty() && paths.first().length < current.length) continue
         val seenLength = settled[current.destination]
         if (seenLength != null && seenLength < current.length) continue
         if (process(current)) {
