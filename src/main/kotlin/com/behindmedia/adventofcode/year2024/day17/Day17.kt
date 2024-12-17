@@ -193,23 +193,32 @@ private data class Value(val index: Int, val value: Long)
 
 private fun findBestInput(instructions: List<Int>): Long {
     val pending = ArrayDeque<Value>()
+    // Start at the end, where the expected value of 'A' is 0 to terminate the program
     pending.add(Value(instructions.size, 0L))
     val valid = mutableListOf<Long>()
     while (pending.isNotEmpty()) {
         val (index, value) = pending.removeFirst()
         if (index == 0) {
+            // No more instructions before this one, we found a valid value
             valid += value
             continue
         }
         val nextIndex = index - 1
         val instruction = instructions[nextIndex].toLong()
+        // We only have 3 bits to try (8 values)
         for (i in 0L until 8L) {
-            val nextValue = (value shl 3) or i
-            val (output, instructionFound) = runProgramLoop(instructions, nextValue)
-            if (instructionFound == instruction && output == value) {
-                pending.addFirst(Value(nextIndex, nextValue))
+            // Create an input value by left shifting the current
+            // and setting the last 3 bits to i
+            val inputValue = (value shl 3) or i
+            // outputValue is the value of 'A' after the program has run one loop
+            // with 'inputValue' as input
+            // output is the value printed, which should match the current instruction
+            val (outputValue, output) = runProgramLoop(instructions, inputValue)
+            if (output == instruction && outputValue == value) {
+                pending.addFirst(Value(nextIndex, inputValue))
             }
         }
     }
+    // Return the minimum valid value
     return valid.min()
 }
