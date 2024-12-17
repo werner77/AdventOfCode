@@ -157,10 +157,10 @@ fun CharSequence.splitWithDelimitersNonEmpty(vararg delimiters: String): List<St
     return splitWithDelimitersToNonEmptySequence(*delimiters).toList()
 }
 
-fun <T>timing(block: () -> T) {
+fun <T>timing(block: () -> T): T {
     val start = System.currentTimeMillis()
     try {
-        block.invoke()
+        return block.invoke()
     } finally {
         val end = System.currentTimeMillis()
         println("Took ${end - start} ms.")

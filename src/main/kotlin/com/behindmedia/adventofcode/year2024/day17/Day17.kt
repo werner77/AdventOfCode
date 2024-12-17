@@ -37,7 +37,7 @@ private sealed class Operation {
         }
     }
 
-    abstract fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int
+    abstract fun execute(state: State, operand: Int, out: OutputStream): Int?
 
     protected fun getComboValue(state: State, operand: Int): Long {
         return when (operand) {
@@ -50,34 +50,30 @@ private sealed class Operation {
     }
 
     data object Adv : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val comboValue = getComboValue(state, operand)
-            state['A'] = state['A'] shr comboValue.toInt()
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            state['A'] = state['A'] shr getComboValue(state, operand).toInt()
+            return null
         }
     }
 
     data object Bxl : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val value = state['B'] xor operand.toLong()
-            state['B'] = value
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            state['B'] = state['B'] xor operand.toLong()
+            return null
         }
     }
 
     data object Bst : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val comboValue = getComboValue(state, operand)
-            val value = comboValue % 8
-            state['B'] = value
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            state['B'] = getComboValue(state, operand) and 7
+            return null
         }
     }
 
     data object Jnz : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
             return if (state['A'] == 0L) {
-                instructionPointer + 2
+                null
             } else {
                 operand
             }
@@ -85,34 +81,30 @@ private sealed class Operation {
     }
 
     data object Bxc : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val value = state['B'] xor state['C']
-            state['B'] = value
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            state['B'] = state['B'] xor state['C']
+            return null
         }
     }
 
     data object Out : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val value = getComboValue(state, operand) % 8
-            out.write(value.toInt())
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            out.write((getComboValue(state, operand) and 7).toInt())
+            return null
         }
     }
 
     data object Bdv : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val comboValue = getComboValue(state, operand)
-            state['B'] = state['A'] shr comboValue.toInt()
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            state['B'] = state['A'] shr getComboValue(state, operand).toInt()
+            return null
         }
     }
 
     data object Cdv : Operation() {
-        override fun execute(instructionPointer: Int, state: State, operand: Int, out: OutputStream): Int {
-            val comboValue = getComboValue(state, operand)
-            state['C'] = state['A'] shr comboValue.toInt()
-            return instructionPointer + 2
+        override fun execute(state: State, operand: Int, out: OutputStream): Int? {
+            state['C'] = state['A'] shr getComboValue(state, operand).toInt()
+            return null
         }
     }
 }
@@ -138,10 +130,15 @@ fun main() = timing {
     println(runProgram(instructions, a.toLong()).second.joinToString(","))
 
     // Part 2
-    println(findBestInput(instructions))
+    val result = findBestInput(instructions)
+
+    // Validate result
+    require(runProgram(instructions, result).second == instructions)
+
+    println(result)
 }
 
-private fun runProgram(
+private inline fun runProgram(
     instructions: List<Int>,
     input: Long,
     predicate: (Operation) -> Boolean = { true }
@@ -150,13 +147,13 @@ private fun runProgram(
     val state = stateOf(input)
     var instructionPointer = 0
     while (instructionPointer < instructions.size) {
-        val instruction = instructions[instructionPointer]
-        val operand = instructions[instructionPointer + 1]
+        val instruction = instructions[instructionPointer++]
+        val operand = instructions[instructionPointer++]
         val operation = Operation(instruction)
         if (!predicate(operation)) {
             return state['A'] to stream.buffer
         }
-        instructionPointer = operation.execute(instructionPointer, state, operand, stream)
+        instructionPointer = operation.execute(state, operand, stream) ?: continue
     }
     return state['A'] to stream.buffer
 }
@@ -178,7 +175,7 @@ private fun decompiledProgram(a: Long): Pair<Long, Long> {
 }
 
 private class Out : OutputStream() {
-    val buffer: MutableList<Int> = mutableListOf()
+    val buffer: MutableList<Int> = ArrayList(1)
 
     override fun write(b: Int) {
         buffer.add(b)
