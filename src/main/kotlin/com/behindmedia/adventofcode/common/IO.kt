@@ -37,6 +37,16 @@ fun <T>parseValidLines(resource: String, parser: (String) -> T?) : List<T> {
     }
 }
 
+private val numberPattern = """[+\-]?\d+""".toRegex()
+
+fun readIntsFromString(string: String): List<Int> {
+    return numberPattern.findAll(string).map { it.value.toInt() }.toList()
+}
+
+fun readLongsFromString(string: String): List<Long> {
+    return numberPattern.findAll(string).map { it.value.toLong() }.toList()
+}
+
 fun <T>parseNonBlankLines(resource: String, parser: (String) -> T) : List<T> {
     val reader = readerForResource(resource)
     return reader.use {

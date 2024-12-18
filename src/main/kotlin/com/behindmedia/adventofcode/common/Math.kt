@@ -168,6 +168,17 @@ fun <E> Map<Coordinate, E>.printMap(default: (Coordinate) -> E) {
     }
 }
 
+fun binarySearch(
+    lowerBound: Int,
+    upperBound: Int,
+    targetValue: Int,
+    inverted: Boolean = false,
+    evaluation: (Int) -> Int
+): Int? {
+    return binarySearch(lowerBound, upperBound, inverted) { mid ->
+        evaluation(mid) <= targetValue
+    }
+}
 
 fun binarySearch(
     lowerBound: Long,
@@ -176,28 +187,17 @@ fun binarySearch(
     inverted: Boolean = false,
     evaluation: (Long) -> Long
 ): Long? {
-    var begin = lowerBound
-    var end = upperBound
-    var result: Long? = null
-    while (begin <= end) {
-        val mid = (begin + end) / 2L
-        if (evaluation(mid) <= targetValue) {
-            result = mid
-            if (inverted) {
-                end = mid - 1
-            } else {
-                begin = mid + 1
-            }
-        } else {
-            if (inverted) {
-                begin = mid + 1
-            } else {
-                end = mid - 1
-            }
-        }
+    return binarySearch(lowerBound, upperBound, inverted) { mid ->
+        evaluation(mid) <= targetValue
     }
-    return result
 }
+
+fun binarySearch(
+    lowerBound: Int,
+    upperBound: Int,
+    inverted: Boolean = false,
+    evaluation: (Int) -> Boolean
+): Int? = binarySearch(lowerBound.toLong(), upperBound.toLong(), inverted, { evaluation.invoke(it.toInt()) })?.toInt()
 
 fun binarySearch(
     lowerBound: Long,
