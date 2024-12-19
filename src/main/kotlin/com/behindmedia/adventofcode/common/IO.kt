@@ -115,6 +115,10 @@ fun String.splitNonEmptySequence(vararg delimiters: String): Sequence<String> {
     return splitNonEmptySequence(delimiters = delimiters) { it }
 }
 
+fun String.splitTrimmed(vararg delimiters: String): List<String> {
+    return splitNonEmpty(*delimiters) { it.trim() }
+}
+
 fun String.splitNonEmpty(vararg delimiters: String): List<String> {
     return splitNonEmptySequence(*delimiters).toList()
 }

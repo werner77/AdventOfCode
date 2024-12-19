@@ -82,15 +82,21 @@ fun <T> Sequence<T>.countParallel(operation: (T) -> Boolean): Long =
     sumOfParallel { if (operation(it)) 1L else 0L }
 
 fun <T, R> Sequence<T>.mapReduceParallel(initial: R, map: (T) -> R, reduce: (R, R) -> R): R {
+    return mapParallel(map).fold(initial, reduce)
+}
+
+fun <T, R> Sequence<T>.mapParallel(map: (T) -> R): List<R> {
     return runBlocking {
         val deferredResults = map { chunk ->
             async(Dispatchers.Default) {
                 map(chunk)
             }
         }
-        deferredResults.toList().awaitAll().fold(initial, reduce)
+        deferredResults.toList().awaitAll()
     }
 }
+
+fun <T, R> Iterable<T>.mapParallel(map: (T) -> R): List<R> = this.asSequence().mapParallel(map)
 
 fun <T, R> Iterable<T>.mapReduceParallel(initial: R, map: (T) -> R, reduce: (R, R) -> R): R =
     this.asSequence().mapReduceParallel(initial, map, reduce)
