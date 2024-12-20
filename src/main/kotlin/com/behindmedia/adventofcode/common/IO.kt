@@ -177,7 +177,7 @@ fun <T>timing(block: () -> T): T {
         return block.invoke()
     } finally {
         val end = System.currentTimeMillis()
-        println("Took ${end - start} ms.")
+        println("Took ${(end - start)} ms.")
     }
 }
 
