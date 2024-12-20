@@ -1,63 +1,75 @@
 package com.behindmedia.adventofcode.year2024.day20
 
 import com.behindmedia.adventofcode.common.*
-
-private typealias Cheat = Pair<Coordinate, Coordinate>
+import kotlin.math.abs
 
 fun main() = timing {
     val grid = CharGrid(read("/2024/day20.txt"))
-
-    // Part 1
-    println(grid.countGoodCheats(2))
-
-    // Part 2
-    println(grid.countGoodCheats(20))
-}
-
-private fun CharGrid.countGoodCheats(maxTime: Int, minSave: Int = 100): Int {
-    val pathStart = this.single { it.value == 'S' }.key
-    val pathEnd = this.single { it.value == 'E' }.key
+    val pathStart = grid.single { it.value == 'S' }.key
+    val pathEnd = grid.single { it.value == 'E' }.key
     val path = shortestPath(
         from = pathStart,
         neighbours = { it.destination.directNeighbours },
-        reachable = { _, it -> this.getOrNull(it) != '#' },
+        reachable = { _, it -> grid.getOrNull(it) != '#' },
         process = { if (it.destination == pathEnd) it else null }
     ) ?: error("No path found")
-    val steps = path.allNodes.withIndex().associateBy({ it.value }, { it.index })
-    val seenCheats = defaultMutableMapOf<Int, MutableSet<Cheat>>(putValueImplicitly = true) { mutableSetOf() }
-    for ((start, startLength) in steps) {
-        findCheat(start, maxTime) { cheatPath ->
-            val destinationLength = steps[cheatPath.destination]
-            if (destinationLength != null) {
-                val save = destinationLength - startLength - cheatPath.length
-                if (save >= minSave) {
-                    val nodes = cheatPath.nodes { it != start }
-                    seenCheats[save] += nodes.first() to nodes.last()
+
+    // Part 1
+    println(cheatCount(path, 2))
+
+    // Part 2
+    println(cheatCount(path, 20))
+}
+
+private fun cheatCount(
+    path: Path<Coordinate>,
+    maxTime: Int,
+    minSave: Int = 100,
+): Int {
+    val nodes = path.allNodes
+    val (sortedSteps, stepLengths) = sortedSteps(nodes)
+    val countMap = defaultMutableMapOf<Int, Int> { 0 }
+    val signs = listOf(-1, 1)
+    for ((startLength, start) in nodes.withIndex()) {
+        val (x1, y1) = start
+        for (y2 in y1 - maxTime..y1 + maxTime) {
+            val map = sortedSteps.getOrNull(y2) ?: continue
+            val distY = abs(y2 - y1)
+            val rangeX = maxTime - distY
+            var pivot = map.binarySearch(x1)
+            if (pivot < 0) {
+                pivot = -pivot - 1
+            }
+            for (sign in signs) {
+                var offset = if (sign >= 0) 0 else 1
+                while (true) {
+                    val x2 = map.getOrNull(pivot + sign * offset) ?: break
+                    val distX = abs(x2 - x1)
+                    if (distX > rangeX) break
+                    val endLength = stepLengths[y2][x2]
+                    val save = endLength - startLength - distX - distY
+                    if (save >= minSave) {
+                        countMap[save]++
+                    }
+                    offset++
                 }
             }
         }
     }
-    val counts = seenCheats.mapValues { it.value.size }
-    //println(counts.toSortedMap())
-    return counts.values.sum()
+    return countMap.values.sum()
 }
 
-private fun CharGrid.findCheat(start: Coordinate, maxLength: Int, handle: (Path<Coordinate>) -> Unit) {
-    val pending = ArrayDeque<Path<Coordinate>>()
-    pending.add(Path(start, 0, null))
-    val seen = mutableSetOf<Coordinate>()
-    while (pending.isNotEmpty()) {
-        val current = pending.removeFirst()
-        val position = current.destination
-        val length = current.length
-        if (!seen.add(position) || length > maxLength) continue
-        if (length > 1) {
-            handle(current)
-        }
-        for (next in position.directNeighbours) {
-            if (this.containsKey(next)) {
-                pending.add(Path(next, length + 1, current))
-            }
-        }
+private fun sortedSteps(
+    nodes: List<Coordinate>,
+): Pair<Array<IntArray>, Array<IntArray>> {
+    val sizeX = nodes.maxOf { it.x } + 1
+    val sizeY = nodes.maxOf { it.y } + 1
+    val stepLengths = Array(sizeY) { IntArray(sizeX) { 0 } }
+    val steps = Array(sizeY) { mutableListOf<Int>() }
+    for ((length, c) in nodes.withIndex()) {
+        steps[c.y] += c.x
+        stepLengths[c.y][c.x] = length
     }
+    val sortedSteps = steps.map { list -> list.toIntArray().also { it.sort() } }.toTypedArray<IntArray>()
+    return sortedSteps to stepLengths
 }
