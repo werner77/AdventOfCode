@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.common
 
 import kotlin.math.abs
-import java.util.ArrayDeque
 import java.util.PriorityQueue
 
 /**
@@ -32,7 +31,7 @@ class Path<N: Any> @JvmOverloads constructor(
         return false
     }
 
-    inline fun nodes(where: (N) -> Boolean): Collection<N> {
+    inline fun nodes(where: (N) -> Boolean): List<N> {
         val result = ArrayDeque<N>()
         any {
             if (where(it)) result.addFirst(it)
@@ -41,7 +40,7 @@ class Path<N: Any> @JvmOverloads constructor(
         return result
     }
 
-    val allNodes: Collection<N>
+    val allNodes: List<N>
         get() {
             return nodes { true }
         }
@@ -94,7 +93,7 @@ inline fun <reified N: Any, T> shortestPath(
     val visited = mutableSetOf<N>()
     pending.add(Path(from, 0, null))
     while (true) {
-        val current = pending.pollFirst() ?: return null
+        val current = pending.removeFirstOrNull() ?: return null
         if (visited.contains(current.destination)) continue
         visited += current.destination
         process(current)?.let {
@@ -146,7 +145,7 @@ inline fun <T> Coordinate.reachableCoordinates(reachable: (Coordinate) -> Boolea
     list.add(CoordinatePath(this, 0))
     var start = true
     while (true) {
-        val current = list.pollFirst() ?: return null
+        val current = list.removeFirstOrNull() ?: return null
         if (start) {
             start = false
         } else {
