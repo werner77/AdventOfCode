@@ -33,17 +33,22 @@ private fun cheatCount(
     for ((startLength, start) in nodes.withIndex()) {
         val (x1, y1) = start
         for (y2 in y1 - maxTime..y1 + maxTime) {
-            val map = sortedSteps.getOrNull(y2) ?: continue
+            // Gets the sorted x values corresponding with y value = y2
+            val sortedX = sortedSteps.getOrNull(y2) ?: continue
             val distY = abs(y2 - y1)
+
+            // As distY increases the rangeX decreases to keep the max manhattan distance within the maxTime bounds
             val rangeX = maxTime - distY
-            var pivot = map.binarySearch(x1)
+
+            // Locate the current coordinate in the sorted array of x coordinates corresponding with
+            var pivot = sortedX.binarySearch(x1)
             if (pivot < 0) {
                 pivot = -pivot - 1
             }
             for (sign in signs) {
                 var offset = if (sign >= 0) 0 else 1
                 while (true) {
-                    val x2 = map.getOrNull(pivot + sign * offset) ?: break
+                    val x2 = sortedX.getOrNull(pivot + sign * offset) ?: break
                     val distX = abs(x2 - x1)
                     if (distX > rangeX) break
                     val endLength = stepLengths[y2][x2]
@@ -59,6 +64,12 @@ private fun cheatCount(
     return countMap.values.sum()
 }
 
+/**
+ * Returns two 2D arrays:
+ *
+ * - first: steps in path indexed by y and then all nodes belonging to that y coordinate sorted by x
+ * - second: the lengths of the steps for each x, y coordinate
+ */
 private fun sortedSteps(
     nodes: List<Coordinate>,
 ): Pair<Array<IntArray>, Array<IntArray>> {
