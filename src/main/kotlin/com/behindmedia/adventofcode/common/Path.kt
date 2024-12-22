@@ -92,16 +92,14 @@ inline fun <reified N: Any, T> shortestPath(
     val pending = ArrayDeque<Path<N>>()
     val visited = mutableSetOf<N>()
     pending.add(Path(from, 0, null))
+    visited.add(from)
     while (true) {
         val current = pending.removeFirstOrNull() ?: return null
-        if (visited.contains(current.destination)) continue
-        visited += current.destination
         process(current)?.let {
             return it
         }
         for (neighbour in neighbours(current)) {
-            if (neighbour in visited) continue
-            if (reachable(current, neighbour)) {
+            if (reachable(current, neighbour) && visited.add(neighbour)) {
                 pending.add(Path(neighbour, current.length + 1, current))
             }
         }
@@ -115,22 +113,37 @@ inline fun <N: Any, T> shortestWeightedPath(
     from: N,
     neighbours: (N) -> Collection<Pair<N, Int>>,
     minLengthToTarget: (N) -> Int = { _ -> 0 },
+    findAll: Boolean = false,
     process: (Path<N>) -> T?
 ): T? {
     val pending = PriorityQueue<Path<N>>()
     pending.add(Path(from, 0, null))
-    val settled = mutableSetOf<N>()
+    val settled = mutableMapOf<N, Int>(from to 0)
+    var minLength = Int.MAX_VALUE
     while (true) {
         val current = pending.poll() ?: break
-        if (settled.contains(current.destination)) continue
-        process(current)?.let {
-            return it
+        if (current.length > minLength) {
+            break
         }
-        val currentNode = current.destination
-        settled.add(currentNode)
+        val result = process(current)
+        if (result != null) {
+            minLength = current.length
+            if (findAll) {
+                continue
+            } else {
+                return result
+            }
+        }
         for ((neighbour, neighbourWeight) in neighbours(current.destination)) {
-            val newDistance = current.length + neighbourWeight
-            pending.add(Path(neighbour, newDistance, current, minLengthToTarget.invoke(neighbour)))
+            val newWeight = current.length + neighbourWeight
+            val existingWeight = settled[neighbour] ?: Int.MAX_VALUE
+            val valid = if (findAll) newWeight <= existingWeight else newWeight < existingWeight
+            if (valid) {
+                if (newWeight < existingWeight) {
+                    settled[neighbour] = newWeight
+                }
+                pending.add(Path(neighbour, newWeight, current, minLengthToTarget.invoke(neighbour)))
+            }
         }
     }
     return null
