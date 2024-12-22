@@ -46,7 +46,7 @@ class Path<N: Any> @JvmOverloads constructor(
         }
 }
 
-val Path<Coordinate>.completeDirections: Collection<Coordinate>
+val Path<Coordinate>.completeDirections: List<Coordinate>
     get() {
         val result = ArrayDeque<Coordinate>()
         var current: Path<Coordinate>? = this
