@@ -77,6 +77,13 @@ private fun findLevel(code: String, levelCount: Int): Long {
     val minValues = MutableList(code.length) {
         Long.MAX_VALUE
     }
+    // - Find the shortest path(s) to type in the code on the numeric keyboard
+    // - Each directional change is independent from each other as all other levels will end up back on 'A' again after commit,
+    //   so the total command length is just the sum of the lengths corresponding with each directional change on the number pad.
+    // - Patterns on the directional keypad will always end with 'A' at which point all robots are aligned again
+    // - Patterns can be translated from level i to level i + 1, there is only a small set of distinct patterns. However, some have options to choose from. From these options the minimum should be taken.
+    // - The pattern translations are automatically computed (once) if not already known during the DP phase
+    // - The length for the individual directions is computed and memoized using DP.
     numericGrid.findPath(code) { index, directions ->
         val length = findLength(directions, levelCount - 1)
         minValues[index] = min(minValues[index], length)
@@ -87,10 +94,13 @@ private fun findLevel(code: String, levelCount: Int): Long {
 private fun findLength(directions: List<Coordinate>, level: Int): Long {
     val startPattern = (directions.map { it.character!! } + 'A').joinToString("")
     val map = hashMapOf<Pair<Int, String>, Long>()
-    return dfs(level, startPattern, map)
+    return dp(level, startPattern, map)
 }
 
-private fun dfs(left: Int, pattern: String, cache: MutableMap<Pair<Int, String>, Long>): Long {
+/**
+ * Calculates the size of the pattern with levels left to compute using dynamic programming
+ */
+private fun dp(left: Int, pattern: String, cache: MutableMap<Pair<Int, String>, Long>): Long {
     if (left == 0) {
         return pattern.length.toLong()
     }
@@ -103,7 +113,7 @@ private fun dfs(left: Int, pattern: String, cache: MutableMap<Pair<Int, String>,
         for (option in options) {
             var total = 0L
             for (translation in option) {
-                total += dfs(left - 1, translation, cache)
+                total += dp(left - 1, translation, cache)
             }
             minTotal = min(minTotal, total)
         }
@@ -111,6 +121,12 @@ private fun dfs(left: Int, pattern: String, cache: MutableMap<Pair<Int, String>,
     }
 }
 
+/**
+ * Computes a pattern translation onf the directional keyboard.
+ *
+ * The pattern has a list of options in which it can be translated to on the next level, a
+ * nd each of these options can have one or more sub-patterns.
+ */
 private fun Grid.findPatternTranslations(pattern: String): List<List<String>> {
     // Find a brute force list of translations for this pattern using path finding
     val origin = this.coordinate('A')
