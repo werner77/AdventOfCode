@@ -22,28 +22,33 @@ private fun part1(inputs: List<Long>, times: Int = 2000): Long {
     return result
 }
 
-private fun part2(inputs: List<Long>, times: Int = 2000): Long {
-    val totalPrices = defaultMutableMapOf<List<Long>, Long> { 0L }
+@JvmInline
+private value class PriceSequence(val value: Int) {
+    operator fun plus(price: Int): PriceSequence {
+        val newValue = (value shl 8) or (price and 0xFF)
+        return PriceSequence(newValue)
+    }
+}
+
+private fun part2(inputs: List<Long>, times: Int = 2000): Int {
+    val totalPrices = defaultMutableMapOf<PriceSequence, Int> { 0 }
     for (input in inputs) {
-        val sequence = ArrayDeque<Long>()
-        val prices = mutableMapOf<List<Long>, Long>()
+        var sequence = PriceSequence(0)
+        val prices = mutableMapOf<PriceSequence, Int>()
         var current = input
-        repeat(times) {
-            val lastPrice = current % 10
+        var lastPrice = (current % 10).toInt()
+        repeat(times) { i ->
             current = evolve(current)
-            val price = current % 10
+            val price = (current % 10).toInt()
             val change = price - lastPrice
-            sequence.addLast(change)
-            if (sequence.size > 4) {
-                sequence.removeFirst()
-            }
-            if (sequence.size == 4) {
+            sequence += change
+            if (i >= 3) {
                 if (sequence !in prices) {
-                    val sequenceCopy = sequence.toList()
-                    prices[sequenceCopy] = price
-                    totalPrices[sequenceCopy] += price
+                    prices[sequence] = price
+                    totalPrices[sequence] += price
                 }
             }
+            lastPrice = price
         }
     }
     return totalPrices.maxOf { it.value }

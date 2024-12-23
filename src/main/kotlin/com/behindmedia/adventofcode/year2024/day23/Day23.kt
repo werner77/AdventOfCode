@@ -39,7 +39,6 @@ private fun findGroups(connections: Map<String, Set<String>>): Set<Set<String>> 
             if (!seen.add(current.contents)) {
                 continue
             }
-            seen.add(current.contents)
             val lastNode = current.last
             val destinations = connections[lastNode]!!
             for (destination in destinations) {
