@@ -195,8 +195,8 @@ fun <T: Any, R: Any> Collection<T>.permute(maxSize: Int = this.size, unique: Boo
     // We cycle through the values remaining with removeFirst and addLast.
     fun <T> permute(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
         if (valuesLeft.isEmpty() || list.size == maxSize) return perform(list)
-        for (v in valuesLeft) {
-            val value = if (unique) valuesLeft.removeFirst() else v
+        for (i in 0 until valuesLeft.size) {
+            val value = if (unique) valuesLeft.removeFirst() else valuesLeft[i]
             try {
                 list.add(value)
                 return permute(list, valuesLeft, perform) ?: continue
