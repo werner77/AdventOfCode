@@ -1,8 +1,9 @@
 package com.behindmedia.adventofcode.year2024.day24
 
 import com.behindmedia.adventofcode.common.*
+import kotlinx.coroutines.*
 import kotlin.random.Random
-
+import kotlin.math.*
 
 private enum class Operation {
     XOR, AND, OR;
@@ -23,6 +24,25 @@ private enum class Operation {
  */
 private data class Gate(val input1: Int, val input2: Int, var output: Int, val operation: Operation)
 
+private data class UnorderedPair<T>(val first: T, val second: T) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherPair = other as? UnorderedPair<*> ?: return false
+        if (first != otherPair.first && first != otherPair.second) return false
+        if (second != otherPair.first && second != otherPair.second) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = first?.hashCode() ?: 0
+        result += second?.hashCode() ?: 0
+        return result
+    }
+
+    fun toList(): List<T> = listOf(first, second)
+}
+
+private infix fun <A> A.with(that: A): UnorderedPair<A> = UnorderedPair(this, that)
 
 /**
  * Class representing the entires state in an optimized manner:
@@ -32,18 +52,16 @@ private data class Gate(val input1: Int, val input2: Int, var output: Int, val o
  * z are the third bitCount bytes
  * rest of outputs follow after.
  */
-private class State(encodedGates: String) {
+private class State(val encoded: String) {
     val bitCount: Int
     val forwardNameIndex: Map<String, Int>
     val reverseNameIndex: Map<Int, String>
     val gatesByInput: Map<Int, Set<Gate>>
     val gatesByOutput: Map<Int, Gate>
-    private val gates: List<Gate>
     val outputCount: Int
-        get() = gates.size
 
     init {
-        val gateData = encodedGates.splitTrimmed("\n").map {
+        val gateData = encoded.splitTrimmed("\n").map {
             val (input, output) = it.splitTrimmed("->")
             val (input1, operation, input2) = input.splitTrimmed(" ")
             Quadruple(input1, input2, output, Operation.valueOf(operation))
@@ -68,7 +86,7 @@ private class State(encodedGates: String) {
         }
         forwardNameIndex = forward
         reverseNameIndex = reverse
-        gates = gateData.map { (input1, input2, output, operation) ->
+        val gates = gateData.map { (input1, input2, output, operation) ->
             Gate(
                 forward[input1]!!,
                 forward[input2]!!,
@@ -76,6 +94,7 @@ private class State(encodedGates: String) {
                 operation
             )
         }
+        outputCount = gates.size
         gatesByInput = gates.fold(mutableMapOf<Int, MutableSet<Gate>>()) { map, gate ->
             map.getOrPut(gate.input1) { mutableSetOf() }.add(gate)
             map.getOrPut(gate.input2) { mutableSetOf() }.add(gate)
@@ -200,39 +219,111 @@ private class State(encodedGates: String) {
         compute()
         return output
     }
+
+    fun copy(): State = State(this.encoded)
 }
 
 private const val debug = false
 
-fun main() {
-    val (first, second) = read("/2024/day24.txt").splitTrimmed("\n\n")
-
-    val inputs = first.splitTrimmed("\n").map {
+fun main() = timing {
+    val (encodedInput, encodedGates) = read("/2024/day24.txt").splitTrimmed("\n\n")
+    val inputs = encodedInput.splitTrimmed("\n").map {
         val (port, value) = it.splitTrimmed(":")
         port to (value.toInt() == 1)
     }.toMap()
     val bitCount = inputs.size / 2 + 1
     val (x, y) = parseInputs(inputs, bitCount)
 
-    val state = State(second)
+    // Part 1
+    val state = State(encodedGates)
+
+    // Set inputs
     state.setInputs(x, y)
+
+    // Compute state
     state.compute()
 
-    // Part 1
+    // Print output
     println(state.output)
 
     // Part 2
-    val (candidatePairs, operations) = state.findErrors()
+
+    // Find candidates for swaps and the faulty operations
+    val (candidatePairs, operations) = state.findErrorsParallel()
+
+    // Try to perform swaps until successful, first trying the faulty operations and expanding with more tests if successful.
     val result = state.trySwaps(candidatePairs, operations)
+
+    // If result found: print it
     println(state.formattedOutputs(result))
 }
 
-private fun State.formattedOutputs(pairs: List<Pair<Int, Int>>): String {
-    return pairs.asSequence().map { listOf(it.first, it.second) }.flatten().map { reverseNameIndex[it]!! }.sorted().joinToString(",")
+/**
+ * Divides an int range into count number of sub ranges which are as similar in size as possible.
+ */
+private fun IntRange.divide(count: Int): List<IntRange> {
+    val size = this.last - this.first + 1
+    val result = mutableListOf<IntRange>()
+    var current = this.first
+    var remaining = size
+    while (remaining > 0) {
+        val subSize = remaining / (count - result.size).toDouble().roundToInt()
+        result += current until min(current + subSize, this.last + 1)
+        current += subSize
+        remaining -= subSize
+    }
+    return result
 }
 
+/**
+ * Find all errors, testing all bit operations, running on all available cores.
+ */
+private fun State.findErrorsParallel(): Pair<Set<UnorderedPair<Int>>, Set<BitOperation>> {
+    val state = this
+    return runBlocking {
+        val pairs = mutableSetOf<UnorderedPair<Int>>()
+        val operations = mutableSetOf<BitOperation>()
+        val ranges = (0 until bitCount - 1).divide(Runtime.getRuntime().availableProcessors())
+        val results = ranges.map { range ->
+            // Create a copy of the state first, as state is not thread-safe
+            val copy = state.copy()
+            async {
+                withContext(Dispatchers.Default) {
+                    // Find the errors for the sub range
+                    copy.findErrors(bitRange = range)
+                }
+            }
+        }.awaitAll()
+
+        // Join all results together
+        results.fold(pairs to operations) { r, entry ->
+            r.first.addAll(entry.first)
+            r.second.addAll(entry.second)
+            r
+        }
+    }
+}
+
+/**
+ * Outputs the formatted pars, joining the sorted outputs to string separated by commas.
+ */
+private fun State.formattedOutputs(pairs: List<UnorderedPair<Int>>): String {
+    return pairs.asSequence().map { it.toList() }.flatten().map { reverseNameIndex[it]!! }.sorted().joinToString(",")
+}
+
+/**
+ * Class representing an operation on the nth bit with operation index equal to index.
+ *
+ * index=0: false + false -> false
+ * index=1: true + false -> true
+ * index=2: false + true -> true
+ * index=3: true + true -> true for `bit + 1` (testing carry over)
+ */
 private data class BitOperation(val bit: Int, val index: Int)
 
+/**
+ * Parses the two input values x and y as long from the specified map and bitCount.
+ */
 private fun parseInputs(inputs: Map<String, Boolean>, bitCount: Int): Pair<Long, Long> {
     var x = 0L
     var y = 0L
@@ -248,6 +339,9 @@ private fun parseInputs(inputs: Map<String, Boolean>, bitCount: Int): Pair<Long,
     return x to y
 }
 
+/**
+ * Swaps two outputs
+ */
 private fun swapOutputs(gate1: Gate, gate2: Gate) {
     val output1 = gate1.output
     val output2 = gate2.output
@@ -255,10 +349,13 @@ private fun swapOutputs(gate1: Gate, gate2: Gate) {
     gate2.output = output1
 }
 
+/**
+ * Tests all bit operations. Operation 0 (all false) does not have to be tested as it will always succeed.
+ */
 private fun State.testAllBits(): Boolean {
     for (bit in 0 until bitCount - 1) {
-        for (operationIndex in 0..3) {
-            if (!test(bit, operationIndex)) {
+        for (index in 1..3) {
+            if (!test(BitOperation(bit, index))) {
                 return false
             }
         }
@@ -266,6 +363,9 @@ private fun State.testAllBits(): Boolean {
     return true
 }
 
+/**
+ * Performs a set of 100 random additions, verifying the results.
+ */
 private fun State.testRandomAdditions(): Boolean {
     val mask = (1L shl bitCount - 1) - 1L
     val random = Random(0)
@@ -278,52 +378,61 @@ private fun State.testRandomAdditions(): Boolean {
     return true
 }
 
-private fun State.test(bit: Int, operationIndex: Int): Boolean {
-    if (operationIndex == 0) {
-        this.reset()
+/**
+ * Tests the specified bit operation against this state.
+ */
+private fun State.test(operation: BitOperation): Boolean {
+    if (operation.index == 0) {
+        reset()
         compute()
-        if (this.getZ(bit)) {
+        if (getZ(operation.bit)) {
             return false
         }
-    } else if (operationIndex == 1) {
-        this.reset()
-        this.setX(bit, true)
-        this.setY(bit, false)
+    } else if (operation.index == 1) {
+        reset()
+        setX(operation.bit, true)
+        setY(operation.bit, false)
         compute()
-        if (!this.getZ(bit)) {
+        if (!getZ(operation.bit)) {
             return false
         }
-    } else if (operationIndex == 2) {
-        this.reset()
-        this.setX(bit, false)
-        this.setY(bit, true)
+    } else if (operation.index == 2) {
+        reset()
+        setX(operation.bit, false)
+        setY(operation.bit, true)
         compute()
-        if (!this.getZ(bit)) {
+        if (!getZ(operation.bit)) {
             return false
         }
-    } else if (operationIndex == 3) {
-        this.reset()
-        this.setX(bit, true)
-        this.setY(bit, true)
+    } else if (operation.index == 3) {
+        reset()
+        setX(operation.bit, true)
+        setY(operation.bit, true)
         compute()
-        if (!this.getZ(bit + 1)) {
+        if (!getZ(operation.bit + 1)) {
             return false
         }
     } else {
-        error("Invalid operation index: $operationIndex")
+        error("Invalid operation index: ${operation.index}")
     }
     return true
 }
 
+/**
+ * Reachable direction, left is going through the inputs, right is going through the outputs.
+ */
 private enum class ReachableDirection {
     Left, Right;
 }
 
+/**
+ * Traverses the graph to find all reachable outputs from start, using the specified direction.
+ */
 private fun State.reachableOutputs(start: Int, direction: ReachableDirection): Set<Int> {
     val seen = mutableSetOf<Int>()
     val pending = ArrayDeque<Gate>()
     if (direction == ReachableDirection.Left) {
-        pending.add(gatesByOutput[start]!!)
+        pending.add(gatesByOutput[start] ?: error("No gate found for output: $start"))
     } else {
         pending.addAll(gatesByInput[start] ?: emptySet())
     }
@@ -343,7 +452,12 @@ private fun State.reachableOutputs(start: Int, direction: ReachableDirection): S
     return seen
 }
 
-private inline fun <T> State.swappingOutputs(outputs: Collection<Pair<Int, Int>>, perform: State.() -> T): T {
+/**
+ * Performs the specified closure after swapping the specified pairs of outputs.
+ *
+ * After the closure has been invoked the outputs will be swapped back to their original values.
+ */
+private inline fun <T> State.swappingOutputs(outputs: Collection<UnorderedPair<Int>>, perform: State.() -> T): T {
     val firstGates = outputs.map { gatesByOutput[it.first] ?: error("Invalid output: ${it.first}") }
     val secondGates = outputs.map { gatesByOutput[it.second] ?: error("Invalid output: ${it.second}") }
     try {
@@ -363,54 +477,61 @@ private inline fun <T> State.swappingOutputs(outputs: Collection<Pair<Int, Int>>
 }
 
 private inline fun <T> State.swappingOutputs(output1: Int, output2: Int, perform: State.() -> T): T {
-    return swappingOutputs(listOf(output1 to output2), perform)
+    return swappingOutputs(listOf(output1 with output2), perform)
 }
 
-private fun State.findErrors(): Pair<List<Pair<Int, Int>>, List<BitOperation>> {
-    val operations = mutableListOf<BitOperation>()
-    val candidatePairs = mutableSetOf<Set<Int>>()
+/**
+ * Performs tests for the specified bit range, returning candidate pairs for swapping and faulty operations encountered.
+ */
+private fun State.findErrors(bitRange: IntRange = 0 until bitCount - 1): Pair<Set<UnorderedPair<Int>>, Set<BitOperation>> {
+    val operations = mutableSetOf<BitOperation>()
+    val candidatePairs = mutableSetOf<UnorderedPair<Int>>()
+    val reachableCache = mutableMapOf<Int, Set<Int>>()
     val currentErrorCount = countErrors()
-    for (bit in 0 until bitCount - 1) {
+    for (bit in bitRange) {
         val zIndex = bitCount * 2 + bit
         for (operationIndex in 1..3) {
-            if (!test(bit, operationIndex)) {
-                // Get all outputs that were set to true, at least one of those must be wrongly connected
-                val switchedOutputs = outputs { _, value -> value == true }
+            val operation = BitOperation(bit, operationIndex)
+            if (!test(operation)) {
+                // Get all outputs that were set to true, at least one of those must be wrongly connected.
+                // This stems from the fact that the end port should have a 1 for each test and does not. A 1 can only
+                // come from another 1 in the circuit (because there are no NOT gates) -> at least one of the 1's is wrongly connected.
+                val trueOutputs = outputs { _, value -> value == true }
                 val finish = if (operationIndex == 3) zIndex + 1 else zIndex
-                val reachableOutputsFromFinish = reachableOutputs(finish, ReachableDirection.Left)
-
+                val reachableOutputsFromFinish = reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left) }
                 if (debug) {
-                    println("Faulty operation bit=$bit, operation=$operationIndex, output: $zIndex")
-                    println("Involved: $switchedOutputs")
+                    println("Faulty operation bit=$bit, operation=$operationIndex, output: $finish")
+                    println("Involved: $trueOutputs")
                     println("Reachable inputs: $reachableOutputsFromFinish")
                 }
-
-                // Try to swap pairs of reachable inputs and switched outputs
+                // Try to swap pairs of left reachable outputs from finish and the candidate faulty outputs
                 for (output1 in reachableOutputsFromFinish) {
-                    for (output2 in switchedOutputs) {
+                    for (output2 in trueOutputs) {
                         if (output1 == output2) continue
                         swappingOutputs(output1, output2) {
-                            val errorCount = countErrors()
-                            // Count as valid swap if the error count did not increase and the current test case is successful
-                            val valid = errorCount <= currentErrorCount && this.test(bit, operationIndex)
+                            // Count as valid swap if the error count decreased and the current test case is now successful.
+                            val valid = test(operation) && countErrors() < currentErrorCount
                             if (valid) {
-                                candidatePairs.add(setOf(output1, output2))
+                                candidatePairs.add(output1 with output2)
                             }
                         }
                     }
                 }
-                operations += BitOperation(bit, operationIndex)
+                operations += operation
             }
         }
     }
-    return candidatePairs.map { it.first() to it.last() } to operations
+    return candidatePairs to operations
 }
 
+/**
+ * Count the number of errors which were find by performing all tests on the current state.
+ */
 private fun State.countErrors(): Int {
     var errorCount = 0
     for (bit in 0 until bitCount - 1) {
-        for (operationIndex in 1..3) {
-            if (!this.test(bit, operationIndex)) {
+        for (index in 1..3) {
+            if (!test(BitOperation(bit, index))) {
                 errorCount++
             }
         }
@@ -418,17 +539,23 @@ private fun State.countErrors(): Int {
     return errorCount
 }
 
-private fun State.trySwaps(candidatePairs: List<Pair<Int, Int>>, operations: List<BitOperation>): List<Pair<Int, Int>> {
-    return candidatePairs.permute(maxSize = 4) { pairs ->
+/**
+ * Tries all permutations of distinct sets of pairs, swapping them and performing tests.
+ *
+ * If a valid set of swaps is found the result is returned.
+ */
+private fun State.trySwaps(
+    candidatePairs: Set<UnorderedPair<Int>>,
+    operations: Set<BitOperation>
+): List<UnorderedPair<Int>> {
+    return candidatePairs.permute(count = 4, mode = PermuteMode.UniqueSets) { pairs ->
         val allOutputs = pairs.fold(mutableSetOf<Int>()) { s, value ->
             s += value.first
             s += value.second
             s
         }
         val valid = (allOutputs.size == 8) && swappingOutputs(outputs = pairs) {
-            operations.all {
-                test(it.bit, it.index)
-            } && testAllBits() && testRandomAdditions()
+            operations.all { test(it) } && testAllBits() && testRandomAdditions()
         }
         if (valid) {
             pairs.toList()

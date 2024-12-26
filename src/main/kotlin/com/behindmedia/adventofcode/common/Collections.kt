@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlin.math.max
 
 /**
  * Removes the first element if present and returns it.
@@ -190,19 +191,51 @@ inline fun <T: Any, R: Any> List<T>.processPairsIndexed(unique: Boolean = true, 
     return null
 }
 
-fun <T: Any, R: Any> Collection<T>.permute(maxSize: Int = this.size, unique: Boolean = true, perform: (List<T>) -> R?): R? {
+enum class PermuteMode {
+    Duplicate,
+    Unique,
+    UniqueSets
+}
+
+/**
+ * Will generate permutations for the receiver depending on the mode supplied:
+ *
+ * - Duplicate: generate any permutation where the same element may be present multiple times, e.g. take k elements from n but after each draw put the drawn element back before performing the next draw. This is n.pow(k) iterations.
+ * - Unique: generate any permutation where the same element cannot be present multiple times, e.g. take k elements from n and don't put back the drawn element before performing the next draw. This is n over k iterations.
+ * - UniqueSets: generate any permutation where the same set of elements cannot be present multiple times. This is n over k divided by x.
+ */
+fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: PermuteMode = PermuteMode.Unique, perform: (List<T>) -> R?): R? {
     // Use an ArrayDeque to avoid having to reallocate a new collection each time
     // We cycle through the values remaining with removeFirst and addLast.
     fun <T> permute(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
-        if (valuesLeft.isEmpty() || list.size == maxSize) return perform(list)
-        for (i in 0 until valuesLeft.size) {
-            val value = if (unique) valuesLeft.removeFirst() else valuesLeft[i]
-            try {
-                list.add(value)
-                return permute(list, valuesLeft, perform) ?: continue
-            } finally {
-                list.removeLast()
-                if (unique) valuesLeft.addLast(value)
+        if (list.size == count) {
+            return perform(list)
+        }
+        val iterationsCount = if (mode == PermuteMode.UniqueSets) (valuesLeft.size + list.size - count + 1) else valuesLeft.size
+        val toPutBack = ArrayList<T>(iterationsCount)
+        try {
+            for (i in 0 until iterationsCount) {
+                val value = if (mode == PermuteMode.Duplicate) {
+                    valuesLeft[i]
+                } else {
+                    valuesLeft.removeFirst()
+                }
+                if (mode == PermuteMode.UniqueSets) {
+                    toPutBack.add(value)
+                }
+                try {
+                    list.add(value)
+                    return permute(list, valuesLeft, perform) ?: continue
+                } finally {
+                    list.removeLast()
+                    if (mode == PermuteMode.Unique) {
+                        valuesLeft.addLast(value)
+                    }
+                }
+            }
+        } finally {
+            for (i in toPutBack.size -1 downTo 0) {
+                valuesLeft.addFirst(toPutBack[i])
             }
         }
         return null

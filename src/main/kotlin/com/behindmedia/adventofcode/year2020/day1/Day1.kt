@@ -7,7 +7,7 @@ fun main() {
         line.toInt()
     }
     for (size in listOf(2, 3)) {
-        println(data.permute(maxSize = size, unique = true) { values ->
+        println(data.permute(count = size) { values ->
             if (values.sum() == 2020) {
                 values.product()
             } else {

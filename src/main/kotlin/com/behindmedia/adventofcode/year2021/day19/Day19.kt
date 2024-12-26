@@ -146,7 +146,7 @@ fun main() {
 
         // Part 2
         var maxDist = Long.MIN_VALUE
-        allScanners.permute(maxSize = 2) { (c1, c2) ->
+        allScanners.permute(count = 2) { (c1, c2) ->
             maxDist = max(maxDist, c1.manhattenDistance(c2))
             null
         }
