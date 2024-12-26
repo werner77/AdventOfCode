@@ -212,7 +212,7 @@ fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: Permute
             return perform(list)
         }
         val iterationsCount = if (mode == PermuteMode.UniqueSets) (valuesLeft.size + list.size - count + 1) else valuesLeft.size
-        val toPutBack = ArrayList<T>(iterationsCount)
+        val toPutBack: MutableList<T>? = if (mode == PermuteMode.UniqueSets) ArrayList<T>(iterationsCount) else null
         try {
             for (i in 0 until iterationsCount) {
                 val value = if (mode == PermuteMode.Duplicate) {
@@ -221,7 +221,7 @@ fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: Permute
                     valuesLeft.removeFirst()
                 }
                 if (mode == PermuteMode.UniqueSets) {
-                    toPutBack.add(value)
+                    toPutBack!!.add(value)
                 }
                 try {
                     list.add(value)
@@ -234,8 +234,10 @@ fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: Permute
                 }
             }
         } finally {
-            for (i in toPutBack.size -1 downTo 0) {
-                valuesLeft.addFirst(toPutBack[i])
+            if (toPutBack != null) {
+                for (i in toPutBack.size -1 downTo 0) {
+                    valuesLeft.addFirst(toPutBack[i])
+                }
             }
         }
         return null

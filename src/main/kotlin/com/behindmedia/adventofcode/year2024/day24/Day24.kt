@@ -164,6 +164,9 @@ private class State(val encoded: String) {
         data[index] = value
     }
 
+    /**
+     * Gets the z value as long
+     */
     val output: Long
         get() {
             var result = 0L
@@ -431,19 +434,22 @@ private enum class ReachableDirection {
 
 /**
  * Traverses the graph to find all reachable outputs from start, using the specified direction.
+ *
+ * Will return a map where the key is the node and the value is the order in which it was encountered (BFS)
  */
-private fun State.reachableOutputs(start: Int, direction: ReachableDirection): Set<Int> {
-    val seen = mutableSetOf<Int>()
+private fun State.reachableOutputs(start: Int, direction: ReachableDirection): Map<Int, Int> {
+    val seen = mutableMapOf<Int, Int>()
     val pending = ArrayDeque<Gate>()
     if (direction == ReachableDirection.Left) {
         pending.add(gatesByOutput[start] ?: error("No gate found for output: $start"))
     } else {
         pending.addAll(gatesByInput[start] ?: emptySet())
     }
+    var order = 0
     while (pending.isNotEmpty()) {
         val current = pending.removeFirst()
-        if (!seen.add(current.output)) continue
-
+        if (seen.contains(current.output)) continue
+        seen[current.output] = order++
         if (direction == ReachableDirection.Left) {
             gatesByOutput[current.input1]?.let { pending.add(it) }
             gatesByOutput[current.input2]?.let { pending.add(it) }
@@ -497,24 +503,45 @@ private fun State.findErrors(bitRange: IntRange = 0 until bitCount - 1): Pair<Se
         for (operationIndex in 1..3) {
             val operation = BitOperation(bit, operationIndex)
             if (!test(operation)) {
+                // An error occurred for this test:
+                //
                 // Get all outputs that were set to true, at least one of those must be wrongly connected.
                 // This stems from the fact that the end port should have a 1 for each test and does not. A 1 can only
                 // come from another 1 in the circuit (because there are no NOT gates) -> at least one of the 1's is wrongly connected.
+                //
+                // Proof out of contradiction:
+                //
+                // Assume all true outputs are correctly connected while any output value is false (which should in fact be true).
+                //
+                // Any gate XOR, AND, OR would emit the correct value if all true outputs were correctly connected:
+                //
+                // -> AND is easy to see, because it only emits true it both inputs are true and both are correctly connected so the output should be correct as well.
+                // -> OR will only emit true if at least one output is true. If all true outputs are correctly connected then all OR gates will also emit the correct value.
+                // -> XOR will only emit true if exactly one output is true. But all true outputs are correctly connected,
+                // so we cannot swap a true port from another output to the input of this OR. If we just swap false ports the XOR output will remain the same. (false, false) -> false
+                // and (false, true) -> true.
                 val trueOutputs = outputs { _, value -> value == true }
                 val finish = if (operationIndex == 3) zIndex + 1 else zIndex
+
+                // Get any node which is reachable from the output node for which the test case failed.
+                // At least one node in this reachable graph must be wrongly connected.
                 val reachableOutputsFromFinish =
-                    reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left) }
+                    reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left).keys }
                 if (debug) {
                     println("Faulty operation bit=$bit, operation=$operationIndex, output: $finish")
                     println("Involved: $trueOutputs")
                     println("Reachable inputs: $reachableOutputsFromFinish")
                 }
-                // Try to swap pairs of left reachable outputs from finish and the candidate faulty outputs
+                // Try to swap pairs of left reachable outputs from finish and the candidate faulty outputs.
                 for (output1 in reachableOutputsFromFinish) {
                     for (output2 in trueOutputs) {
                         if (output1 == output2) continue
                         swappingOutputs(output1, output2) {
                             // Count as valid swap if the error count decreased and the current test case is now successful.
+                            // We could test explicitly for cycles as well, but the test would never succeed if a cycle is created.
+                            // This condition assumes all "good" swaps are fully independent. The condition can be relaxed with
+                            // assuming that only the total error count decreases or even allow it to stay the same.
+                            // The run time will be longer, but the same result will be found.
                             val valid = test(operation) && countErrors() < currentErrorCount
                             if (valid) {
                                 candidatePairs.add(output1 with output2)
@@ -544,6 +571,38 @@ private fun State.countErrors(): Int {
     return errorCount
 }
 
+private fun State.hasCycles(): Boolean {
+    // Try to topologically sort the graph. If this fails, then there are cycles
+    val inDegrees = defaultMutableMapOf<Int, Int> { 0 }
+    for (gate in gatesByOutput.values) {
+        require(gate.input1 != gate.input2)
+        if (gate.input1 == gate.output) return true
+        if (gate.input2 == gate.output) return true
+        inDegrees[gate.output] += 2
+    }
+    val pending = ArrayDeque<Int>()
+    (0 until 2 * bitCount).forEach {
+        pending.add(it)
+    }
+    val seen = mutableSetOf<Int>()
+    while (pending.isNotEmpty()) {
+        val next = pending.removeFirst()
+        if (!seen.add(next)) {
+            return true
+        }
+        val gates = gatesByInput[next] ?: emptySet()
+        for (gate in gates) {
+            val newValue = inDegrees[gate.output] - 1
+            require(newValue >= 0)
+            inDegrees[gate.output] = newValue
+            if (newValue == 0) {
+                pending.add(gate.output)
+            }
+        }
+    }
+    return false
+}
+
 /**
  * Tries all permutations of distinct sets of pairs, swapping them and performing tests.
  *
@@ -560,6 +619,9 @@ private fun State.trySwaps(
             s
         }
         val valid = (allOutputs.size == 8) && swappingOutputs(outputs = pairs) {
+            // First test only the failed operations (for speed purposes)
+            // Then test all bits
+            // Finally test 100 random additions (should not be strictly necessary)
             operations.all { test(it) } && testAllBits() && testRandomAdditions()
         }
         if (valid) {
