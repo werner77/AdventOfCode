@@ -45,7 +45,7 @@ private data class UnorderedPair<T>(val first: T, val second: T) {
 private infix fun <A> A.with(that: A): UnorderedPair<A> = UnorderedPair(this, that)
 
 /**
- * Class representing the entires state in an optimized manner:
+ * Class representing the entire state in an optimized manner:
  *
  * x are the first bitCount bytes
  * y are the second bitCount bytes
@@ -204,6 +204,10 @@ private class State(val encoded: String) {
             val current = pending.removeFirst()
             val value1 = state[current.input1] ?: error("No state found for ${current.input1}")
             val value2 = state[current.input2] ?: error("No state found for ${current.input2}")
+            if (state[current.output] != null) {
+                // Output only changes once.
+                continue
+            }
             val value = current.operation.invoke(value1, value2)
             state[current.output] = value
             for (next in gatesByInput[current.output] ?: emptySet()) {
@@ -498,7 +502,8 @@ private fun State.findErrors(bitRange: IntRange = 0 until bitCount - 1): Pair<Se
                 // come from another 1 in the circuit (because there are no NOT gates) -> at least one of the 1's is wrongly connected.
                 val trueOutputs = outputs { _, value -> value == true }
                 val finish = if (operationIndex == 3) zIndex + 1 else zIndex
-                val reachableOutputsFromFinish = reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left) }
+                val reachableOutputsFromFinish =
+                    reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left) }
                 if (debug) {
                     println("Faulty operation bit=$bit, operation=$operationIndex, output: $finish")
                     println("Involved: $trueOutputs")
