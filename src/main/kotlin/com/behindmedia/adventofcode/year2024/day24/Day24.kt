@@ -5,6 +5,9 @@ import kotlinx.coroutines.*
 import kotlin.random.Random
 import kotlin.math.*
 
+/**
+ * Boolean operation
+ */
 private enum class Operation {
     XOR, AND, OR;
 
@@ -23,26 +26,6 @@ private enum class Operation {
  * Output can be swapped (which is why it is a var)
  */
 private data class Gate(val input1: Int, val input2: Int, var output: Int, val operation: Operation)
-
-private data class UnorderedPair<T>(val first: T, val second: T) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        val otherPair = other as? UnorderedPair<*> ?: return false
-        if (first != otherPair.first && first != otherPair.second) return false
-        if (second != otherPair.first && second != otherPair.second) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = first?.hashCode() ?: 0
-        result += second?.hashCode() ?: 0
-        return result
-    }
-
-    fun toList(): List<T> = listOf(first, second)
-}
-
-private infix fun <A> A.with(that: A): UnorderedPair<A> = UnorderedPair(this, that)
 
 /**
  * Class representing the entire state in an optimized manner:
@@ -257,6 +240,8 @@ fun main() = timing {
 
     // Find candidates for swaps and the faulty operations
     val (candidatePairs, operations) = state.findErrorsParallel()
+
+    println(candidatePairs.size)
 
     // Try to perform swaps until successful, first trying the faulty operations and expanding with more tests if successful.
     val result = state.trySwaps(candidatePairs, operations)

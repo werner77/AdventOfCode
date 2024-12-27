@@ -1,6 +1,7 @@
 package com.behindmedia.adventofcode.common
 
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 /**
  * Describes a three-dimensional coordinate or vector
@@ -51,8 +52,15 @@ data class Coordinate3D(val x: Long, val y: Long, val z: Long) : Comparable<Coor
         return Coordinate3D(x + xOffset, y + yOffset, z + zOffset)
     }
 
-    fun manhattenDistance(other: Coordinate3D): Long {
-        return abs(this.x - other.x) + abs(this.y - other.y) + abs(this.z - other.z)
+    fun manhattenDistance(to: Coordinate3D): Long {
+        return abs(this.x - to.x) + abs(this.y - to.y) + abs(this.z - to.z)
+    }
+
+    fun distance(to: Coordinate3D): Double {
+        val deltaX = x - to.x
+        val deltaY = y - to.y
+        val deltaZ = z - to.z
+        return sqrt((deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ).toDouble())
     }
 
     operator fun plus(other: Coordinate3D): Coordinate3D {
