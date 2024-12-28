@@ -1,7 +1,6 @@
 package com.behindmedia.adventofcode.year2024.day16
 
 import com.behindmedia.adventofcode.common.*
-import java.util.*
 
 private typealias PositionDirection = Pair<Coordinate, Coordinate>
 
@@ -54,7 +53,7 @@ private fun <N: Any> findShortestWeightedPaths(
     val settled = hashMapOf<N, Int>()
     val paths = mutableListOf<Path<N>>()
     while (true) {
-        val current = pending.poll() ?: break
+        val current = pending.removeFirstOrNull() ?: break
         if (paths.isNotEmpty() && paths.first().length < current.length) continue
         val seenLength = settled[current.destination]
         if (seenLength != null && seenLength < current.length) continue

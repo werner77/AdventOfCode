@@ -92,9 +92,8 @@ fun chineseRemainder(values: List<Pair<Long, Long>>): Pair<Long, Long>? {
     return result to lcm
 }
 
-private val md = MessageDigest.getInstance("MD5")
-
 fun md5(input: String): String {
+    val md = MessageDigest.getInstance("MD5")
     return BigInteger(1, md.digest(input.toByteArray())).toString(16).padStart(32, '0')
 }
 
@@ -556,4 +555,22 @@ fun findQuadraticRoots(a: Long, b: Long, c: Long): List<Double> {
     } else {
         emptyList()
     }
+}
+
+infix fun Int.over(k: Int): Long {
+    val n = this
+    require(k in 1..n)
+    var result = 1L
+    for (i in n - k + 1 .. n) {
+        result *= i
+    }
+    return result
+}
+
+fun Int.faculty(): Long {
+    var result = 1L
+    for (i in 1..this) {
+        result *= i
+    }
+    return result
 }

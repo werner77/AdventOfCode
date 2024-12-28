@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import kotlin.math.max
 
 /**
  * Removes the first element if present and returns it.
@@ -169,7 +168,7 @@ inline fun <T> Iterable<T>.productOf(selector: (T) -> Double): Double {
     return product
 }
 
-inline fun <T: Any, R: Any> List<T>.processPairs(unique: Boolean = true, block: (T, T) -> R?): R? {
+inline fun <T : Any, R : Any> List<T>.processPairs(unique: Boolean = true, block: (T, T) -> R?): R? {
     for (i in 0 until this.size) {
         val startIndex = if (unique) i + 1 else 0
         for (j in startIndex until this.size) {
@@ -180,7 +179,10 @@ inline fun <T: Any, R: Any> List<T>.processPairs(unique: Boolean = true, block: 
     return null
 }
 
-inline fun <T: Any, R: Any> List<T>.processPairsIndexed(unique: Boolean = true, block: (IndexedValue<T>, IndexedValue<T>) -> R?): R? {
+inline fun <T : Any, R : Any> List<T>.processPairsIndexed(
+    unique: Boolean = true,
+    block: (IndexedValue<T>, IndexedValue<T>) -> R?
+): R? {
     for (i in 0 until this.size) {
         val startIndex = if (unique) i + 1 else 0
         for (j in startIndex until this.size) {
@@ -201,18 +203,23 @@ enum class PermuteMode {
  * Will generate permutations for the receiver depending on the mode supplied:
  *
  * - Duplicate: generate any permutation where the same element may be present multiple times, e.g. take k elements from n but after each draw put the drawn element back before performing the next draw. This is n.pow(k) iterations.
- * - Unique: generate any permutation where the same element cannot be present multiple times, e.g. take k elements from n and don't put back the drawn element before performing the next draw. This is n over k iterations.
- * - UniqueSets: generate any permutation where the same set of elements cannot be present multiple times. This is n over k divided by x.
+ * - Unique: generate any permutation where the same element cannot be present multiple times, e.g. take k elements from n and don't put back the drawn element before performing the next draw. This is (n over k) iterations.
+ * - UniqueSets: generate any permutation where the same set of elements cannot be present multiple times. This is (n over k) / k! iterations.
  */
-fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: PermuteMode = PermuteMode.Unique, perform: (List<T>) -> R?): R? {
+fun <T : Any, R : Any> Collection<T>.permute(
+    count: Int = this.size,
+    mode: PermuteMode = PermuteMode.Unique,
+    perform: (List<T>) -> R?
+): R? {
     // Use an ArrayDeque to avoid having to reallocate a new collection each time
     // We cycle through the values remaining with removeFirst and addLast.
     fun <T> permute(list: MutableList<T>, valuesLeft: ArrayDeque<T>, perform: (List<T>) -> R?): R? {
         if (list.size == count) {
             return perform(list)
         }
-        val iterationsCount = if (mode == PermuteMode.UniqueSets) (valuesLeft.size + list.size - count + 1) else valuesLeft.size
-        val toPutBack: MutableList<T>? = if (mode == PermuteMode.UniqueSets) ArrayList<T>(iterationsCount) else null
+        val iterationsCount =
+            if (mode == PermuteMode.UniqueSets) (valuesLeft.size + list.size - count + 1) else valuesLeft.size
+        val restoreList: MutableList<T>? = if (mode == PermuteMode.UniqueSets) ArrayList(iterationsCount) else null
         try {
             for (i in 0 until iterationsCount) {
                 val value = if (mode == PermuteMode.Duplicate) {
@@ -220,9 +227,7 @@ fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: Permute
                 } else {
                     valuesLeft.removeFirst()
                 }
-                if (mode == PermuteMode.UniqueSets) {
-                    toPutBack!!.add(value)
-                }
+                restoreList?.add(value)
                 try {
                     list.add(value)
                     return permute(list, valuesLeft, perform) ?: continue
@@ -234,9 +239,9 @@ fun <T: Any, R: Any> Collection<T>.permute(count: Int = this.size, mode: Permute
                 }
             }
         } finally {
-            if (toPutBack != null) {
-                for (i in toPutBack.size -1 downTo 0) {
-                    valuesLeft.addFirst(toPutBack[i])
+            if (restoreList != null) {
+                for (i in restoreList.size - 1 downTo 0) {
+                    valuesLeft.addFirst(restoreList[i])
                 }
             }
         }
@@ -265,6 +270,7 @@ fun <T> permute(count: Int, range: IntRange, perform: (IntArray) -> T?): T? {
         }
         return null
     }
+
     val list = IntArray(count) { 0 }
     return permute(list, 0, range, perform)
 }
@@ -394,11 +400,16 @@ fun <E> List<E>.removingAllOccurences(sublist: List<E>): List<E> {
  */
 class Reference<T>(var value: T)
 
-class FilteredIterator<E: Any>(iterator: Iterator<E>, predicate: (E) -> Boolean) : CompactMappedIterator<E, E>(iterator, { if (predicate(it)) it else null })
+class FilteredIterator<E : Any>(iterator: Iterator<E>, predicate: (E) -> Boolean) :
+    CompactMappedIterator<E, E>(iterator, { if (predicate(it)) it else null })
 
-class MappedIterator<E: Any, T: Any>(iterator: Iterator<E>, mapper: (E) -> T) : CompactMappedIterator<E, T>(iterator, { mapper(it) })
+class MappedIterator<E : Any, T : Any>(iterator: Iterator<E>, mapper: (E) -> T) :
+    CompactMappedIterator<E, T>(iterator, { mapper(it) })
 
-open class CompactMappedIterator<T: Any, R: Any>(private val iterator: Iterator<T>, private val mapper: (T) -> R?) :
+open class CompactMappedIterator<T : Any, R : Any>(
+    private val iterator: Iterator<T>,
+    private val mapper: (T) -> R?
+) :
     Iterator<R> {
 
     private var nextElement: R? = null
@@ -429,11 +440,14 @@ open class CompactMappedIterator<T: Any, R: Any>(private val iterator: Iterator<
     }
 }
 
-fun <T: Any, R: Any>Iterator<T>.mapped(mapper: (T) -> R) = CompactMappedIterator(this, mapper)
-fun <T: Any>Iterator<T>.filtered(predicate: (T) -> Boolean) = CompactMappedIterator(this) { if (predicate(it)) it else null }
-fun <T: Any, R: Any>Iterator<T>.compactMapped(mapper: (T) -> R?) = CompactMappedIterator(this, mapper)
+fun <T : Any, R : Any> Iterator<T>.mapped(mapper: (T) -> R) = CompactMappedIterator(this, mapper)
+fun <T : Any> Iterator<T>.filtered(predicate: (T) -> Boolean) =
+    CompactMappedIterator(this) { if (predicate(it)) it else null }
 
-class FilteredIterable<E: Any>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean) : Iterable<E> {
+fun <T : Any, R : Any> Iterator<T>.compactMapped(mapper: (T) -> R?) = CompactMappedIterator(this, mapper)
+
+class FilteredIterable<E : Any>(private val iterable: Iterable<E>, private val predicate: (E) -> Boolean) :
+    Iterable<E> {
 
     override fun iterator(): Iterator<E> {
         return FilteredIterator(iterable.iterator(), predicate)
@@ -479,18 +493,39 @@ fun <K, V> defaultMapOf(vararg pairs: Pair<K, V>, defaultValue: () -> V): Defaul
     return DefaultMapWrapper(impl, defaultValue)
 }
 
-fun <K, V> defaultMutableMapOf(putValueImplicitly: Boolean = false, defaultValue: () -> V): DefaultMutableMap<K, V> {
+fun <K, V> defaultMutableMapOf(
+    putValueImplicitly: Boolean = false,
+    defaultValue: () -> V
+): DefaultMutableMap<K, V> {
     val impl = mutableMapOf<K, V>()
-    return DefaultMutableMapWrapper(impl = impl, defaultValue = defaultValue, putValueImplicitly = putValueImplicitly)
+    return DefaultMutableMapWrapper(
+        impl = impl,
+        defaultValue = defaultValue,
+        putValueImplicitly = putValueImplicitly
+    )
 }
 
-fun <K, V> defaultMutableMapOf(putValueImplicitly: Boolean = false, vararg pairs: Pair<K, V>, defaultValue: () -> V): DefaultMutableMap<K, V> {
+fun <K, V> defaultMutableMapOf(
+    putValueImplicitly: Boolean = false,
+    vararg pairs: Pair<K, V>,
+    defaultValue: () -> V
+): DefaultMutableMap<K, V> {
     val impl = mutableMapOf(*pairs)
-    return DefaultMutableMapWrapper(impl = impl, defaultValue = defaultValue, putValueImplicitly = putValueImplicitly)
+    return DefaultMutableMapWrapper(
+        impl = impl,
+        defaultValue = defaultValue,
+        putValueImplicitly = putValueImplicitly
+    )
 }
 
-fun <K, V>Map<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMap<K, V> = DefaultMapWrapper(this, defaultValue)
-fun <K, V>MutableMap<K, V>.withDefaultValue(putValueImplicitly: Boolean = false, defaultValue: () -> V): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this, defaultValue, putValueImplicitly)
+fun <K, V> Map<K, V>.withDefaultValue(defaultValue: () -> V): DefaultMap<K, V> =
+    DefaultMapWrapper(this, defaultValue)
+
+fun <K, V> MutableMap<K, V>.withDefaultValue(
+    putValueImplicitly: Boolean = false,
+    defaultValue: () -> V
+): DefaultMutableMap<K, V> = DefaultMutableMapWrapper(this, defaultValue, putValueImplicitly)
+
 fun <V> List<V>.withDefaultValue(defaultValue: () -> V): DefaultList<V> = DefaultListWrapper(this, defaultValue)
 
 private class DefaultMutableMapWrapper<K, V>(
@@ -544,11 +579,12 @@ interface DefaultMutableMap<K, V> : DefaultMap<K, V>, MutableMap<K, V> {
     fun getOrPutDefault(key: K): V
 }
 
-interface DefaultList<V>: List<V> {
+interface DefaultList<V> : List<V> {
     fun getOrDefault(index: Int): V
 }
 
-private class DefaultListWrapper<V>(private val impl: List<V>, private val defaultValue: () -> V): DefaultList<V>, List<V> by impl {
+private class DefaultListWrapper<V>(private val impl: List<V>, private val defaultValue: () -> V) : DefaultList<V>,
+    List<V> by impl {
     override fun getOrDefault(index: Int): V {
         return impl.getOrNull(index) ?: defaultValue.invoke()
     }
