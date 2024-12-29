@@ -39,8 +39,9 @@ private class State(val encoded: String) {
     val bitCount: Int
     val forwardNameIndex: Map<String, Int>
     val reverseNameIndex: Map<Int, String>
-    val gatesByInput: Map<Int, Set<Gate>>
-    val gatesByOutput: Map<Int, Gate>
+    val gates: Array<Gate>
+    val gatesByInput: Array<out Set<Gate>>
+    val gatesByOutput: Array<Gate?>
     val outputCount: Int
 
     init {
@@ -69,21 +70,24 @@ private class State(val encoded: String) {
         }
         forwardNameIndex = forward
         reverseNameIndex = reverse
-        val gates = gateData.map { (input1, input2, output, operation) ->
+        gates = gateData.map { (input1, input2, output, operation) ->
             Gate(
                 forward[input1]!!,
                 forward[input2]!!,
                 forward[output]!!,
                 operation
             )
-        }
+        }.toTypedArray()
         outputCount = gates.size
-        gatesByInput = gates.fold(mutableMapOf<Int, MutableSet<Gate>>()) { map, gate ->
-            map.getOrPut(gate.input1) { mutableSetOf() }.add(gate)
-            map.getOrPut(gate.input2) { mutableSetOf() }.add(gate)
+        gatesByInput = gates.fold(Array<MutableSet<Gate>>(j) { mutableSetOf() }) { map, gate ->
+            map[gate.input1].add(gate)
+            map[gate.input2].add(gate)
             map
         }
-        gatesByOutput = gates.associateBy { it.output }
+        val lookupMap = gates.associateBy { it.output }
+        gatesByOutput = Array(j) { index ->
+            lookupMap[index]
+        }
     }
 
     private val data = Array(bitCount * 2 + outputCount) { if (it < bitCount * 2) false else null }
@@ -177,30 +181,19 @@ private class State(val encoded: String) {
 
     fun compute() {
         val state = this
-        // Process all switches for which two inputs are available
-        val pending = ArrayDeque<Gate>()
-        for (i in 0 until state.bitCount * 2) {
-            for (switch in (gatesByInput[i] ?: emptySet())) {
-                if (state[switch.input1] != null && state[switch.input2] != null) {
-                    pending.add(switch)
+        fun compute(gates: Collection<Gate>) {
+            for (gate in gates) {
+                if (state[gate.output] == null) {
+                    val value1 = state[gate.input1] ?: continue
+                    val value2 = state[gate.input2] ?: continue
+                    val value = gate.operation.invoke(value1, value2)
+                    state[gate.output] = value
+                    compute(gatesByInput[gate.output])
                 }
             }
         }
-        while (pending.isNotEmpty()) {
-            val current = pending.removeFirst()
-            val value1 = state[current.input1] ?: error("No state found for ${current.input1}")
-            val value2 = state[current.input2] ?: error("No state found for ${current.input2}")
-            if (state[current.output] != null) {
-                // Output only changes once.
-                continue
-            }
-            val value = current.operation.invoke(value1, value2)
-            state[current.output] = value
-            for (next in gatesByInput[current.output] ?: emptySet()) {
-                if (state[next.input1] != null && state[next.input2] != null) {
-                    pending.add(next)
-                }
-            }
+        for (i in 0 until state.bitCount * 2) {
+            compute(gates = gatesByInput[i])
         }
     }
 
@@ -240,8 +233,6 @@ fun main() = timing {
 
     // Find candidates for swaps and the faulty operations
     val (candidatePairs, operations) = state.findErrorsParallel()
-
-    println(candidatePairs.size)
 
     // Try to perform swaps until successful, first trying the faulty operations and expanding with more tests if successful.
     val result = state.trySwaps(candidatePairs, operations)
@@ -419,30 +410,25 @@ private enum class ReachableDirection {
 
 /**
  * Traverses the graph to find all reachable outputs from start, using the specified direction.
- *
- * Will return a map where the key is the node and the value is the order in which it was encountered (BFS)
  */
-private fun State.reachableOutputs(start: Int, direction: ReachableDirection): Map<Int, Int> {
-    val seen = mutableMapOf<Int, Int>()
-    val pending = ArrayDeque<Gate>()
-    if (direction == ReachableDirection.Left) {
-        pending.add(gatesByOutput[start] ?: error("No gate found for output: $start"))
-    } else {
-        pending.addAll(gatesByInput[start] ?: emptySet())
-    }
-    var order = 0
-    while (pending.isNotEmpty()) {
-        val current = pending.removeFirst()
-        if (seen.contains(current.output)) continue
-        seen[current.output] = order++
-        if (direction == ReachableDirection.Left) {
-            gatesByOutput[current.input1]?.let { pending.add(it) }
-            gatesByOutput[current.input2]?.let { pending.add(it) }
-        } else {
-            for (next in gatesByInput[current.output] ?: emptySet()) {
-                pending.add(next)
+private fun State.reachableOutputs(start: Int, direction: ReachableDirection): Set<Int> {
+    val seen = HashSet<Int>(outputCount * 2)
+    fun dfs(gate: Gate) {
+        if (seen.add(gate.output)) {
+            if (direction == ReachableDirection.Left) {
+                gatesByOutput[gate.input1]?.let { dfs(it) }
+                gatesByOutput[gate.input2]?.let { dfs(it) }
+            } else {
+                for (next in gatesByInput[gate.output]) {
+                    dfs(next)
+                }
             }
         }
+    }
+    if (direction == ReachableDirection.Left) {
+        dfs(gatesByOutput[start] ?: error("No gate found for output: $start"))
+    } else {
+        gatesByInput[start].forEach { dfs(it) }
     }
     return seen
 }
@@ -511,7 +497,7 @@ private fun State.findErrors(bitRange: IntRange = 0 until bitCount - 1): Pair<Se
                 // Get any node which is reachable from the output node for which the test case failed.
                 // At least one node in this reachable graph must be wrongly connected.
                 val reachableOutputsFromFinish =
-                    reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left).keys }
+                    reachableCache.getOrPut(finish) { reachableOutputs(finish, ReachableDirection.Left) }
                 if (debug) {
                     println("Faulty operation bit=$bit, operation=$operationIndex, output: $finish")
                     println("Involved: $trueOutputs")
@@ -559,7 +545,7 @@ private fun State.countErrors(): Int {
 private fun State.hasCycles(): Boolean {
     // Try to topologically sort the graph. If this fails, then there are cycles
     val inDegrees = defaultMutableMapOf<Int, Int> { 0 }
-    for (gate in gatesByOutput.values) {
+    for (gate in gates) {
         require(gate.input1 != gate.input2)
         if (gate.input1 == gate.output) return true
         if (gate.input2 == gate.output) return true
