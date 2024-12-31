@@ -90,14 +90,14 @@ private class State(val encoded: String) {
         }
     }
 
-    private val data = Array(bitCount * 2 + outputCount) { if (it < bitCount * 2) false else null }
+    private val data = Array(bitCount * 2 + outputCount) { if (it < bitCount * 2) 0 else -1 }
 
     /**
      * Resets the entire state to initial values
      */
     fun reset() {
-        data.fill(false, 0, bitCount * 2)
-        data.fill(null, bitCount * 2, data.size)
+        data.fill(0, 0, bitCount * 2)
+        data.fill(-1, bitCount * 2, data.size)
     }
 
     /**
@@ -108,10 +108,10 @@ private class State(val encoded: String) {
         for (bit in 0 until bitCount) {
             val mask = 1L shl bit
             if (x and mask == mask) {
-                data[bit] = true
+                data[bit] = 1
             }
             if (y and mask == mask) {
-                data[bitCount + bit] = true
+                data[bitCount + bit] = 1
             }
         }
     }
@@ -120,34 +120,34 @@ private class State(val encoded: String) {
      * Sets specified bit of the x input to the specified value
      */
     fun setX(bit: Int, value: Boolean) {
-        data[bit] = value
+        data[bit] = if (value) 1 else 0
     }
 
     /**
      * Sets specified bit of the y input to the specified value
      */
     fun setY(bit: Int, value: Boolean) {
-        data[bitCount + bit] = value
+        data[bitCount + bit] = if (value) 1 else 0
     }
 
     /**
      * Gets specified bit of the z output
      */
     fun getZ(bit: Int): Boolean {
-        return data[bitCount * 2 + bit] == true
+        return data[bitCount * 2 + bit] == 1
     }
 
     /**
      * Gets the state for the item at the specified index
      */
-    operator fun get(index: Int): Boolean? {
+    operator fun get(index: Int): Int {
         return data[index]
     }
 
     /**
      * Sets the state for the item at the specified index
      */
-    operator fun set(index: Int, value: Boolean) {
+    operator fun set(index: Int, value: Int) {
         data[index] = value
     }
 
@@ -159,7 +159,7 @@ private class State(val encoded: String) {
             var result = 0L
             val offset = bitCount * 2
             for (bit in 0 until bitCount) {
-                if (data[offset + bit]!!) {
+                if (data[offset + bit] == 1) {
                     // Set this bit
                     result = result or (1L shl bit)
                 }
@@ -167,7 +167,7 @@ private class State(val encoded: String) {
             return result
         }
 
-    fun outputs(predicate: (Int, Boolean?) -> Boolean): List<Int> {
+    fun outputs(predicate: (Int, Int) -> Boolean): List<Int> {
         val offset = bitCount * 2
         val result = mutableListOf<Int>()
         for (index in offset until data.size) {
@@ -181,19 +181,23 @@ private class State(val encoded: String) {
 
     fun compute() {
         val state = this
-        fun compute(gates: Collection<Gate>) {
-            for (gate in gates) {
-                if (state[gate.output] == null) {
-                    val value1 = state[gate.input1] ?: continue
-                    val value2 = state[gate.input2] ?: continue
-                    val value = gate.operation.invoke(value1, value2)
-                    state[gate.output] = value
-                    compute(gatesByInput[gate.output])
-                }
+        fun compute(output: Int): Boolean {
+            val current = state[output]
+            if (current >= 0) {
+                return current == 1
+            } else if (current == -2) {
+                throw IllegalStateException("Cycle")
+            } else {
+                require(current == -1)
+                state[output] = -2
+                val gate = gatesByOutput[output] ?: error("No gate found for output: $output")
+                val result = gate.operation.invoke(compute(gate.input1), compute(gate.input2))
+                state[gate.output] = if (result) 1 else 0
+                return result
             }
         }
-        for (i in 0 until state.bitCount * 2) {
-            compute(gates = gatesByInput[i])
+        for (i in 0 until bitCount) {
+            compute(bitCount * 2 + i)
         }
     }
 
@@ -325,9 +329,11 @@ private fun parseInputs(inputs: Map<String, Boolean>, bitCount: Int): Pair<Long,
 /**
  * Swaps two outputs
  */
-private fun swapOutputs(gate1: Gate, gate2: Gate) {
+private fun State.swapOutputs(gate1: Gate, gate2: Gate) {
     val output1 = gate1.output
     val output2 = gate2.output
+    gatesByOutput[output1] = gate2
+    gatesByOutput[output2] = gate1
     gate1.output = output2
     gate2.output = output1
 }
@@ -491,7 +497,7 @@ private fun State.findErrors(bitRange: IntRange = 0 until bitCount - 1): Pair<Se
                 // -> XOR will only emit true if exactly one output is true. But all true outputs are correctly connected,
                 // so we cannot swap a true port from another output to the input of this OR. If we just swap false ports the XOR output will remain the same. (false, false) -> false
                 // and (false, true) -> true.
-                val trueOutputs = outputs { _, value -> value == true }
+                val trueOutputs = outputs { _, value -> value == 1 }
                 val finish = if (operationIndex == 3) zIndex + 1 else zIndex
 
                 // Get any node which is reachable from the output node for which the test case failed.
@@ -513,7 +519,12 @@ private fun State.findErrors(bitRange: IntRange = 0 until bitCount - 1): Pair<Se
                             // This condition assumes all "good" swaps are fully independent. The condition can be relaxed with
                             // assuming that only the total error count decreases or even allow it to stay the same.
                             // The run time will be longer, but the same result will be found.
-                            val valid = test(operation) && countErrors() < currentErrorCount
+                            val valid = try {
+                                test(operation) && countErrors() < currentErrorCount
+                            } catch (e: IllegalStateException) {
+                                // Created a cycle
+                                false
+                            }
                             if (valid) {
                                 candidatePairs.add(output1 with output2)
                             }
@@ -593,7 +604,12 @@ private fun State.trySwaps(
             // First test only the failed operations (for speed purposes)
             // Then test all bits
             // Finally test 100 random additions (should not be strictly necessary)
-            operations.all { test(it) } && testAllBits() && testRandomAdditions()
+            try {
+                operations.all { test(it) } && testAllBits() && testRandomAdditions()
+            } catch (e: IllegalStateException) {
+                // Created a cycle
+                false
+            }
         }
         if (valid) {
             pairs.toList()

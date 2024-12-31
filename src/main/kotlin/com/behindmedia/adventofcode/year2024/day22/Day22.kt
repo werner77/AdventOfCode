@@ -1,6 +1,11 @@
 package com.behindmedia.adventofcode.year2024.day22
 
-import com.behindmedia.adventofcode.common.*
+import com.behindmedia.adventofcode.common.parseLines
+import com.behindmedia.adventofcode.common.timing
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.ConcurrentHashMap
 
 fun main() = timing {
     val data = parseLines("/2024/day22.txt") { line ->
@@ -31,24 +36,28 @@ private value class PriceSequence(val value: Int) {
 }
 
 private fun part2(inputs: List<Long>, times: Int = 2000): Int {
-    val totalPrices = defaultMutableMapOf<PriceSequence, Int> { 0 }
-    for (input in inputs) {
-        var sequence = PriceSequence(0)
-        val prices = mutableMapOf<PriceSequence, Int>()
-        var current = input
-        var lastPrice = (current % 10).toInt()
-        repeat(times) { i ->
-            current = evolve(current)
-            val price = (current % 10).toInt()
-            val change = price - lastPrice
-            sequence += change
-            if (i >= 3) {
-                if (sequence !in prices) {
-                    prices[sequence] = price
-                    totalPrices[sequence] += price
+    val totalPrices = ConcurrentHashMap<PriceSequence, Int>()
+    runBlocking {
+        for (input in inputs) {
+            launch(Dispatchers.Default) {
+                var sequence = PriceSequence(0)
+                val prices = mutableMapOf<PriceSequence, Int>()
+                var current = input
+                var lastPrice = (current % 10).toInt()
+                repeat(times) { i ->
+                    current = evolve(current)
+                    val price = (current % 10).toInt()
+                    val change = price - lastPrice
+                    sequence += change
+                    if (i >= 3) {
+                        if (sequence !in prices) {
+                            prices[sequence] = price
+                            totalPrices.compute(sequence) { _, value -> (value ?: 0) + price }
+                        }
+                    }
+                    lastPrice = price
                 }
             }
-            lastPrice = price
         }
     }
     return totalPrices.maxOf { it.value }
