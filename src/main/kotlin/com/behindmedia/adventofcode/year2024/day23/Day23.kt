@@ -16,19 +16,18 @@ fun main() = timing {
             mutableSetOf()
         }.add(first)
     }
-    val groups = findGroups(connections)
+    val groups = findGroups(connections, 3)
 
     // Part 1
     println(groups.count { group -> group.size == 3 && group.any { it.startsWith("t") }})
 
     // Part 2
-    val biggestGroup = groups.maxByOrNull { it.size } ?: error("No group found")
-    println(biggestGroup.sorted().joinToString(","))
+    println(findAllMaximalCliques(connections).maxBy { it.size }.sorted().joinToString(","))
 }
 
 private data class Group(val last: String, val contents: Set<String>)
 
-private fun findGroups(connections: Map<String, Set<String>>): Set<Set<String>> {
+private fun findGroups(connections: Map<String, Set<String>>, maxSize: Int = Int.MAX_VALUE): Set<Set<String>> {
     val groups = mutableSetOf<Set<String>>()
     val seen = mutableSetOf<Set<String>>()
     for (start in connections.keys) {
@@ -36,6 +35,9 @@ private fun findGroups(connections: Map<String, Set<String>>): Set<Set<String>> 
         pending.add(Group(start, setOf(start)))
         while (pending.isNotEmpty()) {
             val current = pending.removeFirst()
+            if (current.contents.size > maxSize) {
+                continue
+            }
             if (!seen.add(current.contents)) {
                 continue
             }
@@ -44,7 +46,7 @@ private fun findGroups(connections: Map<String, Set<String>>): Set<Set<String>> 
             for (destination in destinations) {
                 if (destination in current.contents) {
                     // Recursion, save this set
-                    if (current.contents.size >= 3) {
+                    if (current.contents.size in 3..maxSize) {
                         groups.add(current.contents)
                     }
                     continue

@@ -355,10 +355,10 @@ private fun State.testAllBits(): Boolean {
 /**
  * Performs a set of 100 random additions, verifying the results.
  */
-private fun State.testRandomAdditions(): Boolean {
+private fun State.testRandomAdditions(count: Int): Boolean {
     val mask = (1L shl bitCount - 1) - 1L
     val random = Random(0)
-    for (i in 0 until 100) {
+    for (i in 0 until count) {
         val i1 = random.nextLong() and mask
         val i2 = random.nextLong() and mask
         val i3 = compute(i1, i2)
@@ -553,38 +553,6 @@ private fun State.countErrors(): Int {
     return errorCount
 }
 
-private fun State.hasCycles(): Boolean {
-    // Try to topologically sort the graph. If this fails, then there are cycles
-    val inDegrees = defaultMutableMapOf<Int, Int> { 0 }
-    for (gate in gates) {
-        require(gate.input1 != gate.input2)
-        if (gate.input1 == gate.output) return true
-        if (gate.input2 == gate.output) return true
-        inDegrees[gate.output] += 2
-    }
-    val pending = ArrayDeque<Int>()
-    (0 until 2 * bitCount).forEach {
-        pending.add(it)
-    }
-    val seen = mutableSetOf<Int>()
-    while (pending.isNotEmpty()) {
-        val next = pending.removeFirst()
-        if (!seen.add(next)) {
-            return true
-        }
-        val gates = gatesByInput[next] ?: emptySet()
-        for (gate in gates) {
-            val newValue = inDegrees[gate.output] - 1
-            require(newValue >= 0)
-            inDegrees[gate.output] = newValue
-            if (newValue == 0) {
-                pending.add(gate.output)
-            }
-        }
-    }
-    return false
-}
-
 /**
  * Tries all permutations of distinct sets of pairs, swapping them and performing tests.
  *
@@ -603,9 +571,9 @@ private fun State.trySwaps(
         val valid = (allOutputs.size == 8) && swappingOutputs(outputs = pairs) {
             // First test only the failed operations (for speed purposes)
             // Then test all bits
-            // Finally test 100 random additions (should not be strictly necessary)
+            // Finally test random additions (should not be strictly necessary)
             try {
-                operations.all { test(it) } && testAllBits() && testRandomAdditions()
+                operations.all { test(it) } && testAllBits() && testRandomAdditions(10)
             } catch (e: IllegalStateException) {
                 // Created a cycle
                 false

@@ -269,49 +269,51 @@ fun <C> topologicalSort(
     return result
 }
 
-fun optimumSearch(startValue: Long, inverted: Boolean = false, process: (Long) -> Long): Long {
-    fun compareEval(first: Long, second: Long): Int {
-        return if (inverted) second.compareTo(first) else first.compareTo(second)
-    }
+/**
+ * Bron-Kerbosch algorithm to find the maximum cliques
+ */
+fun <T> findAllMaximalCliques(adjacencyList: Map<T, Set<T>>): List<Set<T>> {
+    fun compute(
+        r: Set<T>,
+        p: Set<T>,
+        x: Set<T>,
+        adjacencyList: Map<T, Set<T>>,
+        result: MutableList<Set<T>>
+    ) {
+        if (p.isEmpty() && x.isEmpty()) {
+            result.add(r)
+            return
+        }
 
-    var exceededOptimum = false
-    var delta = 1
-    var currentValue = startValue
-    var bestEvaluation = process(currentValue)
-    while (true) {
-        if (exceededOptimum) {
-            val leftEvaluation = process(currentValue - delta)
-            val rightEvaluation = process(currentValue + delta)
-            val comparisonResult = compareEval(leftEvaluation, rightEvaluation)
-            val (currentEvaluation, sign) = if (comparisonResult > 0) {
-                Pair(leftEvaluation, -1)
-            } else {
-                Pair(rightEvaluation, 1)
-            }
+        // Pick a pivot
+        val pivot = p.firstOrNull() ?: x.firstOrNull() ?: error("No pivot found")
+        val pivotNeighbors = adjacencyList[pivot] ?: emptySet()
 
-            if (compareEval(currentEvaluation, bestEvaluation) > 0) {
-                currentValue += sign * delta
-                bestEvaluation = currentEvaluation
-            } else if (delta == 1) {
-                process(currentValue)
-                return currentValue
+        val p1 = p.toMutableSet()
+        val x1 = x.toMutableSet()
+        val iterator = p1.iterator()
+        while (iterator.hasNext()) {
+            val v = iterator.next()
+            if (v in pivotNeighbors) {
+                continue
             }
-            delta = max(1, delta / 2)
-        } else {
-            // First increase delta by powers of two until the evaluation gets worse
-            val currentEvaluation = process(currentValue + delta)
-            val comparisonResult = compareEval(currentEvaluation, bestEvaluation)
-            if (comparisonResult > 0) {
-                currentValue += delta
-                delta *= 2
-                bestEvaluation = currentEvaluation
-            } else {
-                exceededOptimum = true
-                delta = max(1, delta / 2)
-            }
+            val neighbors = adjacencyList[v] ?: emptySet()
+            compute(
+                r = r + v,
+                p = p1.intersect(neighbors),
+                x = x1.intersect(neighbors),
+                adjacencyList = adjacencyList,
+                result = result
+            )
+            iterator.remove()
+            x1.add(v)
         }
     }
+    val result = mutableListOf<Set<T>>()
+    compute(emptySet(), adjacencyList.keys, emptySet(), adjacencyList, result)
+    return result
 }
+
 
 fun Int.pow(exp: Int): Int {
     var result = 1
