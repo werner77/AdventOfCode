@@ -1,7 +1,5 @@
 package com.behindmedia.adventofcode.common
 
-import java.util.NoSuchElementException
-
 interface ValueGrid<T: Any>: Iterable<Map.Entry<Coordinate, T>> {
     companion object {
         fun <T: Any>toString(valueGrid: ValueGrid<T>): String {
@@ -147,3 +145,37 @@ class MutableObjectGrid<T: Any>(sizeX: Int, sizeY: Int, default: (Int, Int) -> T
     }
 }
 
+fun <E> Map<Coordinate, E>.printMap(default: E, includeBorder: Boolean = false) {
+    var range = this.keys.range()
+    if (includeBorder) {
+        range = range.inset(Insets.square(-1))
+    }
+    for (c in range) {
+        print(this[c] ?: default)
+        if (c.x == range.endInclusive.x) {
+            println()
+        }
+    }
+}
+
+fun <E> Map<Coordinate, E>.printMapToString(default: E): String {
+    val range = this.keys.range()
+    val buffer = StringBuilder()
+    for (c in range) {
+        buffer.append(this[c] ?: default)
+        if (c.x == range.endInclusive.x) {
+            buffer.appendLine()
+        }
+    }
+    return buffer.toString()
+}
+
+fun <E> Map<Coordinate, E>.printMap(default: (Coordinate) -> E) {
+    val range = this.keys.range()
+    for (c in range) {
+        print(this[c] ?: default.invoke(c))
+        if (c.x == range.endInclusive.x) {
+            println()
+        }
+    }
+}

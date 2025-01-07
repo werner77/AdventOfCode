@@ -8,15 +8,17 @@ fun main() {
     val regex = """Step ([A-Z]+) must be finished before step ([A-Z]+) can begin.""".toRegex()
 
     val steps = mutableMapOf<String, MutableSet<String>>()
+    val adjacencyList = mutableMapOf<String, MutableSet<String>>()
     parseLines("/2018/day7.txt") { line ->
         val (a, b) = regex.matchEntire(line)?.destructured ?: error("Line does not match: $line")
         if (steps[a] == null) steps[a] = mutableSetOf()
         steps.getOrPut(b) { mutableSetOf() }.add(a)
+        adjacencyList.getOrPut(a) { mutableSetOf() }.add(b)
         Unit
     }
 
     // Part 1
-    println(topologicalSort(incomingEdges = steps).joinToString(""))
+    println(topologicalSort(adjacencyList).joinToString(""))
 
     part2(steps, 5)
 }

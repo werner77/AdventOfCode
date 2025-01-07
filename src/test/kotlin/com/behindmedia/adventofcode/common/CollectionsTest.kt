@@ -29,7 +29,7 @@ class CollectionsTest {
                 null
             }
 
-            val expectedSize = (n over k) / k.faculty()
+            val expectedSize = (n over k) / k.faculty
 
             assertTrue(seen == expectedSize.toInt())
         }

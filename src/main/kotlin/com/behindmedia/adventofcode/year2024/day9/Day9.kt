@@ -1,7 +1,7 @@
 package com.behindmedia.adventofcode.year2024.day9
 
 import com.behindmedia.adventofcode.common.*
-import com.behindmedia.adventofcode.common.PriorityQueue
+import com.behindmedia.adventofcode.common.SortedQueue
 
 private fun minFileId(size: Int): Int {
     return 0
@@ -59,7 +59,7 @@ private fun part2(data: String): Long {
     val fileCount = data.length / 2 + 1
     val files = Array(fileCount) { 0 to 0 }
     var pos = 0
-    val gapQueues = Array<PriorityQueue<Pair<Int, Int>>>(9) { PriorityQueue(comparator = Comparator.comparing(Pair<Int, Int>::first)) }
+    val gapQueues = Array<SortedQueue<Pair<Int, Int>>>(9) { SortedQueue(comparator = Comparator.comparing(Pair<Int, Int>::first)) }
     for ((i, c) in data.withIndex()) {
         val length = c.digitToInt()
         if (i % 2 == 0) {
@@ -79,7 +79,7 @@ private fun part2(data: String): Long {
         val queue = gapQueues[fileLength - 1]
         var gap: Pair<Int, Int>?
         do {
-            gap = queue.removeFirst()
+            gap = queue.removeFirstOrNull()
         } while(gap != null && !seen.add(gap.first))
         val (gapPos, gapLength) = gap ?: continue
         if (gapPos >= filePos) continue

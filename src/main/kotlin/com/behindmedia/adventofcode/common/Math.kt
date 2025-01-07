@@ -1,12 +1,10 @@
 package com.behindmedia.adventofcode.common
 
-import kotlin.Comparator
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.util.*
-import kotlin.math.*
-import java.util.function.Function
-
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 /**
  * Function to compare doubles with an allowed fractional difference
@@ -131,190 +129,6 @@ fun Long.times(other: Long, modulo: Long, ensurePositive: Boolean): Long {
     return result
 }
 
-
-fun <E> Map<Coordinate, E>.printMap(default: E, includeBorder: Boolean = false) {
-    var range = this.keys.range()
-    if (includeBorder) {
-        range = range.inset(Insets.square(-1))
-    }
-    for (c in range) {
-        print(this[c] ?: default)
-        if (c.x == range.endInclusive.x) {
-            println()
-        }
-    }
-}
-
-fun <E> Map<Coordinate, E>.printMapToString(default: E): String {
-    val range = this.keys.range()
-    val buffer = StringBuilder()
-    for (c in range) {
-        buffer.append(this[c] ?: default)
-        if (c.x == range.endInclusive.x) {
-            buffer.appendLine()
-        }
-    }
-    return buffer.toString()
-}
-
-fun <E> Map<Coordinate, E>.printMap(default: (Coordinate) -> E) {
-    val range = this.keys.range()
-    for (c in range) {
-        print(this[c] ?: default.invoke(c))
-        if (c.x == range.endInclusive.x) {
-            println()
-        }
-    }
-}
-
-fun binarySearch(
-    lowerBound: Int,
-    upperBound: Int,
-    targetValue: Int,
-    inverted: Boolean = false,
-    evaluation: (Int) -> Int
-): Int? {
-    return binarySearch(lowerBound, upperBound, inverted) { mid ->
-        evaluation(mid) <= targetValue
-    }
-}
-
-fun binarySearch(
-    lowerBound: Long,
-    upperBound: Long,
-    targetValue: Long,
-    inverted: Boolean = false,
-    evaluation: (Long) -> Long
-): Long? {
-    return binarySearch(lowerBound, upperBound, inverted) { mid ->
-        evaluation(mid) <= targetValue
-    }
-}
-
-fun binarySearch(
-    lowerBound: Int,
-    upperBound: Int,
-    inverted: Boolean = false,
-    evaluation: (Int) -> Boolean
-): Int? = binarySearch(lowerBound.toLong(), upperBound.toLong(), inverted, { evaluation.invoke(it.toInt()) })?.toInt()
-
-fun binarySearch(
-    lowerBound: Long,
-    upperBound: Long,
-    inverted: Boolean = false,
-    evaluation: (Long) -> Boolean
-): Long? {
-    var begin = lowerBound
-    var end = upperBound
-    var result: Long? = null
-    while (begin <= end) {
-        val mid = (begin + end) / 2L
-        if (evaluation(mid)) {
-            result = mid
-            if (inverted) {
-                end = mid - 1
-            } else {
-                begin = mid + 1
-            }
-        } else {
-            if (inverted) {
-                begin = mid + 1
-            } else {
-                end = mid - 1
-            }
-        }
-    }
-    return result
-}
-
-
-fun <C : Comparable<C>> topologicalSort(
-    incomingEdges: Map<C, Collection<C>>
-): List<C> {
-    return topologicalSort(incomingEdges = incomingEdges, comparator = Comparator.comparing(Function.identity()))
-}
-
-fun <C> topologicalSort(
-    incomingEdges: Map<C, Collection<C>>,
-    comparator: Comparator<C>
-): List<C> {
-    // Find all nodes with have no incoming edges
-    val remainingEdges = mutableMapOf<C, MutableSet<C>>()
-    val pending = TreeSet<C>(comparator)
-    for ((c, edges) in incomingEdges) {
-        if (edges.isEmpty()) {
-            // Add to pending
-            pending.add(c)
-        } else {
-            // Add to remaining
-            remainingEdges[c] = edges.toMutableSet()
-        }
-    }
-    val result = mutableListOf<C>()
-    while (pending.isNotEmpty()) {
-        val next = pending.popFirst() ?: error("No element found left")
-        result += next
-        // Remove next from the incoming edges
-        val iterator = remainingEdges.iterator()
-        while (iterator.hasNext()) {
-            val (c, e) = iterator.next()
-            e.remove(next)
-            if (e.isEmpty()) {
-                pending += c
-                iterator.remove()
-            }
-        }
-    }
-    if (remainingEdges.isNotEmpty()) error("Graph has a cycle")
-    return result
-}
-
-/**
- * Bron-Kerbosch algorithm to find the maximum cliques
- */
-fun <T> findAllMaximalCliques(adjacencyList: Map<T, Set<T>>): List<Set<T>> {
-    fun compute(
-        r: Set<T>,
-        p: Set<T>,
-        x: Set<T>,
-        adjacencyList: Map<T, Set<T>>,
-        result: MutableList<Set<T>>
-    ) {
-        if (p.isEmpty() && x.isEmpty()) {
-            result.add(r)
-            return
-        }
-
-        // Pick a pivot
-        val pivot = p.firstOrNull() ?: x.firstOrNull() ?: error("No pivot found")
-        val pivotNeighbors = adjacencyList[pivot] ?: emptySet()
-
-        val p1 = p.toMutableSet()
-        val x1 = x.toMutableSet()
-        val iterator = p1.iterator()
-        while (iterator.hasNext()) {
-            val v = iterator.next()
-            if (v in pivotNeighbors) {
-                continue
-            }
-            val neighbors = adjacencyList[v] ?: emptySet()
-            compute(
-                r = r + v,
-                p = p1.intersect(neighbors),
-                x = x1.intersect(neighbors),
-                adjacencyList = adjacencyList,
-                result = result
-            )
-            iterator.remove()
-            x1.add(v)
-        }
-    }
-    val result = mutableListOf<Set<T>>()
-    compute(emptySet(), adjacencyList.keys, emptySet(), adjacencyList, result)
-    return result
-}
-
-
 fun Int.pow(exp: Int): Int {
     var result = 1
     for (i in 0 until exp) {
@@ -330,206 +144,6 @@ fun Long.pow(exp: Int): Long {
     }
     return result
 }
-
-class Primes(maxNumber: Int) {
-    private val sieves = sieve(maxNumber)
-
-    private fun sieve(n: Int): IntArray {
-        val sieves = IntArray(n + 1) { 0 }
-        var i = 2
-        while (i * i <= n) {
-            if (sieves[i] == 0) {
-                var k = i * i
-                while (k <= n) {
-                    if (sieves[k] == 0) {
-                        sieves[k] = i
-                    }
-                    k += i
-                }
-            }
-            i++
-        }
-        return sieves
-    }
-
-    fun getPrimeFactors(n: Int): Set<Map.Entry<Int, Int>> {
-        val factors = defaultMutableMapOf<Int, Int> { 0 }
-        var x = n
-        while (sieves[x] > 0) {
-            factors[sieves[x]] += 1
-            x /= sieves[x]
-        }
-        factors[x] += 1
-        return factors.entries
-    }
-
-    fun sumOfFactors(x: Int): Int {
-        if (x == 1) return 1
-        var result = 1
-        for ((factor, times) in getPrimeFactors(x)) {
-            var sum = 0
-            for (i in 0..times) {
-                sum += factor.pow(i)
-            }
-            result *= sum
-        }
-        return result
-    }
-
-    fun getFactors(n: Int): List<Int> {
-        var i = 1
-        val result = mutableListOf<Int>()
-        while (i * i <= n) {
-            if (n % i == 0) {
-                val d = n / i
-                result += d
-                if (d != i) result += i
-            }
-            i++
-        }
-        return result
-    }
-
-    fun isPrime(n: Int): Boolean {
-        val factors = getPrimeFactors(n)
-        return factors.size == 1 && factors.single().value == 1
-    }
-}
-
-@JvmInline
-value class SafeLong(val value: Long) : Comparable<SafeLong> {
-    operator fun unaryPlus(): SafeLong {
-        return SafeLong(value)
-    }
-
-    operator fun unaryMinus(): SafeLong {
-        checkOverflow {
-            value == Long.MIN_VALUE
-        }
-        return SafeLong(-value)
-    }
-
-    operator fun inc(): SafeLong {
-        checkOverflow {
-            value == Long.MAX_VALUE
-        }
-        return SafeLong(value + 1)
-    }
-
-    operator fun dec(): SafeLong {
-        checkOverflow {
-            value == Long.MIN_VALUE
-        }
-        return SafeLong(value - 1)
-    }
-
-    operator fun plus(b: SafeLong): SafeLong {
-        val result = this.value + b.value
-        checkOverflow {
-            result - b.value != this.value
-        }
-        return SafeLong(result)
-    }
-
-    operator fun minus(b: SafeLong): SafeLong {
-        val result = this.value - b.value
-        checkOverflow {
-            result + b.value != this.value
-        }
-        return SafeLong(result)
-    }
-
-    operator fun times(b: SafeLong): SafeLong {
-        val result = this.value * b.value
-        checkOverflow {
-            this.value != result / b.value
-        }
-        return SafeLong(result)
-    }
-
-    operator fun div(b: SafeLong): SafeLong {
-        return SafeLong(this.value / b.value)
-    }
-
-    operator fun rem(b: SafeLong): SafeLong {
-        return SafeLong(this.value % (b.value))
-    }
-
-    override fun compareTo(other: SafeLong): Int {
-        return value.compareTo(other.value)
-    }
-}
-
-private inline fun checkOverflow(test: () -> Boolean) {
-    if (test.invoke()) throw IllegalStateException("Overflow occurred")
-}
-
-@JvmInline
-value class SafeInt(val value: Int) : Comparable<SafeInt> {
-    operator fun unaryPlus(): SafeInt {
-        return SafeInt(value)
-    }
-
-    operator fun unaryMinus(): SafeInt {
-        checkOverflow {
-            value == Integer.MIN_VALUE
-        }
-        return SafeInt(-value)
-    }
-
-    operator fun inc(): SafeInt {
-        checkOverflow {
-            value == Integer.MAX_VALUE
-        }
-        return SafeInt(value + 1)
-    }
-
-    operator fun dec(): SafeInt {
-        checkOverflow {
-            value == Integer.MIN_VALUE
-        }
-        return SafeInt(value - 1)
-    }
-
-    operator fun plus(b: SafeInt): SafeInt {
-        val result = this.value + b.value
-        checkOverflow {
-            result - b.value != this.value
-        }
-        return SafeInt(result)
-    }
-
-    operator fun minus(b: SafeInt): SafeInt {
-        val result = this.value - b.value
-        checkOverflow {
-            result + b.value != this.value
-        }
-        return SafeInt(result)
-    }
-
-    operator fun times(b: SafeInt): SafeInt {
-        val result = this.value * b.value
-        checkOverflow {
-            this.value != result / b.value
-        }
-        return SafeInt(result)
-    }
-
-    operator fun div(b: SafeInt): SafeInt {
-        return SafeInt(this.value / b.value)
-    }
-
-    operator fun rem(b: SafeInt): SafeInt {
-        return SafeInt(this.value % (b.value))
-    }
-
-    override fun compareTo(other: SafeInt): Int {
-        return value.compareTo(other.value)
-    }
-}
-
-fun Int.safe(): SafeInt = SafeInt(this)
-fun Long.safe(): SafeLong = SafeLong(this)
 
 fun normalizedAngle(angle: Double): Double {
     var result = positiveAngle(angle)
@@ -569,10 +183,49 @@ infix fun Int.over(k: Int): Long {
     return result
 }
 
-fun Int.faculty(): Long {
-    var result = 1L
-    for (i in 1..this) {
-        result *= i
+val Int.faculty: Long
+    get() {
+        var result = 1L
+        for (i in 1..this) {
+            result *= i
+        }
+        return result
     }
-    return result
+
+val Int.digits: List<Int>
+    get() {
+        if (this == 0) {
+            return listOf(0)
+        }
+        val result = ArrayDeque<Int>(10)
+        var value = abs(this)
+        while (value != 0) {
+            result.addFirst(value % 10)
+            value /= 10
+        }
+        return result
+    }
+
+val Long.digits: List<Int>
+    get() {
+        if (this == 0L) {
+            return listOf(0)
+        }
+        val result = ArrayDeque<Int>(20)
+        var value = abs(this)
+        while (value != 0L) {
+            result.addFirst((value % 10L).toInt())
+            value /= 10L
+        }
+        return result
+    }
+
+fun floorLog2(value: Int): Int {
+    require(value > 0)
+    return 31 - value.countLeadingZeroBits()
+}
+
+fun ceilLog2(value: Int): Int {
+    require(value > 0)
+    return 32 - (value - 1).countLeadingZeroBits()
 }

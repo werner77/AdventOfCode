@@ -48,7 +48,7 @@ private fun <N: Any> findShortestWeightedPaths(
     neighbours: (N) -> Collection<Pair<N, Int>>,
     process: (Path<N>) -> Boolean
 ): List<Path<N>> {
-    val pending = PriorityQueue<Path<N>>()
+    val pending = SortedQueue<Path<N>>()
     pending.add(Path(from, 0, null))
     val settled = hashMapOf<N, Int>()
     val paths = mutableListOf<Path<N>>()
