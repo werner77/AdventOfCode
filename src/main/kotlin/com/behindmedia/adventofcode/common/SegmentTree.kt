@@ -1,7 +1,5 @@
 package com.behindmedia.adventofcode.common
 
-import com.behindmedia.adventofcode.common.LazySegmentTree
-
 interface SegmentNode<N : SegmentNode<N, V>, V : Any> {
     operator fun plus(other: N): N
 }
@@ -157,6 +155,7 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
         if (right < queryLeft || left > queryRight) {
             return null
         }
+
         if (left >= queryLeft && right <= queryRight) {
             return nodes[nodeIndex]
         }
