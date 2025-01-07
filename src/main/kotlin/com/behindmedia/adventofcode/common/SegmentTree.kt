@@ -1,5 +1,7 @@
 package com.behindmedia.adventofcode.common
 
+import com.behindmedia.adventofcode.common.LazySegmentTree
+
 interface SegmentNode<N : SegmentNode<N, V>, V : Any> {
     operator fun plus(other: N): N
 }
@@ -73,7 +75,17 @@ class SegmentTree<N : SegmentNode<N, V>, V : Any>(
     size: Int,
     nodeConstructor: (V) -> N,
     dataLocator: (Int) -> V
-): AbstractSegmentTree<N, V>(size, nodeConstructor, dataLocator) {
+) : AbstractSegmentTree<N, V>(size, nodeConstructor, dataLocator) {
+    constructor(array: Array<V>, nodeConstructor: (V) -> N, ) : this(
+        array.size,
+        nodeConstructor,
+        { array[it] })
+
+    constructor(list: List<V>, nodeConstructor: (V) -> N) : this(
+        list.size,
+        nodeConstructor,
+        { list[it] })
+
     override fun query(nodeIndex: Int, left: Int, right: Int, queryLeft: Int, queryRight: Int): N? {
         if (right < queryLeft || left > queryRight) {
             return null
@@ -112,7 +124,20 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
     nodeConstructor: (V) -> N,
     private val lazyNodeConstructor: (V) -> L,
     dataLocator: (Int) -> V
-): AbstractSegmentTree<N, V>(size, nodeConstructor, dataLocator) {
+) : AbstractSegmentTree<N, V>(size, nodeConstructor, dataLocator) {
+
+    constructor(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L) : this(
+        array.size,
+        nodeConstructor,
+        lazyNodeConstructor,
+        { array[it] })
+
+    constructor(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L) : this(
+        list.size,
+        nodeConstructor,
+        lazyNodeConstructor,
+        { list[it] })
+
     private val lazyNodes: MutableList<L?> = MutableList<L?>(nodes.size) { null }
 
     fun update(range: IntRange, value: V) {
@@ -179,7 +204,7 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
 
         // 1) Apply the pending update to the current node
         val node = nodes[nodeIndex] ?: error("Node at index $nodeIndex does not exist")
-        pendingUpdate.applyTo(node, left..right)
+        nodes[nodeIndex] = pendingUpdate.applyTo(node, left..right)
 
         // 2) Propagate to children if not a leaf
         if (left != right) {
