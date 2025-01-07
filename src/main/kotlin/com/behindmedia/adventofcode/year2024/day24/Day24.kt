@@ -246,23 +246,6 @@ fun main() = timing {
 }
 
 /**
- * Divides an int range into count number of sub ranges which are as similar in size as possible.
- */
-private fun IntRange.divide(count: Int): List<IntRange> {
-    val size = this.last - this.first + 1
-    val result = mutableListOf<IntRange>()
-    var current = this.first
-    var remaining = size
-    while (remaining > 0) {
-        val subSize = remaining / (count - result.size).toDouble().roundToInt()
-        result += current until min(current + subSize, this.last + 1)
-        current += subSize
-        remaining -= subSize
-    }
-    return result
-}
-
-/**
  * Find all errors, testing all bit operations, running on all available cores.
  */
 private fun State.findErrorsParallel(): Pair<Set<UnorderedPair<Int>>, Set<BitOperation>> {
