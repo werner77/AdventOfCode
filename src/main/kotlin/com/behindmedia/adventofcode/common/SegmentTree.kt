@@ -1,23 +1,49 @@
 package com.behindmedia.adventofcode.common
 
-interface SegmentNode<N : SegmentNode<N, V>, V : Any> {
+interface SegmentNode<N : SegmentNode<N, V, O>, V : Any, O: Any> {
+    // This operation denotes the aggregation the segment tree does
     operator fun plus(other: N): N
+
+    // This generates a new node by applying the specified value with the specified operation
+    fun apply(value: V, operation: O): N
 }
 
-interface LazySegmentNode<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : Any> {
+interface LazySegmentNode<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>, V : Any, O: Any> {
+    // This generates a new lazy update based on this one and the specified operand.
+    // Note the order may be relevant because not all operations are commutative.
     operator fun plus(other: L): L
+
+    // Applies this update to a node by generating a new node (clearing this update once it's done).
     fun applyTo(node: N, range: IntRange): N
 }
 
-abstract class AbstractSegmentTree<N : SegmentNode<N, V>, V : Any>(
-    val size: Int,
-    protected val nodeConstructor: (V) -> N,
-    dataLocator: (Int) -> V
-) {
-    protected val nodes: MutableList<N?>
-
+interface SegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any> {
+    val size: Int
     val range: IntRange
         get() = 0 until size
+
+    fun query(range: IntRange = this.range): N
+
+    fun query(index: Int): N {
+        require(index in this.range) { "Invalid index: $index" }
+        return query(index..index)
+    }
+
+    fun update(range: IntRange = this.range, value: V, operation: O) {
+        for (i in range) {
+            update(i, value, operation)
+        }
+    }
+
+    fun update(index: Int, value: V, operation: O)
+}
+
+abstract class AbstractSegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any>(
+    override val size: Int,
+    protected val nodeConstructor: (V) -> N,
+    dataLocator: (Int) -> V
+): SegmentTree<N, V, O> {
+    protected val nodes: MutableList<N?>
 
     init {
         require(size >= 1)
@@ -39,24 +65,19 @@ abstract class AbstractSegmentTree<N : SegmentNode<N, V>, V : Any>(
         build(1, 0, size - 1)
     }
 
-    fun query(range: IntRange = this.range): N {
+    override fun query(range: IntRange): N {
         require(range.first in this.range && range.last in this.range) { "Invalid range: $range" }
         return query(1, 0, size - 1, range.first, range.last) ?: error("No node found")
     }
 
-    fun query(index: Int): N {
+    override fun update(index: Int, value: V, operation: O) {
         require(index in this.range) { "Invalid index: $index" }
-        return query(index..index)
-    }
-
-    fun update(index: Int, value: V) {
-        require(index in this.range) { "Invalid index: $index" }
-        update(1, 0, size - 1, index, value);
+        update(1, 0, size - 1, index, value, operation)
     }
 
     protected abstract fun query(nodeIndex: Int, left: Int, right: Int, queryLeft: Int, queryRight: Int): N?
 
-    protected abstract fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V)
+    protected abstract fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V, operation: O)
 
     protected operator fun N?.plus(other: N?): N? {
         return if (this == null) {
@@ -69,11 +90,11 @@ abstract class AbstractSegmentTree<N : SegmentNode<N, V>, V : Any>(
     }
 }
 
-class SegmentTree<N : SegmentNode<N, V>, V : Any>(
+class PlainSegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any>(
     size: Int,
     nodeConstructor: (V) -> N,
     dataLocator: (Int) -> V
-) : AbstractSegmentTree<N, V>(size, nodeConstructor, dataLocator) {
+) : AbstractSegmentTree<N, V, O>(size, nodeConstructor, dataLocator) {
     constructor(array: Array<V>, nodeConstructor: (V) -> N, ) : this(
         array.size,
         nodeConstructor,
@@ -92,7 +113,7 @@ class SegmentTree<N : SegmentNode<N, V>, V : Any>(
             return nodes[nodeIndex]
         }
         val mid = (left + right) / 2
-        val nextNodeIndex = nodeIndex + nodeIndex
+        val nextNodeIndex = nodeIndex shl 1
         return query(nextNodeIndex, left, mid, queryLeft, queryRight) + query(
             nextNodeIndex + 1,
             mid + 1,
@@ -102,49 +123,68 @@ class SegmentTree<N : SegmentNode<N, V>, V : Any>(
         )
     }
 
-    override fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V) {
+    override fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V, operation: O) {
         if (left == right) {
-            nodes[nodeIndex] = nodeConstructor(value)
+            val existing = nodes[nodeIndex] ?: error("Node at index $nodeIndex does not exist")
+            nodes[nodeIndex] = existing.apply(value, operation)
             return
         }
         val mid = (left + right) / 2
+        val nextNodeIndex = nodeIndex shl 1
         if (valueIndex <= mid) {
-            update(nodeIndex + nodeIndex, left, mid, valueIndex, value)
+            update(nextNodeIndex, left, mid, valueIndex, value, operation)
         } else {
-            update(nodeIndex + nodeIndex + 1, mid + 1, right, valueIndex, value)
+            update(nextNodeIndex + 1, mid + 1, right, valueIndex, value, operation)
         }
-        nodes[nodeIndex] = nodes[nodeIndex + nodeIndex] + nodes[nodeIndex + nodeIndex + 1]
+        nodes[nodeIndex] = nodes[nextNodeIndex] + nodes[nextNodeIndex + 1]
     }
 }
 
-class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : Any>(
+class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>, V : Any, O: Any>(
     size: Int,
     nodeConstructor: (V) -> N,
-    private val lazyNodeConstructor: (V) -> L,
+    private val lazyNodeConstructor: (V, O) -> L,
     dataLocator: (Int) -> V
-) : AbstractSegmentTree<N, V>(size, nodeConstructor, dataLocator) {
+) : AbstractSegmentTree<N, V, O>(size, nodeConstructor, dataLocator) {
 
-    constructor(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L) : this(
+    constructor(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V, O) -> L) : this(
         array.size,
         nodeConstructor,
         lazyNodeConstructor,
         { array[it] })
 
-    constructor(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L) : this(
+    constructor(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V, O) -> L) : this(
         list.size,
         nodeConstructor,
         lazyNodeConstructor,
         { list[it] })
 
-    private val lazyNodes: MutableList<L?> = MutableList<L?>(nodes.size) { null }
+    companion object {
+        operator fun <L: LazySegmentNode<L, N, V, Unit>, N : SegmentNode<N, V, Unit>, V : Any> invoke(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L): LazySegmentTree<L, N, V, Unit> {
+            return LazySegmentTree(array, nodeConstructor, { v, _ -> lazyNodeConstructor(v) })
+        }
 
-    fun update(range: IntRange, value: V) {
-        require(range in this.range) { "Invalid range: $range" }
-        update(1, 0, size - 1, range.first, range.last, value)
+        operator fun <L: LazySegmentNode<L, N, V, Unit>, N : SegmentNode<N, V, Unit>, V : Any> invoke(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L): LazySegmentTree<L, N, V, Unit> {
+            return LazySegmentTree(list, nodeConstructor, { v, _ -> lazyNodeConstructor(v) })
+        }
+
+        operator fun <L: LazySegmentNode<L, N, V, Unit>, N : SegmentNode<N, V, Unit>, V : Any> invoke(size: Int,
+                                                                                                      nodeConstructor: (V) -> N,
+                                                                                                      lazyNodeConstructor: (V) -> L,
+                                                                                                      dataLocator: (Int) -> V): LazySegmentTree<L, N, V, Unit> {
+            return LazySegmentTree(size, nodeConstructor, { v, _ -> lazyNodeConstructor(v) }, dataLocator)
+        }
     }
 
-    override fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V) {
-        update(nodeIndex, left, right, valueIndex, valueIndex, value)
+    private val lazyNodes: MutableList<L?> = MutableList<L?>(nodes.size) { null }
+
+    override fun update(range: IntRange, value: V, operation: O) {
+        require(range in this.range) { "Invalid range: $range" }
+        update(1, 0, size - 1, range.first, range.last, value, operation)
+    }
+
+    override fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V, operation: O) {
+        update(nodeIndex, left, right, valueIndex, valueIndex, value, operation)
     }
 
     override fun query(nodeIndex: Int, left: Int, right: Int, queryLeft: Int, queryRight: Int): N? {
@@ -173,7 +213,7 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
         )
     }
 
-    private fun update(nodeIndex: Int, left: Int, right: Int, updateLeft: Int, updateRight: Int, value: V) {
+    private fun update(nodeIndex: Int, left: Int, right: Int, updateLeft: Int, updateRight: Int, value: V, operation: O) {
         // 1) If there's a pending update at this node, apply it
         applyLazy(nodeIndex, left, right)
 
@@ -182,7 +222,7 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
 
         // 3) Total overlap: store 'value' in lazy[nodeIndex] and apply immediately
         if (updateLeft <= left && right <= updateRight) {
-            lazyNodes[nodeIndex] += lazyNodeConstructor(value)
+            lazyNodes[nodeIndex] += lazyNodeConstructor(value, operation)
             applyLazy(nodeIndex, left, right)
             return
         }
@@ -191,8 +231,8 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
         val mid = (left + right) / 2
         val leftChildIndex = nodeIndex shl 1
         val rightChildIndex = leftChildIndex + 1
-        update(leftChildIndex, left, mid, updateLeft, updateRight, value)
-        update(rightChildIndex, mid + 1, right, updateLeft, updateRight, value)
+        update(leftChildIndex, left, mid, updateLeft, updateRight, value, operation)
+        update(rightChildIndex, mid + 1, right, updateLeft, updateRight, value, operation)
 
         // 5) Recombine children after updates
         nodes[nodeIndex] = nodes[leftChildIndex] + nodes[rightChildIndex]
@@ -227,4 +267,12 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V>, N : SegmentNode<N, V>, V : A
             this + other
         }
     }
+}
+
+fun <N : SegmentNode<N, V, Unit>, V : Any> SegmentTree<N, V, Unit>.update(index: Int, value: V) {
+    return this.update(index, value, Unit)
+}
+
+fun <N : SegmentNode<N, V, Unit>, V : Any> SegmentTree<N, V, Unit>.update(range: IntRange, value: V) {
+    return this.update(range, value, Unit)
 }
