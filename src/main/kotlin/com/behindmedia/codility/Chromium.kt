@@ -2,69 +2,14 @@ package com.behindmedia.codility
 
 import com.behindmedia.adventofcode.common.*
 
+private typealias ModLong = BoundedLong
+
 class Chromium {
 
     private data class Nest(val index: Int, val height: Int)
 
     enum class ProcessMode {
         Initial, Left, Right
-    }
-
-    @JvmInline
-    private value class ModLong(val value: Long) : Comparable<ModLong> {
-        companion object {
-            const val MOD = 1_000_000_007L
-
-            val ZERO = ModLong(0L)
-            val ONE = ModLong(1L)
-        }
-
-        operator fun unaryPlus(): ModLong {
-            return ModLong(value)
-        }
-
-        operator fun unaryMinus(): ModLong {
-            return ModLong(-value)
-        }
-
-        operator fun inc(): ModLong {
-            return ModLong(value + 1)
-        }
-
-        operator fun dec(): ModLong {
-            return ModLong(value - 1)
-        }
-
-        operator fun plus(b: ModLong): ModLong {
-            val result = (this.value + b.value) % MOD
-            return ModLong(result)
-        }
-
-        operator fun minus(b: ModLong): ModLong {
-            val result = (this.value - b.value) % MOD
-            return ModLong(result)
-        }
-
-        operator fun times(b: ModLong): ModLong {
-            val result = (this.value * b.value) % MOD
-            return ModLong(result)
-        }
-
-        operator fun div(b: ModLong): ModLong {
-            return ModLong(this.value / b.value)
-        }
-
-        operator fun rem(b: ModLong): ModLong {
-            return ModLong(this.value % (b.value))
-        }
-
-        override fun compareTo(other: ModLong): Int {
-            return value.compareTo(other.value)
-        }
-
-        override fun toString(): String {
-            return value.toString()
-        }
     }
 
     private data class Node(val left: ModLong = ModLong.ZERO, val right: ModLong = ModLong.ZERO) : SegmentNode<Node, ProcessMode, Unit> {
@@ -120,7 +65,6 @@ class Chromium {
             rl = this.rl + deltaRL
             lr = this.lr + deltaLR
             rr = this.rr + deltaRR
-            println("Updated to: $this")
         }
 
         override fun applyOperation(
@@ -194,6 +138,7 @@ class Chromium {
     }
 
     fun solution(H: IntArray): Int {
+        ModLong.MOD = 1_000_000_007L
         val nests = ArrayList<Nest>(H.size)
         for (i in 0 until H.size) {
             nests.add(Nest(i, H[i]))
@@ -207,13 +152,14 @@ class Chromium {
         )
 
         var total = ModLong.ZERO
-        for ((i, nest) in nests.withIndex()) {
+        for (nest in nests) {
             total += tree.processElement(nest.index)
         }
         return total.value.toInt()
     }
 
     fun dpSolution(H: IntArray): Int {
+        ModLong.MOD = 1_000_000_007L
         val nests: List<Nest> = H.withIndex().map { (i, h) -> Nest(i, h) }
             .sortedBy { it.height }
         var total = ModLong.ZERO
@@ -242,6 +188,7 @@ private fun generateRandomArray(size: Int): IntArray {
 }
 
 fun main() {
-    val array = intArrayOf(2, 3, 5, 0, 6, 4, 1)
+    val array = generateRandomArray(10_000)
     println(Chromium().solution(array))
+    println(Chromium().dpSolution(array))
 }
