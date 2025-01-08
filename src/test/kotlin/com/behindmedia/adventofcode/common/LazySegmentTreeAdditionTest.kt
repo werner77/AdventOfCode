@@ -3,48 +3,7 @@ package com.behindmedia.adventofcode.common
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class LazySegmentTreeAdditionTest {
-
-    private enum class Operation {
-        Assign, Add
-    }
-
-    @JvmInline
-    private value class ValueNode(val value: Int) : SegmentNode<ValueNode, Int, Operation> {
-        override fun plus(other: ValueNode) = ValueNode(this.value + other.value)
-        override fun apply(value: Int, operation: Operation): ValueNode {
-            return when (operation) {
-                Operation.Assign -> ValueNode(value)
-                Operation.Add -> ValueNode(this.value + value)
-            }
-        }
-    }
-
-    private class LazyNode(val value: Int, val operation: Operation) : LazySegmentNode<LazyNode, ValueNode, Int, Operation> {
-        override fun plus(other: LazyNode): LazyNode {
-            return when (other.operation) {
-                Operation.Assign -> other
-                Operation.Add -> when (this.operation) {
-                    Operation.Assign -> LazyNode(this.value + other.value, Operation.Assign)
-                    Operation.Add -> LazyNode(this.value + other.value, Operation.Add)
-                }
-            }
-        }
-
-        override fun applyTo(node: ValueNode, range: IntRange): ValueNode {
-            return when (operation) {
-                Operation.Assign -> ValueNode(range.size * value)
-                Operation.Add -> ValueNode(node.value + range.size * value)
-            }
-        }
-    }
-
-    private fun constructTree(arr: IntArray): LazySegmentTree<LazyNode, ValueNode, Int, Operation> {
-        return LazySegmentTree(
-            array = arr.toTypedArray(),
-            nodeConstructor = ::ValueNode,
-            lazyNodeConstructor = { value, operation -> LazyNode(value, operation) })
-    }
+class LazySegmentTreeAdditionTest: AbstractSegmentTreeTest() {
 
     @Test
     fun testSingleElementArray() {

@@ -5,16 +5,23 @@ interface SegmentNode<N : SegmentNode<N, V, O>, V : Any, O: Any> {
     operator fun plus(other: N): N
 
     // This generates a new node by applying the specified value with the specified operation
-    fun apply(value: V, operation: O): N
+    fun applyOperation(operation: O, value: V): N
 }
 
 interface LazySegmentNode<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>, V : Any, O: Any> {
-    // This generates a new lazy update based on this one and the specified operand.
-    // Note the order may be relevant because not all operations are commutative.
-    operator fun plus(other: L): L
+    // This generates a new lazy update based on this one and the specified parent.
+    // The node parameter is the data node representing this value in the tree.
+    fun applyFrom(parent: L, node: N)
 
     // Applies this update to a node by generating a new node (clearing this update once it's done).
     fun applyTo(node: N, range: IntRange): N
+
+    // Applies an operation to this node
+    fun applyOperation(operation: O, value: V, node: N)
+
+    fun reset()
+
+    val isPending: Boolean
 }
 
 interface SegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any> {
@@ -79,6 +86,10 @@ abstract class AbstractSegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any>(
 
     protected abstract fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V, operation: O)
 
+    protected fun requireNode(nodeIndex: Int): N {
+        return requireNotNull(nodes[nodeIndex]) { "Node at index $nodeIndex does not exist" }
+    }
+
     protected operator fun N?.plus(other: N?): N? {
         return if (this == null) {
             other
@@ -126,7 +137,7 @@ class PlainSegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any>(
     override fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V, operation: O) {
         if (left == right) {
             val existing = nodes[nodeIndex] ?: error("Node at index $nodeIndex does not exist")
-            nodes[nodeIndex] = existing.apply(value, operation)
+            nodes[nodeIndex] = existing.applyOperation(operation, value)
             return
         }
         val mid = (left + right) / 2
@@ -143,40 +154,23 @@ class PlainSegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any>(
 class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>, V : Any, O: Any>(
     size: Int,
     nodeConstructor: (V) -> N,
-    private val lazyNodeConstructor: (V, O) -> L,
+    lazyNodeConstructor: () -> L,
     dataLocator: (Int) -> V
 ) : AbstractSegmentTree<N, V, O>(size, nodeConstructor, dataLocator) {
 
-    constructor(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V, O) -> L) : this(
+    constructor(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: () -> L) : this(
         array.size,
         nodeConstructor,
         lazyNodeConstructor,
         { array[it] })
 
-    constructor(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V, O) -> L) : this(
+    constructor(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: () -> L) : this(
         list.size,
         nodeConstructor,
         lazyNodeConstructor,
         { list[it] })
 
-    companion object {
-        operator fun <L: LazySegmentNode<L, N, V, Unit>, N : SegmentNode<N, V, Unit>, V : Any> invoke(array: Array<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L): LazySegmentTree<L, N, V, Unit> {
-            return LazySegmentTree(array, nodeConstructor, { v, _ -> lazyNodeConstructor(v) })
-        }
-
-        operator fun <L: LazySegmentNode<L, N, V, Unit>, N : SegmentNode<N, V, Unit>, V : Any> invoke(list: List<V>, nodeConstructor: (V) -> N, lazyNodeConstructor: (V) -> L): LazySegmentTree<L, N, V, Unit> {
-            return LazySegmentTree(list, nodeConstructor, { v, _ -> lazyNodeConstructor(v) })
-        }
-
-        operator fun <L: LazySegmentNode<L, N, V, Unit>, N : SegmentNode<N, V, Unit>, V : Any> invoke(size: Int,
-                                                                                                      nodeConstructor: (V) -> N,
-                                                                                                      lazyNodeConstructor: (V) -> L,
-                                                                                                      dataLocator: (Int) -> V): LazySegmentTree<L, N, V, Unit> {
-            return LazySegmentTree(size, nodeConstructor, { v, _ -> lazyNodeConstructor(v) }, dataLocator)
-        }
-    }
-
-    private val lazyNodes: MutableList<L?> = MutableList<L?>(nodes.size) { null }
+    private val lazyNodes: MutableList<L> = MutableList<L>(nodes.size) { lazyNodeConstructor.invoke() }
 
     override fun update(range: IntRange, value: V, operation: O) {
         require(range in this.range) { "Invalid range: $range" }
@@ -222,7 +216,7 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>,
 
         // 3) Total overlap: store 'value' in lazy[nodeIndex] and apply immediately
         if (updateLeft <= left && right <= updateRight) {
-            lazyNodes[nodeIndex] += lazyNodeConstructor(value, operation)
+            lazyNodes[nodeIndex].applyOperation(operation, value, requireNode(nodeIndex))
             applyLazy(nodeIndex, left, right)
             return
         }
@@ -239,33 +233,25 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>,
     }
 
     private fun applyLazy(nodeIndex: Int, left: Int, right: Int) {
-        val pendingUpdate = lazyNodes[nodeIndex] ?: return
+        val lazyUpdate = lazyNodes[nodeIndex]
+        if (!lazyUpdate.isPending) {
+            return
+        }
 
         // 1) Apply the pending update to the current node
         val node = nodes[nodeIndex] ?: error("Node at index $nodeIndex does not exist")
-        nodes[nodeIndex] = pendingUpdate.applyTo(node, left..right)
+        nodes[nodeIndex] = lazyUpdate.applyTo(node, left..right)
 
         // 2) Propagate to children if not a leaf
         if (left != right) {
-            val leftChild = nodeIndex shl 1
-            val rightChild = leftChild + 1
-            // If child has no lazy value, set it; if it does, combine them
-            lazyNodes[leftChild] = lazyNodes[leftChild] + pendingUpdate
-            lazyNodes[rightChild] = lazyNodes[rightChild] + pendingUpdate
+            val leftChildIndex = nodeIndex shl 1
+            val rightChildIndex = leftChildIndex + 1
+            lazyNodes[leftChildIndex].applyFrom(lazyUpdate, requireNode(leftChildIndex))
+            lazyNodes[rightChildIndex].applyFrom(lazyUpdate, requireNode(rightChildIndex))
         }
 
         // 3) Clear the lazy value for the current node
-        lazyNodes[nodeIndex] = null
-    }
-
-    private operator fun L?.plus(other: L?): L? {
-        return if (this == null) {
-            other
-        } else if (other == null) {
-            this
-        } else {
-            this + other
-        }
+        lazyUpdate.reset()
     }
 }
 
