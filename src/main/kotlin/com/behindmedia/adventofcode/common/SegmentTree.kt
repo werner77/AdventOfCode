@@ -208,10 +208,10 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>,
     }
 
     private fun update(nodeIndex: Int, left: Int, right: Int, updateLeft: Int, updateRight: Int, value: V, operation: O) {
-
-        // 2) If there's a pending update at this node, apply it
+        // 1) If there's a pending update at this node, apply it
         applyLazy(nodeIndex, left, right)
 
+        // 2) Check for overlap
         if (right < updateLeft || left > updateRight) {
             return
         }
@@ -221,16 +221,13 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>,
 
         // 3) Total overlap: store 'value' in lazy[nodeIndex] and apply immediately
         if (updateLeft <= left && right <= updateRight) {
-
             // Apply the change to this node
             nodes[nodeIndex] = requireNode(nodeIndex).applyOperation(operation, value, left..right)
-
             if (left != right) {
                 // Apply lazy to children
                 lazyNodes[leftChildIndex].applyOperation(operation, value, requireNode(leftChildIndex))
                 lazyNodes[rightChildIndex].applyOperation(operation, value, requireNode(rightChildIndex))
             }
-
             return
         }
 

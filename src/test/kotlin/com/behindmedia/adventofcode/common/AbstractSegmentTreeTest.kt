@@ -7,12 +7,12 @@ abstract class AbstractSegmentTreeTest {
     }
 
     @JvmInline
-    protected value class ValueNode(val value: Int) : SegmentNode<ValueNode, Int, Operation> {
-        override fun plus(other: ValueNode) = ValueNode(this.value + other.value)
-        override fun applyOperation(operation: Operation, value: Int, range: IntRange): ValueNode {
+    protected value class SumNode(val value: Int) : SegmentNode<SumNode, Int, Operation> {
+        override fun plus(other: SumNode) = SumNode(this.value + other.value)
+        override fun applyOperation(operation: Operation, value: Int, range: IntRange): SumNode {
             return when (operation) {
-                Operation.Assign -> ValueNode(value * range.size)
-                Operation.Add -> ValueNode(this.value + value * range.size)
+                Operation.Assign -> SumNode(value * range.size)
+                Operation.Add -> SumNode(this.value + value * range.size)
             }
         }
         override fun toString(): String {
@@ -20,18 +20,11 @@ abstract class AbstractSegmentTreeTest {
         }
     }
 
-    protected data class LazyNode(var value: Int = 0, var operation: Operation = Operation.Add) : LazySegmentNode<LazyNode, ValueNode, Int, Operation> {
+    protected data class LazySumNode(var value: Int = 0, var operation: Operation = Operation.Add) : LazySegmentNode<LazySumNode, SumNode, Int, Operation> {
 
-        override fun applyFrom(
-            parent: LazyNode,
-            node: ValueNode
-        ) = applyOperation(parent.operation, parent.value, node)
+        override fun applyFrom(parent: LazySumNode, node: SumNode) = applyOperation(parent.operation, parent.value, node)
 
-        override fun applyOperation(
-            operation: Operation,
-            value: Int,
-            node: ValueNode
-        ) = when (operation) {
+        override fun applyOperation(operation: Operation, value: Int, node: SumNode) = when (operation) {
             Operation.Assign -> {
                 this.operation = Operation.Assign
                 this.value = value
@@ -39,7 +32,7 @@ abstract class AbstractSegmentTreeTest {
             Operation.Add -> this.value += value
         }
 
-        override fun applyTo(node: ValueNode, range: IntRange) = node.applyOperation(operation, value, range)
+        override fun applyTo(node: SumNode, range: IntRange) = node.applyOperation(operation, value, range)
 
         override fun reset() {
             value = 0
@@ -54,10 +47,10 @@ abstract class AbstractSegmentTreeTest {
         }
     }
 
-    protected fun constructTree(arr: IntArray): LazySegmentTree<LazyNode, ValueNode, Int, Operation> {
+    protected fun constructTree(arr: IntArray): LazySegmentTree<LazySumNode, SumNode, Int, Operation> {
         return LazySegmentTree(
             array = arr.toTypedArray(),
-            nodeConstructor = ::ValueNode,
-            lazyNodeConstructor = { LazyNode() })
+            nodeConstructor = ::SumNode,
+            lazyNodeConstructor = { LazySumNode() })
     }
 }

@@ -106,19 +106,11 @@ class Chromium {
 
     private fun SegmentTree<Node, ProcessMode, Unit>.processElement(index: Int): ModLong {
 
-        fun getSumLeft(): ModLong {
-            return if (index > 0) this.query(0..index - 1).left else ModLong.ZERO
-        }
-
-        fun getSumRight(): ModLong {
-            return if (index < size - 1) this.query(index + 1..size - 1).right else ModLong.ZERO
-        }
-
         // The number of ways we finished at a lower nest while ending in the left direction
-        val sumLeft = getSumLeft()
+        val sumLeft = if (index > 0) query(0..index - 1).left else ModLong.ZERO
 
         // The number of ways we finished at a lower nest while ending in the right direction
-        val sumRight = getSumRight()
+        val sumRight = if (index < size - 1) query(index + 1..size - 1).right else ModLong.ZERO
 
         // Total number of ways to finish at this nest
         val total = (sumLeft + sumRight + ModLong.ONE)
@@ -158,27 +150,33 @@ class Chromium {
         return total.value.toInt()
     }
 
+    private fun processNest(index: Int, height: Int, nests: IntArray): ModLong {
+        var left = ModLong.ZERO
+        var right = ModLong.ZERO
+        for (h in height + 1 until nests.size) {
+            val otherIndex = nests[h]
+            val isLeft = otherIndex < index
+            if (isLeft) {
+                left += ModLong.ONE + right
+            } else {
+                right += ModLong.ONE + left
+            }
+        }
+        return ModLong.ONE + left + right
+    }
+
     fun dpSolution(H: IntArray): Int {
         ModLong.MOD = 1_000_000_007L
-        val nests: List<Nest> = H.withIndex().map { (i, h) -> Nest(i, h) }
+        val nests = H.withIndex()
+            .map { (i, h) -> Nest(i, h) }
             .sortedBy { it.height }
-        var total = ModLong.ZERO
-        for ((height, nest) in nests.withIndex()) {
-            val index = nest.index
-            var left = ModLong.ZERO
-            var right = ModLong.ZERO
-            for (k in height + 1 until nests.size) {
-                val nest1 = nests[k]
-                val isLeft = nest1.index < index
-                if (isLeft) {
-                    left += ModLong.ONE + right
-                } else {
-                    right += ModLong.ONE + left
-                }
-            }
-            total += ModLong.ONE + left + right
-        }
-        return total.value.toInt()
+            .map { it.index }
+            .toIntArray()
+        return nests.withIndex().mapReduceParallel(
+            initial = ModLong.ZERO,
+            map = { (height, value) -> processNest(value, height, nests) },
+            reduce = ModLong::plus
+        ).toInt()
     }
 
 }
@@ -188,7 +186,11 @@ private fun generateRandomArray(size: Int): IntArray {
 }
 
 fun main() {
-    val array = generateRandomArray(10_000)
-    println(Chromium().solution(array))
-    println(Chromium().dpSolution(array))
+    val array = generateRandomArray(100_000)
+    timing {
+        println(Chromium().solution(array))
+    }
+    timing {
+        println(Chromium().dpSolution(array))
+    }
 }
