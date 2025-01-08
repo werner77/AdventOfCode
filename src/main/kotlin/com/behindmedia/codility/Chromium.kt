@@ -72,7 +72,8 @@ class Chromium {
 
         override fun applyOperation(
             operation: Unit,
-            value: ProcessMode
+            value: ProcessMode,
+            range: IntRange
         ) = when (value) {
             ProcessMode.Initial -> Node(ModLong.ONE, ModLong.ONE)
             ProcessMode.Left -> this.copy(left = this.left + this.right)
@@ -119,7 +120,7 @@ class Chromium {
             rl = this.rl + deltaRL
             lr = this.lr + deltaLR
             rr = this.rr + deltaRR
-            //println("Updated to: $this")
+            println("Updated to: $this")
         }
 
         override fun applyOperation(
@@ -241,21 +242,6 @@ private fun generateRandomArray(size: Int): IntArray {
 }
 
 fun main() {
-
-    for (i in 0 until 100_000) {
-        val array = generateRandomArray(20)
-
-        //val array = intArrayOf(4, 6, 2, 1, 5)
-
-
-        val result1 = Chromium().solution(array)
-        val result2 = Chromium().dpSolution(array)
-
-        if (result1 != result2) {
-            println(result1)
-            println(result2)
-            println(array.contentToString())
-            break
-        }
-    }
+    val array = intArrayOf(2, 3, 5, 0, 6, 4, 1)
+    println(Chromium().solution(array))
 }

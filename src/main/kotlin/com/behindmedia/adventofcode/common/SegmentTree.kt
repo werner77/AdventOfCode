@@ -5,7 +5,7 @@ interface SegmentNode<N : SegmentNode<N, V, O>, V : Any, O: Any> {
     operator fun plus(other: N): N
 
     // This generates a new node by applying the specified value with the specified operation
-    fun applyOperation(operation: O, value: V): N
+    fun applyOperation(operation: O, value: V, range: IntRange): N
 }
 
 interface LazySegmentNode<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>, V : Any, O: Any> {
@@ -137,7 +137,7 @@ class PlainSegmentTree<N : SegmentNode<N, V, O>, V : Any, O: Any>(
     override fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V, operation: O) {
         if (left == right) {
             val existing = nodes[nodeIndex] ?: error("Node at index $nodeIndex does not exist")
-            nodes[nodeIndex] = existing.applyOperation(operation, value)
+            nodes[nodeIndex] = existing.applyOperation(operation, value, left..right)
             return
         }
         val mid = (left + right) / 2
@@ -208,23 +208,34 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>,
     }
 
     private fun update(nodeIndex: Int, left: Int, right: Int, updateLeft: Int, updateRight: Int, value: V, operation: O) {
-        // 1) If there's a pending update at this node, apply it
+
+        // 2) If there's a pending update at this node, apply it
         applyLazy(nodeIndex, left, right)
 
-        // 2) No overlap
-        if (right < updateLeft || left > updateRight) return
+        if (right < updateLeft || left > updateRight) {
+            return
+        }
+
+        val leftChildIndex = nodeIndex shl 1
+        val rightChildIndex = leftChildIndex + 1
 
         // 3) Total overlap: store 'value' in lazy[nodeIndex] and apply immediately
         if (updateLeft <= left && right <= updateRight) {
-            lazyNodes[nodeIndex].applyOperation(operation, value, requireNode(nodeIndex))
-            applyLazy(nodeIndex, left, right)
+
+            // Apply the change to this node
+            nodes[nodeIndex] = requireNode(nodeIndex).applyOperation(operation, value, left..right)
+
+            if (left != right) {
+                // Apply lazy to children
+                lazyNodes[leftChildIndex].applyOperation(operation, value, requireNode(leftChildIndex))
+                lazyNodes[rightChildIndex].applyOperation(operation, value, requireNode(rightChildIndex))
+            }
+
             return
         }
 
         // 4) Partial overlap: recurse to children
         val mid = (left + right) / 2
-        val leftChildIndex = nodeIndex shl 1
-        val rightChildIndex = leftChildIndex + 1
         update(leftChildIndex, left, mid, updateLeft, updateRight, value, operation)
         update(rightChildIndex, mid + 1, right, updateLeft, updateRight, value, operation)
 
