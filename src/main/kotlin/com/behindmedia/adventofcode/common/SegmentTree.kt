@@ -173,7 +173,7 @@ class LazySegmentTree<L : LazySegmentNode<L, N, V, O>, N : SegmentNode<N, V, O>,
     private val lazyNodes: MutableList<L> = MutableList<L>(nodes.size) { lazyNodeConstructor.invoke() }
 
     override fun update(range: IntRange, value: V, operation: O) {
-        require(range in this.range) { "Invalid range: $range" }
+        require(range.first in this.range && range.last in this.range) { "Invalid range: $range" }
         update(1, 0, size - 1, range.first, range.last, value, operation)
     }
 
