@@ -22,9 +22,9 @@ class Day13Test {
     fun puzzle2() {
         val program = read("/2019/day13.txt")
         val day13 = Day13()
-        val gui: TextWindow? = null
+        //val gui: TextWindow? = null
         //uncomment to enable visualization
-        //val gui = TextWindow("AdventOfCode Day 13")
+        val gui = TextWindow("AdventOfCode Day 13")
 
         val finalGameState = day13.play(program) { gameState ->
             gui?.let {

@@ -13,7 +13,7 @@ private fun Char.toCoordinate(): Coordinate? {
     }
 }
 
-private const val visualize = false
+private const val visualize = true
 
 fun main() = timing {
     val string = read("/2024/day15.txt")
