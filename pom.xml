@@ -13,12 +13,14 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>2.0.21</kotlin.version>
-        <kotlin.compiler.languageVersion>2.0</kotlin.compiler.languageVersion>
+        <kotlin.version>2.2.21</kotlin.version>
+        <kotlin.compiler.languageVersion>2.2</kotlin.compiler.languageVersion>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <kotlin.compiler.apiVersion>2.0</kotlin.compiler.apiVersion>
+        <kotlin.compiler.apiVersion>2.2</kotlin.compiler.apiVersion>
         <kotlin.compiler.jvmTarget>21</kotlin.compiler.jvmTarget>
+        <kotlinx.coroutines.version>1.10.2</kotlinx.coroutines.version>
+        <kotlinx.serialization.version>1.9.0</kotlinx.serialization.version>
         <junit.version>4.13.2</junit.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -33,7 +35,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.27.1</version>
+            <version>1.28.0</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -43,7 +45,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>1.9.0</version>
+            <version>${kotlinx.coroutines.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -65,14 +67,12 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-core</artifactId>
-            <version>1.7.3</version>
-            <type>pom</type>
+            <version>${kotlinx.serialization.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-json</artifactId>
-            <version>1.7.3</version>
-            <type>pom</type>
+            <version>${kotlinx.serialization.version}</version>
         </dependency>
     </dependencies>
 
