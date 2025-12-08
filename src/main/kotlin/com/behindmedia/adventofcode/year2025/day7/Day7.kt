@@ -2,7 +2,6 @@ package com.behindmedia.adventofcode.year2025.day7
 
 import com.behindmedia.adventofcode.common.*
 
-// The number of ways to reach splitter n is the
 private fun wayCount(grid: CharGrid, coordinate: Coordinate, cache: MutableMap<Coordinate, Long>, unique: Boolean): Long {
     val value = grid.getOrNull(coordinate) ?: return 1L
     val cached = cache[coordinate]
