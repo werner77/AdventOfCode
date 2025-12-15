@@ -1,0 +1,4 @@
+AAA.
+ABAB
+ABAB
+.BBB

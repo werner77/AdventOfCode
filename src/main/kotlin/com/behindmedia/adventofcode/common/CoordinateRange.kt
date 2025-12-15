@@ -13,6 +13,8 @@ class CoordinateRange(private val minMaxCoordinate: Pair<Coordinate, Coordinate>
         )
     )
 
+    constructor(width: Int, height: Int) : this(Coordinate.origin, width, height)
+
     constructor(minCoordinate: Coordinate, maxCoordinate: Coordinate) : this(Pair(minCoordinate, maxCoordinate))
     constructor(collection: Collection<Coordinate>) : this(collection.minMaxCoordinate())
 

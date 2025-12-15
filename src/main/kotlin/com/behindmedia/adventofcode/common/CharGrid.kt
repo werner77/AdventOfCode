@@ -66,9 +66,50 @@ open class CharGrid(final override val sizeX: Int, final override val sizeY: Int
     }
 
     override fun toString(): String = ValueGrid.toString(this)
+
+
+    fun transformed(rotation: Int, flipped: Boolean): CharGrid {
+        return when (rotation % 4) {
+            0 -> {
+                if (flipped) {
+                    CharGrid(this.sizeX, this.sizeY) { x, y -> this.data[y][this.maxX - x] }
+                } else {
+                    this
+                }
+            }
+
+            1 -> {
+                if (flipped) {
+                    CharGrid(this.sizeY, this.sizeX) { x, y -> this.data[this.maxX - x][this.maxY - y] }
+                } else {
+                    CharGrid(this.sizeY, this.sizeX) { x, y -> this.data[this.maxX - x][y] }
+                }
+            }
+
+            2 -> {
+                if (flipped) {
+                    CharGrid(this.sizeX, this.sizeY) { x, y -> this.data[this.maxY - y][x] }
+                } else {
+                    CharGrid(this.sizeX, this.sizeY) { x, y -> this.data[this.maxY - y][this.maxX - x] }
+                }
+            }
+
+            3 -> {
+                if (flipped) {
+                    CharGrid(this.sizeY, this.sizeX) { x, y -> this.data[x][y] }
+                } else {
+                    CharGrid(this.sizeY, this.sizeX) { x, y -> this.data[x][this.maxY - y] }
+                }
+            }
+
+            else -> {
+                error("Invalid rotation: $rotation")
+            }
+        }
+    }
 }
 
-class MutableCharGrid(sizeX: Int, sizeY: Int, default: (Int, Int) -> Char = { _, _ -> defaultChar }): CharGrid(sizeX, sizeY, default), MutableValueGrid<Char> {
+class MutableCharGrid(sizeX: Int, sizeY: Int, default: (Int, Int) -> Char = { _, _ -> defaultChar }) : CharGrid(sizeX, sizeY, default), MutableValueGrid<Char> {
 
     constructor(squareSize: Int, default: (Int, Int) -> Char = { _, _ -> defaultChar }) : this(
         squareSize,
@@ -81,7 +122,7 @@ class MutableCharGrid(sizeX: Int, sizeY: Int, default: (Int, Int) -> Char = { _,
     }
 }
 
-open class CharGridView(val grid: CharGrid, val offset: Coordinate, override val sizeX: Int, override val sizeY: Int): ValueGrid<Char> {
+open class CharGridView(val grid: CharGrid, val offset: Coordinate, override val sizeX: Int, override val sizeY: Int) : ValueGrid<Char> {
     override fun copy(): CharGridView {
         return CharGridView(grid, offset, sizeX, sizeY)
     }
@@ -95,7 +136,8 @@ open class CharGridView(val grid: CharGrid, val offset: Coordinate, override val
     }
 }
 
-class MutableCharGridView(grid: MutableCharGrid, offset: Coordinate, sizeX: Int, sizeY: Int): CharGridView(grid, offset, sizeX, sizeY), MutableValueGrid<Char> {
+class MutableCharGridView(grid: MutableCharGrid, offset: Coordinate, sizeX: Int, sizeY: Int) : CharGridView(grid, offset, sizeX, sizeY),
+    MutableValueGrid<Char> {
     private val mutableGrid = grid
 
     override fun set(coordinate: Coordinate, value: Char) {
